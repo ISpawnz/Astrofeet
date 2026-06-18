@@ -1,0 +1,1575 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import {
+  ShoppingBag,
+  TrendingUp,
+  Receipt,
+  Package,
+  ArrowLeft,
+  LogIn,
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+  Loader2,
+  ShieldAlert,
+  Star,
+  PackageSearch,
+  Inbox,
+} from "lucide-react";
+import { api } from "@/lib/client";
+import { useAuthStore } from "@/stores/auth";
+import { useUIStore } from "@/stores/ui";
+import type { Order, Product, OrderStatus } from "@/lib/types";
+import {
+  formatPrice,
+  formatDate,
+  orderStatusLabel,
+  orderStatusColor,
+} from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const STATUS_ORDER: OrderStatus[] = [
+  "created",
+  "paid",
+  "shipped",
+  "delivered",
+  "cancelled",
+];
+
+const NEON_PALETTE = [
+  "#34e7ff",
+  "#ff5cf0",
+  "#a779ff",
+  "#c6ff5a",
+  "#ff7a3c",
+];
+
+const ALL_SIZES = [36, 37, 38, 39, 40, 41, 42, 43, 44];
+
+const ACCENT_PRESETS: { name: string; value: string }[] = [
+  { name: "Cyan", value: "#34e7ff" },
+  { name: "Magenta", value: "#ff5cf0" },
+  { name: "Violet", value: "#a779ff" },
+  { name: "Lime", value: "#c6ff5a" },
+  { name: "Gold", value: "#ffd24a" },
+  { name: "Orange", value: "#ff7a3c" },
+];
+
+const BADGE_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "Nenhum" },
+  { value: "Novo", label: "Novo" },
+  { value: "Drop limitado", label: "Drop limitado" },
+  { value: "Mais vendido", label: "Mais vendido" },
+];
+
+const CATEGORIES = [
+  "Runner",
+  "Lifestyle",
+  "Performance",
+  "Skate",
+  "Casual",
+];
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
+
+function itemsCount(order: Order): number {
+  return order.items.reduce((acc, it) => acc + it.quantity, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Admin guard
+// ---------------------------------------------------------------------------
+
+function AdminGuard() {
+  const openAuth = useUIStore((s) => s.openAuth);
+  const navigate = useUIStore((s) => s.navigate);
+  return (
+    <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 16, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4 }}
+        className="glass-strong w-full rounded-3xl border border-white/10 p-8"
+      >
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30">
+          <ShieldAlert className="h-8 w-8" />
+        </div>
+        <h2 className="text-xl font-bold">Acesso restrito ao painel.</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Esta área é reservada ao comando da Astrofeet. Faça login com uma
+          conta de administrador para continuar.
+        </p>
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <Button
+            onClick={() => openAuth("login")}
+            className="bg-[var(--neon-cyan)] text-black hover:bg-[var(--neon-cyan)]/90"
+          >
+            <LogIn className="h-4 w-4" />
+            Fazer login
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate("home")}
+            className="border-white/10 bg-white/5 hover:bg-white/10"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar à loja
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Metric card
+// ---------------------------------------------------------------------------
+
+interface MetricCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent: string;
+  index?: number;
+}
+
+function MetricCard({ icon, label, value, accent, index = 0 }: MetricCardProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay: Math.min(index * 0.06, 0.3) }}
+      className="glass relative overflow-hidden rounded-2xl border border-white/10 p-5"
+    >
+      <div
+        className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full opacity-25 blur-2xl"
+        style={{ background: accent }}
+      />
+      <div className="relative flex items-start justify-between">
+        <div
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10"
+          style={{
+            color: accent,
+            background: `${accent}1f`,
+          }}
+        >
+          {icon}
+        </div>
+      </div>
+      <p className="relative mt-4 text-3xl font-black tracking-tight">
+        {value}
+      </p>
+      <p className="relative mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+    </motion.div>
+  );
+}
+
+function MetricCardSkeleton() {
+  return (
+    <div className="glass rounded-2xl border border-white/10 p-5">
+      <Skeleton className="h-11 w-11 rounded-xl" />
+      <Skeleton className="mt-4 h-9 w-24" />
+      <Skeleton className="mt-2 h-3 w-20" />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Status badge
+// ---------------------------------------------------------------------------
+
+function StatusBadge({ status }: { status: OrderStatus }) {
+  return (
+    <Badge
+      variant="outline"
+      className={cn("rounded-full border px-2 py-0.5 text-[11px] font-semibold", orderStatusColor(status))}
+    >
+      {orderStatusLabel(status)}
+    </Badge>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Overview tab
+// ---------------------------------------------------------------------------
+
+function OverviewTab() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["admin-metrics"],
+    queryFn: () => api.adminMetrics(),
+  });
+
+  const byStatusData = useMemo(() => {
+    if (!data) return [];
+    return STATUS_ORDER.map((s) => ({
+      status: s,
+      label: orderStatusLabel(s),
+      count: data.byStatus[s] ?? 0,
+    }));
+  }, [data]);
+
+  const recentByStatus = useMemo(() => {
+    if (!data || data.recent.length === 0) return [];
+    const map: Record<string, number> = {};
+    for (const o of data.recent) {
+      map[o.status] = (map[o.status] ?? 0) + 1;
+    }
+    return STATUS_ORDER.filter((s) => (map[s] ?? 0) > 0).map((s, i) => ({
+      status: s,
+      label: orderStatusLabel(s),
+      count: map[s],
+      color: NEON_PALETTE[i % NEON_PALETTE.length],
+    }));
+  }, [data]);
+
+  if (isError) {
+    return (
+      <div className="glass rounded-2xl border border-white/10 p-8 text-center text-sm text-muted-foreground">
+        Não foi possível carregar os números do painel. Tente novamente em
+        instantes.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Metric cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {isLoading || !data ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <MetricCardSkeleton key={i} />
+          ))
+        ) : (
+          <>
+            <MetricCard
+              index={0}
+              icon={<ShoppingBag className="h-5 w-5" />}
+              label="Pedidos hoje"
+              value={String(data.ordersToday)}
+              accent="#34e7ff"
+            />
+            <MetricCard
+              index={1}
+              icon={<TrendingUp className="h-5 w-5" />}
+              label="Faturamento"
+              value={formatPrice(data.revenue)}
+              accent="#c6ff5a"
+            />
+            <MetricCard
+              index={2}
+              icon={<Receipt className="h-5 w-5" />}
+              label="Ticket médio"
+              value={formatPrice(data.ticket)}
+              accent="#a779ff"
+            />
+            <MetricCard
+              index={3}
+              icon={<Package className="h-5 w-5" />}
+              label="Produtos ativos"
+              value={String(data.totalProducts)}
+              accent="#ff5cf0"
+            />
+          </>
+        )}
+      </div>
+
+      {/* Charts */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="glass rounded-2xl border border-white/10 p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">Pedidos por status</h3>
+              <p className="text-xs text-muted-foreground">
+                Visão geral do funil
+              </p>
+            </div>
+            <BarChart className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="h-56 w-full">
+            {isLoading ? (
+              <Skeleton className="h-full w-full rounded-xl" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={byStatusData}
+                  margin={{ top: 8, right: 8, bottom: 0, left: -16 }}
+                >
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: "currentColor", fontSize: 11 }}
+                    className="text-muted-foreground"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fill: "currentColor", fontSize: 11 }}
+                    className="text-muted-foreground"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "rgba(52,231,255,0.08)" }}
+                    contentStyle={{
+                      background: "rgba(20,18,32,0.92)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 12,
+                      color: "#fff",
+                      fontSize: 12,
+                    }}
+                    labelStyle={{ color: "#fff" }}
+                  />
+                  <Bar
+                    dataKey="count"
+                    radius={[6, 6, 0, 0]}
+                    fill="#34e7ff"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        <div className="glass rounded-2xl border border-white/10 p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">Últimos pedidos</h3>
+              <p className="text-xs text-muted-foreground">
+                Distribuição por status
+              </p>
+            </div>
+          </div>
+          <div className="flex h-56 w-full items-center justify-center">
+            {isLoading ? (
+              <Skeleton className="h-40 w-40 rounded-full" />
+            ) : recentByStatus.length === 0 ? (
+              <div className="text-center text-sm text-muted-foreground">
+                <Inbox className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                Sem pedidos recentes
+              </div>
+            ) : (
+              <div className="flex w-full items-center gap-4">
+                <ResponsiveContainer width="55%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={recentByStatus}
+                      dataKey="count"
+                      nameKey="label"
+                      innerRadius={48}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      stroke="none"
+                    >
+                      {recentByStatus.map((entry) => (
+                        <Cell key={entry.status} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: "rgba(20,18,32,0.92)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 12,
+                        color: "#fff",
+                        fontSize: 12,
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <ul className="flex-1 space-y-2">
+                  {recentByStatus.map((entry) => (
+                    <li
+                      key={entry.status}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="flex items-center gap-2 text-muted-foreground">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ background: entry.color }}
+                        />
+                        {entry.label}
+                      </span>
+                      <span className="font-semibold">{entry.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent orders table */}
+      <div className="glass rounded-2xl border border-white/10 p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold">Últimos pedidos</h3>
+            <p className="text-xs text-muted-foreground">
+              Os 6 pedidos mais recentes
+            </p>
+          </div>
+        </div>
+        <div className="max-h-96 overflow-y-auto rounded-xl border border-white/5">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-white/10 hover:bg-transparent">
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Código
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Cliente
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Total
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Status
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Data
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow key={i} className="border-white/5">
+                    <TableCell colSpan={5}>
+                      <Skeleton className="h-6 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : !data || data.recent.length === 0 ? (
+                <TableRow className="border-white/5">
+                  <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                    <Inbox className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                    Nenhum pedido recente
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data.recent.slice(0, 6).map((o) => (
+                  <TableRow key={o.id} className="border-white/5">
+                    <TableCell className="font-mono text-xs text-[var(--neon-cyan)]">
+                      {o.code}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {o.customer.name}
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      {formatPrice(o.total)}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={o.status} />
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {formatDate(o.createdAt)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Orders table
+// ---------------------------------------------------------------------------
+
+function OrdersTable() {
+  const queryClient = useQueryClient();
+  const [query, setQuery] = useState("");
+  const [updating, setUpdating] = useState<string | null>(null);
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["orders"],
+    queryFn: () => api.listOrders(),
+  });
+
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    const q = query.trim().toLowerCase();
+    if (!q) return data;
+    return data.filter(
+      (o) =>
+        o.code.toLowerCase().includes(q) ||
+        o.customer.name.toLowerCase().includes(q),
+    );
+  }, [data, query]);
+
+  async function onStatusChange(order: Order, status: string) {
+    setUpdating(order.id);
+    try {
+      await api.updateOrderStatus(order.id, status);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-metrics"] }),
+      ]);
+      toast.success(`Pedido ${order.code} atualizado para "${orderStatusLabel(status)}".`);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Não foi possível atualizar o status.",
+      );
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  if (isError) {
+    return (
+      <div className="glass rounded-2xl border border-white/10 p-8 text-center text-sm text-muted-foreground">
+        Não foi possível carregar os pedidos. Tente novamente em instantes.
+      </div>
+    );
+  }
+
+  return (
+    <div className="glass rounded-2xl border border-white/10 p-4 sm:p-5">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="font-semibold">Todos os pedidos</h3>
+          <p className="text-xs text-muted-foreground">
+            Atualize o status de cada pedido em tempo real.
+          </p>
+        </div>
+        <div className="relative w-full sm:w-72">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por código ou cliente"
+            className="border-white/10 bg-white/5 pl-9"
+          />
+        </div>
+      </div>
+
+      <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-white/5">
+        <Table>
+          <TableHeader className="sticky top-0 z-10 bg-[var(--card)] backdrop-blur">
+            <TableRow className="border-white/10 hover:bg-transparent">
+              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                Código
+              </TableHead>
+              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                Cliente
+              </TableHead>
+              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                Itens
+              </TableHead>
+              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                Total
+              </TableHead>
+              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                Status
+              </TableHead>
+              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                Data
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i} className="border-white/5">
+                  <TableCell colSpan={6}>
+                    <Skeleton className="h-7 w-full" />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : filtered.length === 0 ? (
+              <TableRow className="border-white/5">
+                <TableCell colSpan={6} className="py-12 text-center">
+                  <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                    <Inbox className="h-8 w-8 opacity-50" />
+                    {query
+                      ? "Nenhum pedido encontrado para essa busca."
+                      : "Ainda não há pedidos registrados."}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((o) => (
+                <TableRow key={o.id} className="border-white/5">
+                  <TableCell className="font-mono text-xs text-[var(--neon-cyan)]">
+                    {o.code}
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">{o.customer.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {o.customer.email}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm">{itemsCount(o)}</TableCell>
+                  <TableCell className="font-semibold">
+                    {formatPrice(o.total)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={o.status} />
+                      <Select
+                        value={o.status}
+                        disabled={updating === o.id}
+                        onValueChange={(v) => onStatusChange(o, v)}
+                      >
+                        <SelectTrigger
+                          size="sm"
+                          className="h-8 w-9 justify-center border-white/10 bg-white/5 px-0"
+                          aria-label="Alterar status"
+                        >
+                          {updating === o.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">···</span>
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUS_ORDER.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {orderStatusLabel(s)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {formatDate(o.createdAt)}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Product form modal
+// ---------------------------------------------------------------------------
+
+interface ProductFormState {
+  name: string;
+  slug: string;
+  brand: string;
+  category: string;
+  price: string;
+  stock: string;
+  rating: string;
+  accent: string;
+  badge: string;
+  description: string;
+  sizes: number[];
+  images: string;
+  featured: boolean;
+  bestSeller: boolean;
+}
+
+function emptyForm(): ProductFormState {
+  return {
+    name: "",
+    slug: "",
+    brand: "",
+    category: CATEGORIES[0],
+    price: "",
+    stock: "0",
+    rating: "5",
+    accent: ACCENT_PRESETS[0].value,
+    badge: "",
+    description: "",
+    sizes: [...ALL_SIZES],
+    images: "",
+    featured: false,
+    bestSeller: false,
+  };
+}
+
+function formFromProduct(p: Product): ProductFormState {
+  return {
+    name: p.name,
+    slug: p.slug,
+    brand: p.brand,
+    category: p.category,
+    price: String(p.price),
+    stock: String(p.stock),
+    rating: String(p.rating),
+    accent: p.accent,
+    badge: p.badge ?? "",
+    description: p.description,
+    sizes: [...p.sizes].sort((a, b) => a - b),
+    images: p.images.join(", "),
+    featured: p.featured,
+    bestSeller: p.bestSeller,
+  };
+}
+
+function ProductFormModal({
+  open,
+  editing,
+  onOpenChange,
+}: {
+  open: boolean;
+  editing: Product | null;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState<ProductFormState>(emptyForm());
+  const [slugEdited, setSlugEdited] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Sync form whenever modal opens or editing target changes
+  useEffect(() => {
+    if (open) {
+      setForm(editing ? formFromProduct(editing) : emptyForm());
+      setSlugEdited(Boolean(editing));
+    }
+  }, [open, editing]);
+
+  function update<K extends keyof ProductFormState>(
+    key: K,
+    value: ProductFormState[K],
+  ) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function updateName(v: string) {
+    setForm((f) => {
+      const next = { ...f, name: v };
+      if (!slugEdited) next.slug = slugify(v);
+      return next;
+    });
+  }
+
+  function toggleSize(s: number) {
+    setForm((f) => {
+      const has = f.sizes.includes(s);
+      const sizes = has
+        ? f.sizes.filter((x) => x !== s)
+        : [...f.sizes, s].sort((a, b) => a - b);
+      return { ...f, sizes };
+    });
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (saving) return;
+
+    const name = form.name.trim();
+    const brand = form.brand.trim();
+    const category = form.category.trim();
+    const priceNum = Number(form.price);
+    const stockNum = parseInt(form.stock || "0", 10);
+    const ratingNum = Math.min(5, Math.max(0, Number(form.rating) || 0));
+
+    if (!name) return toast.error("Dê um nome ao produto.");
+    if (!brand) return toast.error("Informe a marca.");
+    if (!category) return toast.error("Informe a categoria.");
+    if (!Number.isFinite(priceNum) || priceNum < 0)
+      return toast.error("Informe um preço válido.");
+    if (form.sizes.length === 0)
+      return toast.error("Selecione ao menos um tamanho.");
+
+    const slug = (form.slug.trim() || slugify(name)).toLowerCase();
+    const imagesRaw = form.images
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const images =
+      imagesRaw.length > 0 ? imagesRaw : [`/products/${slug}.png`];
+
+    const body: Partial<Product> = {
+      name,
+      slug,
+      brand,
+      category,
+      price: priceNum,
+      stock: Number.isFinite(stockNum) ? stockNum : 0,
+      rating: ratingNum,
+      accent: form.accent,
+      badge: form.badge ? form.badge : null,
+      description: form.description.trim(),
+      sizes: form.sizes,
+      images,
+      featured: form.featured,
+      bestSeller: form.bestSeller,
+    };
+
+    setSaving(true);
+    try {
+      if (editing) {
+        await api.updateProduct(editing.id, body);
+        toast.success(`${name} atualizado com sucesso.`);
+      } else {
+        await api.createProduct(body);
+        toast.success(`${name} adicionado ao catálogo.`);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-metrics"] });
+      onOpenChange(false);
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível salvar o produto.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="glass-strong max-h-[90vh] overflow-y-auto border-white/10 sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-gradient-neon text-xl font-black">
+            {editing ? "Editar produto" : "Novo produto"}
+          </DialogTitle>
+          <DialogDescription>
+            {editing
+              ? "Ajuste as informações do item no catálogo."
+              : "Preencha as informações para adicionar um novo drop."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={onSubmit} className="space-y-5">
+          {/* Identity */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="p-name">Nome</Label>
+              <Input
+                id="p-name"
+                value={form.name}
+                onChange={(e) => updateName(e.target.value)}
+                placeholder="Orion Runner"
+                className="border-white/10 bg-white/5"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="p-slug">Slug</Label>
+              <Input
+                id="p-slug"
+                value={form.slug}
+                onChange={(e) => {
+                  setSlugEdited(true);
+                  update("slug", e.target.value);
+                }}
+                placeholder="orion-runner"
+                className="border-white/10 bg-white/5 font-mono text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="p-brand">Marca</Label>
+              <Input
+                id="p-brand"
+                value={form.brand}
+                onChange={(e) => update("brand", e.target.value)}
+                placeholder="Astrofeet"
+                className="border-white/10 bg-white/5"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="p-category">Categoria</Label>
+              <Select
+                value={form.category}
+                onValueChange={(v) => update("category", v)}
+              >
+                <SelectTrigger
+                  id="p-category"
+                  className="w-full border-white/10 bg-white/5"
+                >
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Numbers */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="p-price">Preço (R$)</Label>
+              <Input
+                id="p-price"
+                type="number"
+                min={0}
+                step="0.01"
+                value={form.price}
+                onChange={(e) => update("price", e.target.value)}
+                placeholder="699.90"
+                className="border-white/10 bg-white/5"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="p-stock">Estoque</Label>
+              <Input
+                id="p-stock"
+                type="number"
+                min={0}
+                value={form.stock}
+                onChange={(e) => update("stock", e.target.value)}
+                className="border-white/10 bg-white/5"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="p-rating">Avaliação (0–5)</Label>
+              <Input
+                id="p-rating"
+                type="number"
+                min={0}
+                max={5}
+                step="0.1"
+                value={form.rating}
+                onChange={(e) => update("rating", e.target.value)}
+                className="border-white/10 bg-white/5"
+              />
+            </div>
+          </div>
+
+          {/* Accent + Badge */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Cor de destaque</Label>
+              <div className="flex flex-wrap items-center gap-2">
+                {ACCENT_PRESETS.map((a) => {
+                  const active = form.accent.toLowerCase() === a.value.toLowerCase();
+                  return (
+                    <button
+                      key={a.value}
+                      type="button"
+                      onClick={() => update("accent", a.value)}
+                      title={a.name}
+                      className={cn(
+                        "h-8 w-8 rounded-full border-2 transition-transform",
+                        active
+                          ? "scale-110 border-white"
+                          : "border-white/20 hover:scale-105",
+                      )}
+                      style={{ background: a.value }}
+                    />
+                  );
+                })}
+                <label className="relative h-8 w-8 cursor-pointer overflow-hidden rounded-full border-2 border-white/20">
+                  <span
+                    className="block h-full w-full"
+                    style={{ background: form.accent }}
+                  />
+                  <input
+                    type="color"
+                    value={form.accent}
+                    onChange={(e) => update("accent", e.target.value)}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                    aria-label="Cor personalizada"
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Selo</Label>
+              <Select
+                value={form.badge}
+                onValueChange={(v) => update("badge", v)}
+              >
+                <SelectTrigger className="w-full border-white/10 bg-white/5">
+                  <SelectValue placeholder="Nenhum" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BADGE_OPTIONS.map((b) => (
+                    <SelectItem key={b.value || "none"} value={b.value || "__none__"}>
+                      {b.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Sizes */}
+          <div className="space-y-1.5">
+            <Label>Tamanhos disponíveis</Label>
+            <div className="flex flex-wrap gap-2">
+              {ALL_SIZES.map((s) => {
+                const active = form.sizes.includes(s);
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => toggleSize(s)}
+                    className={cn(
+                      "h-9 w-11 rounded-lg border text-sm font-medium transition-colors",
+                      active
+                        ? "border-[var(--neon-cyan)] bg-[var(--neon-cyan)]/15 text-[var(--neon-cyan)]"
+                        : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10",
+                    )}
+                  >
+                    {s}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-1.5">
+            <Label htmlFor="p-desc">Descrição</Label>
+            <Textarea
+              id="p-desc"
+              value={form.description}
+              onChange={(e) => update("description", e.target.value)}
+              placeholder="Conte a história do drop, materiais e tecnologia..."
+              className="min-h-24 border-white/10 bg-white/5"
+            />
+          </div>
+
+          {/* Images */}
+          <div className="space-y-1.5">
+            <Label htmlFor="p-images">Imagens (URLs separadas por vírgula)</Label>
+            <Input
+              id="p-images"
+              value={form.images}
+              onChange={(e) => update("images", e.target.value)}
+              placeholder={`/products/${form.slug || "slug"}.png`}
+              className="border-white/10 bg-white/5 font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Se vazio, usaremos <code>/products/&lt;slug&gt;.png</code>.
+            </p>
+          </div>
+
+          <Separator className="bg-white/5" />
+
+          {/* Toggles */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3">
+              <div>
+                <p className="text-sm font-medium">Destaque</p>
+                <p className="text-xs text-muted-foreground">
+                  Aparece em "Novidades"
+                </p>
+              </div>
+              <Switch
+                checked={form.featured}
+                onCheckedChange={(v) => update("featured", v)}
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3">
+              <div>
+                <p className="text-sm font-medium">Mais vendido</p>
+                <p className="text-xs text-muted-foreground">
+                  Aparece em "Mais vendidos"
+                </p>
+              </div>
+              <Switch
+                checked={form.bestSeller}
+                onCheckedChange={(v) => update("bestSeller", v)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-white/10 bg-white/5 hover:bg-white/10"
+              >
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button
+              type="submit"
+              disabled={saving}
+              className="bg-[var(--neon-cyan)] text-black hover:bg-[var(--neon-cyan)]/90"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Salvar"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Products table
+// ---------------------------------------------------------------------------
+
+function ProductsTable() {
+  const queryClient = useQueryClient();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Product | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["products"],
+    queryFn: () => api.products(),
+  });
+
+  function openCreate() {
+    setEditing(null);
+    setModalOpen(true);
+  }
+  function openEdit(p: Product) {
+    setEditing(p);
+    setModalOpen(true);
+  }
+
+  async function onConfirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.deleteProduct(deleteTarget.id);
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-metrics"] });
+      toast.success(`${deleteTarget.name} removido do catálogo.`);
+      setDeleteTarget(null);
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível remover o produto.",
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  if (isError) {
+    return (
+      <div className="glass rounded-2xl border border-white/10 p-8 text-center text-sm text-muted-foreground">
+        Não foi possível carregar o catálogo. Tente novamente em instantes.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="font-semibold">Catálogo</h3>
+          <p className="text-xs text-muted-foreground">
+            Gerencie os drops disponíveis na loja.
+          </p>
+        </div>
+        <Button
+          onClick={openCreate}
+          className="bg-[var(--neon-cyan)] text-black hover:bg-[var(--neon-cyan)]/90"
+        >
+          <Plus className="h-4 w-4" />
+          Novo produto
+        </Button>
+      </div>
+
+      <div className="glass rounded-2xl border border-white/10 p-3 sm:p-4">
+        <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-white/5">
+          <Table>
+            <TableHeader className="sticky top-0 z-10 bg-[var(--card)] backdrop-blur">
+              <TableRow className="border-white/10 hover:bg-transparent">
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Produto
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Categoria
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Preço
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Estoque
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Selo
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Flags
+                </TableHead>
+                <TableHead className="text-right text-xs uppercase tracking-wider text-muted-foreground">
+                  Ações
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow key={i} className="border-white/5">
+                    <TableCell colSpan={7}>
+                      <Skeleton className="h-10 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : !data || data.length === 0 ? (
+                <TableRow className="border-white/5">
+                  <TableCell colSpan={7} className="py-12 text-center">
+                    <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
+                      <PackageSearch className="h-10 w-10 opacity-50" />
+                      <div>
+                        <p className="font-medium text-foreground">
+                          Catálogo vazio
+                        </p>
+                        <p className="text-xs">
+                          Adicione o primeiro drop da Astrofeet.
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={openCreate}
+                        className="bg-[var(--neon-cyan)] text-black hover:bg-[var(--neon-cyan)]/90"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Novo produto
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data.map((p) => (
+                  <TableRow key={p.id} className="border-white/5">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/5"
+                          style={{
+                            boxShadow: `inset 0 0 18px ${p.accent}33`,
+                          }}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={p.images[0]}
+                            alt={p.name}
+                            className="h-full w-full object-contain p-1"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="line-clamp-1 font-medium">{p.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {p.brand}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[11px] font-medium"
+                        style={{
+                          color: p.accent,
+                          background: `${p.accent}1a`,
+                        }}
+                      >
+                        {p.category}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      {formatPrice(p.price)}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={cn(
+                          "text-sm",
+                          p.stock === 0
+                            ? "text-rose-300"
+                            : p.stock <= 5
+                              ? "text-amber-300"
+                              : "text-foreground",
+                        )}
+                      >
+                        {p.stock}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {p.badge ? (
+                        <Badge
+                          variant="outline"
+                          className="rounded-full border-white/15 bg-white/5 text-[10px]"
+                        >
+                          {p.badge}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {p.featured && (
+                          <span className="rounded-md bg-[var(--neon-cyan)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--neon-cyan)]">
+                            Destaque
+                          </span>
+                        )}
+                        {p.bestSeller && (
+                          <span className="rounded-md bg-[var(--neon-lime)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--neon-lime)]">
+                            Top
+                          </span>
+                        )}
+                        <span className="flex items-center gap-0.5 text-[11px] text-amber-300">
+                          <Star className="h-3 w-3 fill-current" />
+                          {p.rating.toFixed(1)}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 hover:bg-white/10"
+                          onClick={() => openEdit(p)}
+                          aria-label={`Editar ${p.name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-rose-300 hover:bg-rose-500/10"
+                          onClick={() => setDeleteTarget(p)}
+                          aria-label={`Remover ${p.name}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      <ProductFormModal
+        open={modalOpen}
+        editing={editing}
+        onOpenChange={setModalOpen}
+      />
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(v) => {
+          if (!v) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent className="glass-strong border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover produto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget
+                ? `Esta ação vai remover "${deleteTarget.name}" do catálogo. Não dá pra desfazer.`
+                : "Esta ação não pode ser desfeita."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="border-white/10 bg-white/5 hover:bg-white/10"
+              disabled={deleting}
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onConfirmDelete}
+              disabled={deleting}
+              className="bg-rose-500 text-white hover:bg-rose-500/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Removendo...
+                </>
+              ) : (
+                "Remover"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main AdminView
+// ---------------------------------------------------------------------------
+
+export function AdminView() {
+  const user = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s.hydrated);
+  const navigate = useUIStore((s) => s.navigate);
+  const [tab, setTab] = useState("overview");
+
+  // Guard: wait for hydration, then enforce admin role
+  if (!hydrated) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-md items-center justify-center px-4">
+        <div className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-5 py-4 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Carregando painel...
+        </div>
+      </div>
+    );
+  }
+
+  if (user?.role !== "admin") {
+    return <AdminGuard />;
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+      >
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-[var(--neon-cyan)]">
+            Astrofeet · Comando
+          </p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">
+            <span className="text-gradient-neon">Painel do Comando</span>
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Conectado como{" "}
+            <span className="font-medium text-foreground">{user.email}</span>
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => navigate("home")}
+          className="w-fit border-white/10 bg-white/5 hover:bg-white/10"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar à loja
+        </Button>
+      </motion.div>
+
+      {/* Tabs */}
+      <Tabs value={tab} onValueChange={setTab} className="gap-5">
+        <TabsList className="glass h-auto w-full justify-start gap-1 rounded-xl border border-white/10 p-1 sm:w-auto">
+          <TabsTrigger
+            value="overview"
+            className="data-[state=active]:bg-[var(--neon-cyan)]/15 data-[state=active]:text-[var(--neon-cyan)] rounded-lg px-4 py-2"
+          >
+            Visão geral
+          </TabsTrigger>
+          <TabsTrigger
+            value="orders"
+            className="data-[state=active]:bg-[var(--neon-cyan)]/15 data-[state=active]:text-[var(--neon-cyan)] rounded-lg px-4 py-2"
+          >
+            Pedidos
+          </TabsTrigger>
+          <TabsTrigger
+            value="products"
+            className="data-[state=active]:bg-[var(--neon-cyan)]/15 data-[state=active]:text-[var(--neon-cyan)] rounded-lg px-4 py-2"
+          >
+            Produtos
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview">
+          <OverviewTab />
+        </TabsContent>
+        <TabsContent value="orders">
+          <OrdersTable />
+        </TabsContent>
+        <TabsContent value="products">
+          <ProductsTable />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+export default AdminView;

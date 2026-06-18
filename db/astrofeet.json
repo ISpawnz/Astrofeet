@@ -1,0 +1,229 @@
+{
+  "users": [
+    {
+      "id": "0b32c14b-29a8-494b-a52e-4b1957d04435",
+      "email": "admin@astrofeet.com",
+      "name": "Comando Astrofeet",
+      "passwordHash": "scrypt$59baf04fbfb8991c623a29bcb82964ef$58619aa83a18d122d7717cc136abbcba6c81e5d106f01ef5a6363bd3d0003d26ff81c0a9348e2b5f748a898fd5c8147a85df51cd75861d2eb3902c3a3b3820fe",
+      "role": "admin",
+      "createdAt": "2026-06-18T15:15:44.053Z",
+      "updatedAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "f76722d5-870c-4f39-a710-5b6557ef3ded",
+      "email": "explorador@astrofeet.com",
+      "name": "Explorador Astrofeet",
+      "passwordHash": "scrypt$3898057fd9fbc0d604a53355d1ac7e53$40b44a9bb5c3e1b9e9d4cf1bb5bdb54647836bfbcd8b62a26fbb4036a4cdbeba2b0031362116ee95bf4e0b2d8b562274e1c2a1212f6b01b5c44b9ca87ee2ea82",
+      "role": "customer",
+      "createdAt": "2026-06-18T15:15:44.053Z",
+      "updatedAt": "2026-06-18T15:15:44.053Z"
+    }
+  ],
+  "products": [
+    {
+      "id": "bc9a1f56-72a9-4adc-949d-cf2c987d5f2b",
+      "slug": "orion-runner",
+      "name": "Orion Runner",
+      "brand": "Astrofeet Lab",
+      "category": "Corrida",
+      "price": 279.99,
+      "description": "Leve, limpo e veloz. O Orion Runner foi feito para quem quer um visual de órbita baixa sem abrir mão do conforto no dia a dia. Cabedal em malha translúcida com acabamento refletivo e entressola responsiva.",
+      "images": "[\"/products/orion-runner.png\"]",
+      "sizes": "[38,39,40,41,42,43]",
+      "stock": 30,
+      "rating": 4.7,
+      "accent": "#34e7ff",
+      "badge": "Novo",
+      "featured": true,
+      "bestSeller": false,
+      "createdAt": "2026-06-18T15:15:44.053Z",
+      "updatedAt": "2026-06-18T15:33:27.790Z"
+    },
+    {
+      "id": "0a11af5d-f300-4afd-b34e-912707cae162",
+      "slug": "lunar-drift",
+      "name": "Lunar Drift",
+      "brand": "Astrofeet Lab",
+      "category": "Casual",
+      "price": 349.9,
+      "description": "Cabedal premium em couro macio, cano alto e presença de vitrine. O Lunar Drift combina clima noturno com conforto de outro planeta. Palmilha com memória de impacto e solado com aderência lunar.",
+      "images": "[\"/products/lunar-drift.png\"]",
+      "sizes": "[37,38,39,40,41,42]",
+      "stock": 18,
+      "rating": 4.8,
+      "accent": "#c6ff5a",
+      "badge": "Drop limitado",
+      "featured": true,
+      "bestSeller": true,
+      "createdAt": "2026-06-18T15:15:44.053Z",
+      "updatedAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "acb1cea4-6f15-4922-ba99-237dbf346b0e",
+      "slug": "solar-pulse",
+      "name": "Solar Pulse",
+      "brand": "Nebula Wear",
+      "category": "Performance",
+      "price": 429,
+      "description": "Um sneaker técnico, feito para chamar atenção sem pesar. Malha respirante, placa de propulsão no antepelo e detalhes em neon dourado. Pronto para treinos longos e looks de impacto.",
+      "images": "[\"/products/solar-pulse.png\"]",
+      "sizes": "[39,40,41,42,43,44]",
+      "stock": 24,
+      "rating": 4.9,
+      "accent": "#ffcf5a",
+      "badge": "Mais vendido",
+      "featured": true,
+      "bestSeller": true,
+      "createdAt": "2026-06-18T15:15:44.053Z",
+      "updatedAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "c986f99c-16ed-4ab9-90a1-be2c2201c1d6",
+      "slug": "nebula-dunk",
+      "name": "Nebula Dunk",
+      "brand": "Nebula Wear",
+      "category": "Lifestyle",
+      "price": 389,
+      "description": "Silhueta chunky com solado robusto e cabedal em camadas de material espacial. O Nebula Dunk é um drop de baixa gravidade para quem vive entre as estrelas e o asfalto.",
+      "images": "[\"/products/nebula-dunk.png\"]",
+      "sizes": "[37,38,39,40,41,42,43]",
+      "stock": 21,
+      "rating": 4.6,
+      "accent": "#a779ff",
+      "badge": "Novo",
+      "featured": false,
+      "bestSeller": false,
+      "createdAt": "2026-06-18T15:15:44.053Z",
+      "updatedAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "6ab33e56-72c5-44ae-8150-d37ee3bff44f",
+      "slug": "void-classic",
+      "name": "Void Classic",
+      "brand": "Astrofeet Lab",
+      "category": "Skate",
+      "price": 319.5,
+      "description": "Clássico atemporal com contraste escuro para looks noturnos. Camurça preta, detalhes em neon magenta e solado vulcanizado de aderência absurda. Um void que combina com tudo.",
+      "images": "[\"/products/void-classic.png\"]",
+      "sizes": "[36,37,38,39,40,42]",
+      "stock": 27,
+      "rating": 4.5,
+      "accent": "#ff5cf0",
+      "badge": null,
+      "featured": false,
+      "bestSeller": true,
+      "createdAt": "2026-06-18T15:15:44.053Z",
+      "updatedAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "26738dfe-d3ca-45d9-ad74-899baa095a96",
+      "slug": "meteor-air",
+      "name": "Meteor Air",
+      "brand": "Nebula Wear",
+      "category": "Performance",
+      "price": 459,
+      "description": "Solado com câmara de ar visível e cabedal em gradiente ígneo. O Meteor Air absorve o impacto e devolve energia a cada passada, como uma chuva de meteoros sob seus pés.",
+      "images": "[\"/products/meteor-air.png\"]",
+      "sizes": "[38,39,40,41,42,43,44]",
+      "stock": 15,
+      "rating": 4.8,
+      "accent": "#ff7a3c",
+      "badge": "Drop limitado",
+      "featured": false,
+      "bestSeller": false,
+      "createdAt": "2026-06-18T15:15:44.053Z",
+      "updatedAt": "2026-06-18T15:15:44.053Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": "c3bc36de-1107-433c-b496-e52c59cc26bf",
+      "createdAt": "2026-06-18T15:33:27.789Z",
+      "updatedAt": "2026-06-18T15:33:27.789Z",
+      "code": "AST-807788",
+      "userId": "0b32c14b-29a8-494b-a52e-4b1957d04435",
+      "status": "created",
+      "items": "[{\"productId\":\"bc9a1f56-72a9-4adc-949d-cf2c987d5f2b\",\"slug\":\"orion-runner\",\"name\":\"Orion Runner\",\"quantity\":2,\"size\":40,\"unitPrice\":279.99,\"subtotal\":559.98}]",
+      "subtotal": 559.98,
+      "shipping": 0,
+      "total": 559.98,
+      "customer": "{\"name\":\"Comando Astrofeet\",\"email\":\"admin@astrofeet.com\",\"phone\":\"(11) 99999-0000\"}",
+      "address": "{\"cep\":\"01310-100\",\"street\":\"Av. Paulista\",\"number\":\"1000\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
+      "payment": "{\"method\":\"card\",\"cardLast4\":\"1111\"}"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "a97a412a-46ce-4154-a85a-cf4be9f1f52d",
+      "productId": "bc9a1f56-72a9-4adc-949d-cf2c987d5f2b",
+      "userId": null,
+      "authorName": "Lucas M.",
+      "rating": 5,
+      "comment": "Confortável demais, parece que tô flutuando. Visual de outro nível.",
+      "createdAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "8ba85251-eb2a-4a31-a267-177f3c667eb4",
+      "productId": "bc9a1f56-72a9-4adc-949d-cf2c987d5f2b",
+      "userId": null,
+      "authorName": "Bianca R.",
+      "rating": 4,
+      "comment": "Lindo, só achei meio justo no peito do pé. Recomendo pegar meia numeração acima.",
+      "createdAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "469412b5-155f-4462-952d-e1c013e72e8a",
+      "productId": "0a11af5d-f300-4afd-b34e-912707cae162",
+      "userId": null,
+      "authorName": "Pedro H.",
+      "rating": 5,
+      "comment": "Couro macio e acabamento impecável. Vale cada real.",
+      "createdAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "f8fc44b6-e7a9-44ac-b367-1415cabdb4e6",
+      "productId": "0a11af5d-f300-4afd-b34e-912707cae162",
+      "userId": null,
+      "authorName": "Ana C.",
+      "rating": 5,
+      "comment": "Combina com tudo, virei meu cotidiano.",
+      "createdAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "7263f94a-9f18-4fcc-ab78-815829a548d0",
+      "productId": "acb1cea4-6f15-4922-ba99-237dbf346b0e",
+      "userId": null,
+      "authorName": "Júlia S.",
+      "rating": 5,
+      "comment": "Corro meia maratona com ele, leveza absurda.",
+      "createdAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "bac7cb77-8209-4179-a9bf-d36671dbfb1b",
+      "productId": "acb1cea4-6f15-4922-ba99-237dbf346b0e",
+      "userId": null,
+      "authorName": "Rafael T.",
+      "rating": 5,
+      "comment": "Melhor tênis de performance que já tive.",
+      "createdAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "89afec4f-5ccd-46da-9915-ec5a8220ea0a",
+      "productId": "6ab33e56-72c5-44ae-8150-d37ee3bff44f",
+      "userId": null,
+      "authorName": "Marcos L.",
+      "rating": 4,
+      "comment": "Clássico que faltava no meu armário. Aderência boa de skate.",
+      "createdAt": "2026-06-18T15:15:44.053Z"
+    },
+    {
+      "id": "b9e2ca3d-4dd8-4a36-a19a-3f34b96726a5",
+      "productId": "26738dfe-d3ca-45d9-ad74-899baa095a96",
+      "userId": null,
+      "authorName": "Camila V.",
+      "rating": 5,
+      "comment": "O câmara de ar é sensacional, parece trampolim.",
+      "createdAt": "2026-06-18T15:15:44.053Z"
+    }
+  ]
+}

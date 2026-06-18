@@ -1,0 +1,73 @@
+// Astrofeet — Prisma schema (SQLite)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("customer") // "customer" | "admin"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orders       Order[]
+  reviews      Review[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  brand       String
+  category    String
+  price       Float
+  description String
+  // JSON-encoded string arrays: images[], sizes[], gallery colors, etc.
+  images      String   @default("[]")
+  sizes       String   @default("[]")
+  stock       Int      @default(0)
+  rating      Float    @default(4.5)
+  accent      String   @default("#66e3ff")
+  badge       String?  // "Novo" | "Drop limitado" | "Mais vendido" | null
+  featured    Boolean  @default(false)
+  bestSeller  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  reviews     Review[]
+}
+
+model Order {
+  id        String   @id @default(cuid())
+  code      String   @unique // human friendly AST-XXXXXX
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  status    String   @default("created") // created | paid | shipped | delivered | cancelled
+  items     String   @default("[]") // JSON array of order line items
+  subtotal  Float    @default(0)
+  shipping  Float    @default(0)
+  total     Float    @default(0)
+  customer  String   @default("{}") // JSON: name, email, phone
+  address   String   @default("{}") // JSON: cep, street, number, city, state...
+  payment   String   @default("{}") // JSON: method, cardLast4, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  authorName String
+  rating     Int
+  comment    String   @default("")
+  createdAt  DateTime @default(now())
+}
