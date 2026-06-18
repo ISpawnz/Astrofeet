@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,6 +29,10 @@ import {
   Clock,
   KeyRound,
   Home,
+  Pencil,
+  Check,
+  X,
+  Loader2,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
@@ -738,9 +742,44 @@ function ProfileRow({
 
 function ProfileTab({ user }: { user: PublicUser }) {
   const navigate = useUIStore((s) => s.navigate);
+  const setUser = useAuthStore((s) => s.setUser);
   const roleLabel = user.role === "admin" ? "Comando" : "Explorador";
   const roleAccent =
     user.role === "admin" ? "var(--neon-magenta)" : "var(--neon-cyan)";
+
+  // Editable name state
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(user.name);
+  const [savingName, setSavingName] = useState(false);
+
+  useEffect(() => {
+    setNameValue(user.name);
+  }, [user.name]);
+
+  async function saveName() {
+    const trimmed = nameValue.trim();
+    if (trimmed.length < 2) {
+      toast.error("Nome precisa ter ao menos 2 caracteres.");
+      return;
+    }
+    if (trimmed === user.name) {
+      setEditingName(false);
+      return;
+    }
+    setSavingName(true);
+    try {
+      const updated = await api.updateProfile(trimmed);
+      setUser(updated);
+      toast.success("Nome atualizado com sucesso!");
+      setEditingName(false);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Não foi possível salvar.",
+      );
+    } finally {
+      setSavingName(false);
+    }
+  }
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
@@ -756,12 +795,71 @@ function ProfileTab({ user }: { user: PublicUser }) {
           Meus dados
         </h2>
         <div className="mt-4 space-y-2.5">
-          <ProfileRow
-            icon={<User className="h-4 w-4" />}
-            label="Nome"
-            value={user.name}
-            accent="var(--neon-cyan)"
-          />
+          {/* Editable name row */}
+          <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+              style={{ background: "color-mix(in oklab, var(--neon-cyan) 12%, transparent)" }}
+            >
+              <User className="h-4 w-4 text-[var(--neon-cyan)]" />
+            </span>
+            <div className="flex-1">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Nome
+              </p>
+              {editingName ? (
+                <div className="mt-1 flex items-center gap-2">
+                  <input
+                    autoFocus
+                    value={nameValue}
+                    onChange={(e) => setNameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveName();
+                      if (e.key === "Escape") {
+                        setEditingName(false);
+                        setNameValue(user.name);
+                      }
+                    }}
+                    className="h-9 flex-1 rounded-lg border border-[var(--neon-cyan)] bg-white/5 px-3 text-sm font-medium outline-none"
+                    placeholder="Seu nome"
+                  />
+                  <button
+                    onClick={saveName}
+                    disabled={savingName}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--neon-cyan)] text-black transition hover:opacity-90 disabled:opacity-40"
+                    aria-label="Salvar nome"
+                  >
+                    {savingName ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingName(false);
+                      setNameValue(user.name);
+                    }}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-foreground transition hover:text-foreground"
+                    aria-label="Cancelar"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-0.5 flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium">{user.name}</p>
+                  <button
+                    onClick={() => setEditingName(true)}
+                    className="flex items-center gap-1 text-xs text-[var(--neon-cyan)] transition hover:underline"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    Editar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
           <ProfileRow
             icon={<Mail className="h-4 w-4" />}
             label="E-mail"
@@ -789,7 +887,7 @@ function ProfileTab({ user }: { user: PublicUser }) {
         <div className="mt-5 flex items-start gap-2 rounded-2xl border border-white/5 bg-white/[0.02] p-3.5">
           <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-[var(--neon-lime)]" />
           <p className="text-xs text-muted-foreground">
-            Para alterar seus dados, fale com a Nave no canto inferior.
+            Para trocar seu e-mail ou senha, fale com a Nave no canto inferior.
           </p>
         </div>
       </motion.div>

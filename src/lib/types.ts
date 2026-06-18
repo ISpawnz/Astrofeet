@@ -48,13 +48,15 @@ export interface Product {
 }
 
 export interface Coupon {
+  id: string;
   code: string;
   type: "percent" | "fixed";
   value: number;
   minSubtotal: number;
   active: boolean;
   description: string;
-  expiresAt?: string;
+  expiresAt?: string | null;
+  createdAt: string;
 }
 
 export interface Review {

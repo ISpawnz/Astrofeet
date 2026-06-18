@@ -93,6 +93,16 @@ export async function POST(req: NextRequest) {
       ? body.sizes.map((s) => Number(s)).filter((n) => Number.isFinite(n))
       : [38, 39, 40, 41, 42];
 
+    // Per-size stock map (optional). If provided, only keys matching selected
+    // sizes are kept; values are clamped to >= 0.
+    let sizeStock: Record<string, number> = {};
+    if (body.sizeStock && typeof body.sizeStock === "object") {
+      for (const s of sizes) {
+        const v = Number((body.sizeStock as Record<string, unknown>)[String(s)]);
+        if (Number.isFinite(v) && v >= 0) sizeStock[String(s)] = Math.floor(v);
+      }
+    }
+
     const created = await db.product.create({
       data: {
         slug,
@@ -104,6 +114,7 @@ export async function POST(req: NextRequest) {
         images: JSON.stringify(images),
         sizes: JSON.stringify(sizes),
         stock: Number(body.stock ?? 0) || 0,
+        sizeStock: JSON.stringify(sizeStock),
         rating: Number(body.rating ?? 4.5) || 4.5,
         accent: String(body.accent ?? "#34e7ff"),
         badge: body.badge ? String(body.badge) : null,

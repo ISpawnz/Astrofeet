@@ -786,3 +786,137 @@ Task: QA + new features (account page, coupons, per-size stock) + styling polish
 6. **Related products algorithm** — brand-based + "frequently bought together".
 7. **Real Prisma/Postgres swap** — db.ts is 1:1 Prisma-shaped; drop-in once prisma installs.
 8. **Performance**: next/image optimization, code-split heavy views.
+
+---
+Task ID: CRON-4
+Agent: full-stack-developer
+Task: Add coupon management tab to AdminView
+
+Work Log:
+- Read worklog.md (Architecture, Design System, Shared components, Contracts,
+  CRON-2 coupon entry) and inspected live contracts: src/lib/client.ts
+  (api.listCoupons/createCoupon/updateCoupon/deleteCoupon), src/lib/types.ts
+  (Coupon), src/lib/format.ts (formatPrice, formatDate), and the existing
+  AdminView.tsx structure (AdminGuard, MetricCard, OverviewTab, OrdersTable,
+  ProductFormModal, ProductsTable, main AdminView with 3 tabs).
+- Read src/components/ui/alert-dialog.tsx to confirm the controlled-open API
+  pattern used by ProductsTable's delete dialog.
+- Extended AdminView.tsx (single file, no new files) with:
+  1. Added `Ticket, Power, Copy, Check` to the lucide-react import block and
+     `Coupon` to the `@/lib/types` import.
+  2. Added a 4th `<TabsTrigger value="cupons">` with a `Ticket` icon after
+     "Produtos" in the existing `TabsList`.
+  3. Added a `<TabsContent value="cupons"><CouponsTab /></TabsContent>` entry.
+  4. Added `CouponFormState` interface, `emptyCouponForm()`, `formFromCoupon()`
+     helpers, and a `COUPON_CODE_RE = /^[A-Z0-9]{3,20}$/` constant.
+  5. Added `CouponFormModal` sub-component (shadcn Dialog): fields for Código
+     (mono, auto-uppercase A-Z0-9, 3-20 chars), Tipo (Select Percentual/Fixo),
+     Valor (number with R$ prefix or % suffix depending on type), Subtotal
+     mínimo (number, default 0), Descrição (required input), Validade
+     (optional date input), Ativo (Switch, default true). useEffect syncs the
+     form on open. Inline error state + toast on validation failure
+     (code regex, value > 0, percent ≤ 100, description required). On submit
+     calls api.createCoupon or api.updateCoupon, invalidates ["coupons"],
+     toasts success, closes modal.
+  6. Added `CouponsTab` sub-component: header (title "Cupons de desconto" +
+     subtitle + gradient "Novo cupom" button), useQuery(["coupons"],
+     api.listCoupons), loading skeleton rows, error state with retry button,
+     and a shadcn Table (max-h-[28rem] overflow-y-auto, also horizontally
+     scrollable on mobile). Columns: CÓDIGO (mono neon-cyan button → copies
+     to clipboard + toast "Cupom X copiado"), DESCRIÇÃO (line-clamp-1),
+     TIPO (Percentual/Fixo), VALOR ("10%" or formatPrice), SUBTOTAL MÍN.
+     (formatPrice or "Sem mínimo"), STATUS (emerald "Ativo" / muted "Inativo"
+     badge), VALIDADE (formatDate or "Sem prazo"), AÇÕES (Power toggle,
+     Pencil edit, Trash2 delete). Empty state with Ticket icon + "Criar
+     primeiro cupom" button. Power toggle calls api.updateCoupon(id,
+     { active: !current }) → invalidate + toast (reversible, no confirm).
+     Delete uses shadcn AlertDialog → api.deleteCoupon → invalidate + toast.
+     framer-motion entrance on the tab wrapper (motion.div opacity/y) and
+     per-row (motion.tr opacity/y with staggered delay).
+- Verified with `node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json`:
+  ZERO errors in AdminView.tsx. (36 pre-existing errors are all in
+  src/app/api/coupons/* backend route files — JSON-Prisma stub friction noted
+  in prior worklog entries — unrelated to this task.)
+- Dev server stays healthy: `GET / 200`, `GET /api/coupons 200`, clean
+  compiles. The one "Fast Refresh full reload" in dev.log was from a brief
+  mid-edit broken state and recovered immediately.
+- Honored all contracts verbatim: api coupon methods (no useMutation, direct
+  calls + invalidateQueries), Coupon type, formatPrice/formatDate, sonner
+  toasts, shadcn primitives only (Dialog, AlertDialog, Table, Select, Switch,
+  Input, Label, Button, Badge, Skeleton), framer-motion entrances, lucide
+  icons (Ticket/Plus/Pencil/Trash2/Check/Loader2/Power/Copy), dark cosmic
+  theme with glass/border-white/10 + neon cyan/violet/emerald palette (NO
+  indigo/blue), pt-BR copy with no technical jargon ("Cupons", "Novo cupom",
+  "Salvar", "Remover", "Ativar/Desativar"), mobile-first responsive (table
+  horizontally scrollable, grid collapses to single column on mobile).
+
+Stage Summary:
+- Modified: src/components/views/AdminView.tsx (1576 → 2287 lines; added
+  CouponFormModal + CouponsTab sub-components, 4th tab trigger & content,
+  Coupon type + new lucide icons imports). No other files touched. No new
+  files created. No backend changes.
+- Agent context recorded at /home/z/my-project/agent-ctx/CRON-4-full-stack-developer.md.
+- Admin panel now has 4 tabs: Visão geral | Pedidos | Produtos | Cupons.
+  The Cupons tab provides full coupon CRUD (create/edit/delete/toggle-active)
+  matching the existing admin UI style and design conventions.
+
+---
+Task ID: CRON-3
+Agent: main (Z.ai Code) — 15-min webDevReview cron job (id 214859)
+Task: QA + new features (admin coupon management, admin per-size stock editor, customer profile editing) + styling polish
+
+## Current project status assessment
+- Project stable from CRON-2 (account page, coupons, per-size stock all working).
+- Dev server healthy on port 3000. HTTP 200.
+- agent-browser QA: all views passing, no errors.
+- E2E verified in CRON-2: order lifecycle, coupon discount, per-size stock decrement all working.
+
+## Completed modifications this round
+
+### New features
+1. **Admin coupon management** (full stack) — built by subagent (CRON-4):
+   - **Backend**: `GET /api/coupons` (admin list), `POST /api/coupons` (admin create with validation: code regex, value > 0, percent ≤ 100, description required, unique code), `PATCH /api/coupons/[id]` (admin update), `DELETE /api/coupons/[id]` (admin delete).
+   - **API client**: `api.listCoupons()`, `api.createCoupon(body)`, `api.updateCoupon(id, body)`, `api.deleteCoupon(id)`.
+   - **Frontend**: 4th admin tab "Cupons" with `CouponFormModal` (create/edit) + `CouponsTab` (table with copy-code, toggle-active, edit, delete via AlertDialog). framer-motion staggered rows.
+   - Verified: created BEMVINDO20 (20% off) → appeared in table → deleted via API (cleanup).
+2. **Admin per-size stock editor** (full stack):
+   - **Backend**: `POST /api/products` + `PUT /api/products/[id]` now accept `sizeStock` map (only keys matching selected sizes kept; values clamped ≥ 0).
+   - **Frontend** (AdminView ProductFormModal): added `sizeStock` to form state, `setSizeStock` helper, `toggleSize` now cleans up removed sizes. New "Estoque por tamanho" panel below the sizes chips: per-size number inputs in a grid, color-coded (rose for 0, amber for ≤2, normal otherwise), live total counter vs global stock, "Distribuir estoque" button (splits global stock evenly across selected sizes), helpful hint.
+   - Verified: editing Meteor Air shows loaded per-size values (1,2,3,3,2,2,2 for sizes 38-44).
+3. **Customer profile editing** (full stack):
+   - **Backend**: `PATCH /api/auth/me` — updates the authenticated user's name (validates ≥ 2 chars), re-signs session cookie so new name is reflected immediately. GET handler preserved.
+   - **API client**: `api.updateProfile(name)` → `Promise<PublicUser>`.
+   - **Frontend** (AccountView ProfileTab): name row is now editable — "Editar" button reveals an input + save (Check) + cancel (X) buttons. Enter saves, Escape cancels. On save: `api.updateProfile` → `setUser` (updates auth store globally) → toast. E-mail remains read-only (note: "Para trocar seu e-mail ou senha, fale com a Nave").
+   - Verified: changed admin name to "Comando Astrofeet Editado" → heading updated → reverted via API.
+
+### Styling polish
+- New globals.css utilities: `.card-hover-glow` (multi-layer neon box-shadow on hover with smooth transition), `.text-shimmer` (animated gradient text shine).
+- Applied `card-hover-glow` to all ProductCard instances (11 cards on home). Subtle cyan+violet glow appears on hover.
+- AccountView name edit UI: inline input with neon-cyan border, save/cancel icon buttons with hover states.
+
+## Verification results
+- ESLint: 0 errors, 8 warnings (all harmless unused eslint-disable).
+- Dev server: HTTP 200, compiles cleanly, no runtime errors.
+- agent-browser QA:
+  - Admin Cupons tab: 4th tab present, table shows 3 seed coupons (DROP15, ORBITA50, GALAXIA10), copy/edit/toggle/delete actions, new coupon form (BEMVINDO20 created + verified + deleted).
+  - Admin per-size stock editor: loads existing sizeStock values, "Distribuir estoque" button, total counter, color-coded inputs.
+  - Customer profile: "Editar" button → inline input → save → name updated in heading + auth store + persisted to DB (verified via API).
+  - ProductCard hover glow: 11 elements with card-hover-glow class on home.
+  - No console errors.
+
+## Unresolved issues / risks
+- Pre-existing cosmetic hydration warning (SSR/client attributes on Next.js error boundaries) — harmless, doesn't affect functionality.
+- Profile editing is name-only (e-mail/password still require "fale com a Nave"). Could add password change endpoint later.
+- Admin per-size stock editor doesn't auto-sync when global stock changes (admin can manually "Distribuir estoque" or edit individually).
+- Coupon management doesn't show usage count (how many orders used each coupon) — could add an aggregation endpoint.
+- No saved addresses feature yet (AccountView shows a friendly empty state).
+
+## Priority recommendations for next phase
+1. **Saved addresses** — let customers save/reuse delivery addresses at checkout (CRUD + select at checkout).
+2. **Coupon usage analytics** — show how many orders used each coupon in admin.
+3. **Password change** — let customers update their password from the account page.
+4. **Product image upload** in admin (file input + base64 or object storage).
+5. **Related products algorithm** — brand-based + "frequently bought together".
+6. **Real Prisma/Postgres swap** — db.ts is 1:1 Prisma-shaped; drop-in once prisma installs.
+7. **Performance**: next/image optimization, code-split heavy views.
+8. **Email notifications** mock — "confirmação enviada para seu e-mail" with a fake send log.

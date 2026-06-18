@@ -5,6 +5,7 @@ import type {
   Review,
   Order,
   PublicUser,
+  Coupon,
 } from "@/lib/types";
 
 async function request<T>(
@@ -174,6 +175,52 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ code, subtotal }),
     });
+  },
+  async listCoupons(): Promise<Coupon[]> {
+    const data = await request<{ coupons: Coupon[] }>("/api/coupons");
+    return data.coupons;
+  },
+  async createCoupon(body: {
+    code: string;
+    type: "percent" | "fixed";
+    value: number;
+    minSubtotal?: number;
+    description: string;
+    active?: boolean;
+    expiresAt?: string | null;
+  }): Promise<{ id: string; code: string }> {
+    return request("/api/coupons", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }).then((d) => (d as { coupon: { id: string; code: string } }).coupon);
+  },
+  async updateCoupon(
+    id: string,
+    body: Partial<{
+      code: string;
+      value: number;
+      minSubtotal: number;
+      description: string;
+      active: boolean;
+      expiresAt: string | null;
+    }>,
+  ): Promise<{ id: string; code: string }> {
+    return request(`/api/coupons/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }).then((d) => (d as { coupon: { id: string; code: string } }).coupon);
+  },
+  async deleteCoupon(id: string): Promise<void> {
+    await request<{ ok: true }>(`/api/coupons/${id}`, { method: "DELETE" });
+  },
+
+  // ---------- Profile ----------
+  async updateProfile(name: string): Promise<PublicUser> {
+    const data = await request<{ user: PublicUser }>("/api/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    });
+    return data.user;
   },
 
   // ---------- Reviews ----------

@@ -60,7 +60,7 @@ export function ProductCard({
       transition={{ duration: 0.5, delay: Math.min(index * 0.05, 0.3) }}
       whileHover={{ y: -6 }}
       onClick={() => navigate("product", { id: product.slug })}
-      className="group relative cursor-pointer overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-sm transition-colors hover:border-white/20"
+      className="group relative cursor-pointer overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-sm transition-colors hover:border-white/20 card-hover-glow"
     >
       {/* Accent glow */}
       <div

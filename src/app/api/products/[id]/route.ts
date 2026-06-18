@@ -66,6 +66,24 @@ export async function PUT(
     if (typeof body.featured === "boolean") data.featured = body.featured;
     if (typeof body.bestSeller === "boolean") data.bestSeller = body.bestSeller;
 
+    // Per-size stock map (optional). Only keys matching the (possibly updated)
+    // sizes array are kept; values clamped to >= 0.
+    if (body.sizeStock && typeof body.sizeStock === "object") {
+      let sizesArr: number[] = [];
+      try {
+        sizesArr = JSON.parse((existing.sizes as string) || "[]");
+      } catch {
+        sizesArr = [];
+      }
+      if (Array.isArray(body.sizes)) sizesArr = body.sizes.map((s) => Number(s));
+      const sizeStock: Record<string, number> = {};
+      for (const s of sizesArr) {
+        const v = Number((body.sizeStock as Record<string, unknown>)[String(s)]);
+        if (Number.isFinite(v) && v >= 0) sizeStock[String(s)] = Math.floor(v);
+      }
+      data.sizeStock = JSON.stringify(sizeStock);
+    }
+
     const updated = await db.product.update({
       where: { id },
       data,
