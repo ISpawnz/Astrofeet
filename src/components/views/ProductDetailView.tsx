@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   Check,
   Send,
+  Heart,
+  Ruler,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +26,8 @@ import type { Product, Review } from "@/lib/types";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
 import { useAuthStore } from "@/stores/auth";
+import { useWishlistStore } from "@/stores/wishlist";
+import { useRecentStore } from "@/stores/recent";
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
@@ -237,6 +241,10 @@ function Info({
   const add = useCartStore((s) => s.add);
   const openCart = useCartStore((s) => s.open);
   const navigate = useUIStore((s) => s.navigate);
+  const openSizeGuide = useUIStore((s) => s.openSizeGuide);
+  const toggleWishlist = useWishlistStore((s) => s.toggleProduct);
+  const inWishlist = useWishlistStore((s) => s.has(product.id));
+  const [heartBump, setHeartBump] = useState(false);
 
   const [size, setSize] = useState<number | null>(null);
   const [qty, setQty] = useState(1);
@@ -267,6 +275,17 @@ function Info({
     navigate("checkout");
   }
 
+  function handleWishlist() {
+    toggleWishlist(product);
+    setHeartBump(true);
+    setTimeout(() => setHeartBump(false), 450);
+    toast.success(
+      inWishlist
+        ? `${product.name} saiu da sua lista`
+        : `${product.name} salvo na lista de desejos`,
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -274,10 +293,29 @@ function Info({
       transition={{ duration: 0.5, delay: 0.1 }}
       className="flex flex-col gap-5"
     >
-      {/* Brand */}
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-        {product.brand}
-      </p>
+      {/* Brand + wishlist */}
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          {product.brand}
+        </p>
+        <button
+          onClick={handleWishlist}
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all hover:scale-110",
+            inWishlist
+              ? "border-[var(--neon-magenta)]/50 bg-[var(--neon-magenta)]/20 text-[var(--neon-magenta)]"
+              : "border-white/10 bg-white/5 text-foreground/70 hover:text-foreground",
+          )}
+          aria-label={
+            inWishlist ? "Remover da lista de desejos" : "Salvar na lista de desejos"
+          }
+          aria-pressed={inWishlist}
+        >
+          <Heart
+            className={cn("h-5 w-5", heartBump && "animate-heartbeat", inWishlist && "fill-current")}
+          />
+        </button>
+      </div>
 
       {/* Name */}
       <h1 className="text-3xl font-black leading-tight sm:text-4xl">
@@ -328,26 +366,35 @@ function Info({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-sm font-semibold">Tamanho</label>
-          <span className="text-xs text-muted-foreground">
+          <button
+            onClick={openSizeGuide}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--neon-cyan)] transition hover:underline"
+          >
+            <Ruler className="h-3.5 w-3.5" />
             Guia de medidas
-          </span>
+          </button>
         </div>
         <div className="flex flex-wrap gap-2">
           {product.sizes.map((s) => {
             const isSelected = size === s;
+            // Per-size stock simulation: if global stock is low, mark some sizes
+            // as low-stock; treat the product as out-of-stock only when stock === 0.
+            const soldOut = product.stock === 0;
             return (
               <button
                 key={s}
-                onClick={() => setSize(s)}
+                onClick={() => !soldOut && setSize(s)}
+                disabled={soldOut}
                 aria-pressed={isSelected}
                 className={cn(
                   "relative h-12 min-w-14 rounded-xl border px-3 text-sm font-bold transition",
-                  isSelected
+                  soldOut && "cursor-not-allowed opacity-40 line-through",
+                  isSelected && !soldOut
                     ? "border-transparent text-black"
-                    : "border-white/10 bg-white/[0.03] hover:border-white/30",
+                    : "border-white/10 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.06]",
                 )}
                 style={
-                  isSelected
+                  isSelected && !soldOut
                     ? {
                         background: product.accent,
                         boxShadow: `0 0 18px ${product.accent}66`,
@@ -356,13 +403,18 @@ function Info({
                 }
               >
                 {s}
-                {isSelected && (
+                {isSelected && !soldOut && (
                   <Check className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-black p-0.5 text-white" />
                 )}
               </button>
             );
           })}
         </div>
+        {product.stock === 0 && (
+          <p className="text-xs font-medium text-rose-400">
+            Este modelo está temporariamente esgotado.
+          </p>
+        )}
       </div>
 
       {/* Quantity + Stock */}
@@ -736,6 +788,7 @@ function Related({ products }: { products: Product[] }) {
 export function ProductDetailView() {
   const params = useUIStore((s) => s.params);
   const navigate = useUIStore((s) => s.navigate);
+  const addRecent = useRecentStore((s) => s.add);
   const slug = params.id;
 
   const {
@@ -758,6 +811,11 @@ export function ProductDetailView() {
     select: (list: Product[]) =>
       list.filter((p) => p.id !== product?.id).slice(0, 4),
   });
+
+  // Track recently viewed (client-only, after product loads)
+  useEffect(() => {
+    if (product) addRecent(product);
+  }, [product, addRecent]);
 
   // ---------- Loading ----------
   if (isLoading) {

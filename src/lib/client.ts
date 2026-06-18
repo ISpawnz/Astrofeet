@@ -135,6 +135,25 @@ export const api = {
     );
     return data.order;
   },
+  async trackOrder(code: string, email?: string): Promise<{
+    order: {
+      code: string;
+      status: string;
+      total: number;
+      subtotal: number;
+      shipping: number;
+      items: { name: string; quantity: number; size: number; unitPrice: number; subtotal: number }[];
+      customerName: string;
+      city: string;
+      state: string;
+      paymentMethod: string;
+      createdAt: string;
+    };
+  }> {
+    const qs = new URLSearchParams({ code });
+    if (email) qs.set("email", email);
+    return request(`/api/orders/track?${qs.toString()}`);
+  },
 
   // ---------- Reviews ----------
   async createReview(payload: {

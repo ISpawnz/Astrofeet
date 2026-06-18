@@ -72,6 +72,14 @@ export function Footer() {
           <div>
             <p className="mb-3 text-sm font-semibold">Atendimento</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>
+                <button
+                  onClick={() => navigate("track-order")}
+                  className="transition hover:text-foreground"
+                >
+                  Rastrear pedido
+                </button>
+              </li>
               <li>Entrega e prazos</li>
               <li>Trocas e devoluções</li>
               <li>Formas de pagamento</li>

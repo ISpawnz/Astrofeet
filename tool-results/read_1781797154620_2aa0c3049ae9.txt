@@ -1,0 +1,438 @@
+     1→# Astrofeet — Worklog
+     2→
+     3→## Project Overview
+     4→Rebuild of Astrofeet (premium sneaker e-commerce, cosmic/neon theme) as a modern
+     5→Next.js 16 + TypeScript + Tailwind 4 + shadcn/ui full-stack app. Single user-facing
+     6→route `/` renders a client-side multi-view SPA. Backend = Next.js API routes
+     7→backed by a JSON-file mini-Prisma store (`src/lib/db.ts`) so the app runs with
+     8→zero external DB binaries. Swappable to real Prisma later (same API shape).
+     9→
+    10→## Architecture (established)
+    11→- **Views (SPA)**: `useUIStore` (src/stores/ui.ts) holds `view` + `params` and
+    12→  `navigate(view, params)`. `src/app/page.tsx` renders the active view.
+    13→  Views: home | products | product | checkout | order-success | admin.
+    14→- **Cart**: `useCartStore` (src/stores/cart.ts, persisted) — `items`, `add(product, size, qty)`,
+    15→  `setQuantity`, `remove`, `subtotal()`, `count()`, `open/close/toggle`.
+    16→- **Auth**: `useAuthStore` (src/stores/auth.ts, persisted) — `user`, `setUser`, `logout`, `isAdmin()`.
+    17→  Session = httpOnly cookie `astrofeet_session` (HMAC token). `api.me()` syncs on load.
+    18→- **API client**: `src/lib/client.ts` exports `api` with methods: `me, login, register, logout,
+    19→  products(params), product(slug), createProduct, updateProduct, deleteProduct, createOrder,
+    20→  listOrders, updateOrderStatus, createReview, adminMetrics, chat`.
+    21→- **Backend routes** (all under `src/app/api/*`, runtime=nodejs):
+    22→  - `auth/login|register|me|logout` (POST each; me=GET)
+    23→  - `products` (GET list w/ filters: category,brand,q,sort,min,max,size,featured,bestSeller; POST admin)
+    24→  - `products/[id]` (GET, PUT admin, DELETE admin) — id accepts slug OR id
+    25→  - `orders` (GET list — admin sees all, customer sees own; POST create — backend recalculates prices/shipping/total)
+    26→  - `orders/[id]/status` (PATCH admin) — statuses: created|paid|shipped|delivered|cancelled
+    27→  - `reviews` (GET ?productId=, POST)
+    28→  - `admin/metrics` (GET admin) — ordersToday, revenue, ticket, totalOrders, totalProducts, recent[], byStatus{}
+    29→  - `chat` (POST) — AI assistant via z-ai-web-dev-sdk LLM, system prompt = "Nave" support agent
+    30→- **Auth helpers** (src/lib/auth.ts): `getCurrentUser()`, `requireAdmin()` (throws AuthError w/ status),
+    31→  `setSessionCookie`, `clearSessionCookie`. Passwords hashed via scrypt (src/lib/crypto.ts).
+    32→- **Serialization** (src/lib/serialize.ts): `serializeProduct`, `serializeReview`, `serializeOrder`
+    33→  convert DB records (JSON string fields for images/sizes/items) to clean public types.
+    34→- **Types** (src/lib/types.ts): Product, Review, CartItem, Order, OrderLineItem, OrderStatus,
+    35→  PublicUser, ViewName, ViewParams.
+    36→- **Format** (src/lib/format.ts): `formatPrice`, `formatDate`, `maskCEP/Phone/Card/Expiry/CVV`,
+    37→  `orderStatusLabel`, `orderStatusColor`.
+    38→
+    39→## Design System (globals.css)
+    40→- Default DARK theme (deep space). Brand neons: `--neon-cyan #34e7ff`, `--neon-magenta #ff5cf0`,
+    41→  `--neon-violet #a779ff`, `--neon-lime #c6ff5a`. Exposed as Tailwind colors `neon-cyan` etc.
+    42→- Utilities: `.neon-text`, `.neon-text-magenta`, `.neon-ring`, `.glass`, `.glass-strong`,
+    43→  `.text-gradient-neon`, `.grid-overlay`, `.border-gradient`.
+    44→- Animations: `.animate-astro-pulse`, `.animate-astro-float`, `.animate-spin-slow`,
+    45→  `.shimmer`, keyframes `astro-twinkle`.
+    46→- GalaxyBackground component (fixed, -z-10) with nebula blobs + twinkling stars + orbit rings.
+    47→- shadcn/ui components already exist in src/components/ui (New York style). USE THEM.
+    48→- Use framer-motion for entrances (`initial/whileInView`), hover lifts. Use `motion` sparingly.
+    49→- Toasts: `import { toast } from "sonner"`.
+    50→- Icons: lucide-react.
+    51→- IMPORTANT: NO indigo/blue as brand color. Use the neon cyan/violet/magenta/lime palette.
+    52→- Footer is sticky to bottom (root wrapper `min-h-screen flex flex-col`, footer `mt-auto`).
+    53→
+    54→## Seeded Data
+    55→- Admin: admin@astrofeet.com / admin123  (role=admin)
+    56→- Customer: explorador@astrofeet.com / explorador123
+    57→- 6 products: orion-runner, lunar-drift, solar-pulse, nebula-dunk, void-classic, meteor-air
+    58→  (each with accent color, badge, sizes, stock, rating, 1-2 reviews).
+    59→- Product images: /products/<slug>.png (AI-generated, may still be generating — fallback
+    60→  /products/placeholder.svg exists). Hero galaxy bg: /hero/galaxy.jpg, lifestyle: /hero/lifestyle.jpg.
+    61→
+    62→## Shared components already built
+    63→- `src/components/layout/GalaxyBackground.tsx`
+    64→- `src/components/layout/Header.tsx` (neon pulsing ASTROFEET logo, nav: Drops/Novidades/Mais vendidos,
+    65→  cart button w/ count, user dropdown w/ admin "Painel" + logout, mobile menu)
+    66→- `src/components/layout/Footer.tsx` (trust block + links + newsletter)
+    67→- `src/components/layout/ShipAssistant.tsx` (floating rocket button → AI chat panel)
+    68→- `src/components/views/ProductCard.tsx` (image w/ accent glow, badge, quick-add, rating, price+installments)
+    69→- `src/components/views/CartDrawer.tsx` (slide-over, qty controls, free-ship progress, checkout CTA)
+    70→- `src/components/views/HomeView.tsx` (hero, drops, promo banner, novidades, mais vendidos, newsletter)
+    71→- `src/components/providers.tsx` (ThemeProvider dark, QueryClient, auth sync on load, Toaster)
+    72→
+    73→## Shipping rules (backend authority)
+    74→- FREE_SHIPPING_THRESHOLD = R$300, BASE_SHIPPING = R$29.9. Subtotal >= 300 → free.
+    75→
+    76→## Outstanding (being built by subagents in parallel)
+    77→- ProductsView (filters/sort/search grid)
+    78→- ProductDetailView (gallery, size, qty, reviews, related)
+    79→- CheckoutView + OrderSuccessView
+    80→- AuthModal (animated sun/moon split login/register)
+    81→- AdminView (orders + status, product CRUD, metrics dashboard)
+    82→
+    83→## Environment note
+    84→- `next` package was missing from node_modules (slow registry). Being downloaded manually to
+    85→  /tmp/astro-pkgs/next-full.tgz and will be extracted to node_modules/next before `bun run dev`.
+    86→- All other deps (react, radix, tailwind, zustand, framer-motion, sonner, recharts, etc.) are present.
+    87→
+    88→---
+    89→Task ID: 2
+    90→Agent: full-stack-developer
+    91→Task: Build ProductsView (filterable product grid)
+    92→
+    93→Work Log:
+    94→- Read worklog.md, src/lib/client.ts, src/lib/types.ts, src/stores/ui.ts,
+    95→  src/components/views/ProductCard.tsx, src/components/views/HomeView.tsx,
+    96→  src/app/api/products/route.ts and relevant shadcn ui components (button,
+    97→  input, select, sheet, slider, skeleton, accordion) to understand contracts,
+    98→  design tokens, and API shape.
+    99→- Designed ProductsView as a single client component with internal sub-components
+   100→  (FilterGroup, ChipRow, Chip, ProductCardSkeleton, EmptyState) for reuse.
+   101→- Wired initial filter state from useUIStore params (category, q, sort, size,
+   102→  min, max) and preserved featured/bestSeller toggles from incoming params.
+   103→- Implemented debounced search (~300ms) via useEffect + setTimeout.
+   104→- Used @tanstack/react-query useQuery with a queryKey derived from all active
+   105→  filters (apiParams memo) so any change refetches; separate stable facets
+   106→  query derives distinct categories & brands.
+   107→- Built filters: chip lists for Categoria/Marca, single-select numeric chips
+   108→  for Tamanho (36-44), dual-thumb shadcn Slider for Preço with
+   109→  onValueCommit (no refetch spam) and formatted R$ display.
+   110→- Added Sort select (Novidades / Menor preço / Maior preço / Melhor avaliação).
+   111→- Desktop sidebar (`lg:grid-cols-[260px_1fr]`) with sticky glass panel;
+   112→  mobile Sheet (left slide-over) reusing the same FiltersPanel.
+   113→- Loading state: 6 skeleton cards mirroring ProductCard layout.
+   114→- Empty state + error state: friendly EmptyState component with action
+   115→  button (Explorar tudo / Tentar novamente).
+   116→- Grid uses `grid grid-cols-2 gap-4 lg:grid-cols-3` of existing ProductCard
+   117→  (which already handles click-to-detail, quick-add, and whileInView anim).
+   118→- Verified with `node_modules/typescript/bin/tsc --noEmit` — no TypeScript
+   119→  errors specific to ProductsView.tsx (other errors in the repo are from
+   120→  the still-pending `next` package install, unrelated to this file).
+   121→
+   122→Stage Summary:
+   123→- Created: src/components/views/ProductsView.tsx (single client component,
+   124→  ~555 lines, TypeScript strict, pt-BR copy, dark cosmic theme using
+   125→  glass/border-white/10 + neon cyan/violet accents, fully responsive
+   126→  mobile-first with touch targets ≥40px).
+   127→- Reuses: api client, useUIStore params, ProductCard, formatPrice, and
+   128→  shadcn ui (button, input, select, sheet, slider, skeleton).
+   129→- No new routes/pages created; no other files modified.
+   130→
+   131→---
+   132→Task ID: 4
+   133→Agent: full-stack-developer
+   134→Task: Build CheckoutView + OrderSuccessView + checkout store
+   135→
+   136→Work Log:
+   137→- Read worklog.md and inspected existing stores (ui, auth), lib/client.ts,
+   138→  lib/types.ts, lib/format.ts, app/page.tsx, CartDrawer.tsx, HomeView.tsx,
+   139→  globals.css, and shadcn Button/RadioGroup components to lock in design
+   140→  tokens and contracts.
+   141→- Created `src/stores/checkout.ts` — tiny non-persisted zustand store with
+   142→  `lastOrder`, `setLastOrder`, `clear`.
+   143→- Created `src/components/views/CheckoutView.tsx`:
+   144→  - Empty-cart state w/ "Explorar drops" → navigate("products").
+   145→  - Layout `grid lg:grid-cols-[1fr_380px] gap-8`: form left, sticky
+   146→    `glass-strong` order summary right.
+   147→  - 3 glass form sections with numbered neon legends:
+   148→    Contato (name/email/phone maskPhone, prefilled from auth user),
+   149→    Entrega (CEP maskCEP, street, number, complement optional, district,
+   150→    city, UF 2-letter), Pagamento (RadioGroup of card/pix/boleto; card
+   151→    reveals number maskCard / name / expiry maskExpiry / CVV maskCVV;
+   152→    pix/boleto show friendly QR/código note).
+   153→  - Inline FieldError + toast on invalid submit; full validate() covers
+   154→    email regex, CEP 8 digits, UF 2 chars, card 13+ digits, CVV 3+ digits.
+   155→  - Summary: items list w/ accent-glow thumbnails (max-h-72 scroll),
+   156→    subtotal / frete (free ≥ R$300 else R$29,90 — matches backend) / total
+   157→    (gradient), "Finalizar compra" gradient button w/ Loader2 spinner,
+   158→    trust row (ShieldCheck "Pagamento seguro" · Lock "Dados criptografados").
+   159→  - Submit → api.createOrder sending only {productId, size, quantity};
+   160→    on success: clear() cart, setLastOrder(order), navigate("order-success"),
+   161→    toast. On error: toast(err.message).
+   162→  - framer-motion staggered entrances; pt-BR copy; reassurance line
+   163→    "Pagamento seguro · Frete grátis acima de R$300".
+   164→- Created `src/components/views/OrderSuccessView.tsx`:
+   165→  - Reads lastOrder from useCheckoutStore; null → "Nenhum pedido recente"
+   166→    card + "Voltar ao início".
+   167→  - Celebration: glowing check in neon-lime→cyan gradient circle with
+   168→    slow-spinning dashed ring + animated sparkle particles, "Pedido
+   169→    confirmado!" gradient title, "enviamos a confirmação para {email}",
+   170→    order.code (mono neon-cyan) + copy button (clipboard + toast).
+   171→  - Status timeline stepper Recebido → Pago → Enviado → Entregue using
+   172→    orderStatusLabel; current step highlighted w/ neon ring; cancelled
+   173→    orders render a dedicated rose notice instead.
+   174→  - Two-column grid: items + totals (subtotal/frete/total) on one side,
+   175→    delivery address + payment card (icon + label; card shows "final
+   176→    {last4}") on the other.
+   177→  - CTAs: "Acompanhar na Nave" → toast "Fale com a Nave no canto inferior
+   178→    direito 🚀"; "Continuar explorando" → navigate("products"); "Voltar ao
+   179→    início" → navigate("home").
+   180→- Ran `tsc --noEmit -p tsconfig.json`: zero errors in the three new files
+   181→  (the only reported error is the not-yet-existing `@/stores/cart` module,
+   182→  being authored by a parallel subagent per the documented cart-store
+   183→  contract). Replaced non-standard `h-4.5 w-4.5` classes with `h-5 w-5`.
+   184→
+   185→Stage Summary:
+   186→- 3 files produced:
+   187→  - `src/stores/checkout.ts`
+   188→  - `src/components/views/CheckoutView.tsx`
+   189→  - `src/components/views/OrderSuccessView.tsx`
+   190→- Agent context recorded at `/home/z/my-project/agent-ctx/4-full-stack-developer.md`.
+   191→- Fully type-safe and aligned with the dark cosmic design system (glass
+   192→  panels, neon cyan/violet/magenta/lime palette, NO indigo/blue).
+   193→- Honors all stated contracts: cart/UI/auth/api/checkout store signatures,
+   194→  payload shape (no prices sent), format helpers, sonner toasts, pt-BR copy.
+   195→- Depends on the parallel cart store (`src/stores/cart.ts`) exposing
+   196→  `items / subtotal() / clear()` and CartItem fields productId/slug/name/
+   197→  price/image/size/quantity/accent, per the worklog.
+   198→
+   199→---
+   200→Task ID: 3
+   201→Agent: full-stack-developer
+   202→Task: Build ProductDetailView (product detail page)
+   203→
+   204→Work Log:
+   205→- Read worklog.md for architecture, design system, stores, API client, types, format helpers.
+   206→- Inspected existing ProductCard, CartDrawer, HomeView, ui.ts, auth.ts for store contracts
+   207→  (useUIStore.navigate/params, useCartStore.add/open, useAuthStore.user) and confirmed
+   208→  `@/stores/cart` is a documented contract (also imported by HomeView/ProductCard/CartDrawer/Header).
+   209→- Verified globals.css exposes `.animate-astro-float`, `.glass`, `.glass-strong`, neon CSS vars
+   210→  (--neon-cyan, --neon-magenta, --neon-violet, --neon-lime) — no indigo/blue used.
+   211→- Built `src/components/views/ProductDetailView.tsx` as a single "use client" file with:
+   212→  • Two `useQuery` hooks: `["product", slug]` (api.product) + `["products","related",cat,id]`
+   213→    (api.products({category}) with `select` filtering out current product, take 4).
+   214→  • Loading skeleton, not-found state with "Voltar aos drops" button.
+   215→  • Breadcrumb Drops / <category> / <name> (clickable back to products).
+   216→  • Two-column layout (lg:grid-cols-2 gap-10), mobile-stacked.
+   217→  • Gallery: rounded-3xl panel, accent radial blurred glow behind image, floating
+   218→    `animate-astro-float` main image, thumbnail strip with accent border highlight + glow.
+   219→    Single-image products get 3 synthesized angle chips (Frente/Lateral/Detalhe).
+   220→  • Info: brand uppercase, h1 3xl/4xl font-black, stars + review count, price (2xl-3xl bold),
+   221→    "ou 10x de X sem juros", free-shipping line above R$300, short description, size selector
+   222→    (chips, selected = accent bg + glow + check badge, requires selection before add), quantity
+   223→    stepper (min 1 max stock), Add-to-cart gradient button (from neon-cyan to neon-violet,
+   224→    text-black, disabled if no size), Buy-now secondary → add + navigate("checkout"), stock
+   225→    indicator (Em estoque / Últimas X unidades / Esgotado), trust row (Truck/RefreshCw/ShieldCheck).
+   226→  • Details/Description section with specs aside (categoria, marca, tamanhos, disponibilidade).
+   227→  • Reviews section: glass-strong summary card (avg big + 5..1 distribution bars), review list
+   228→    (avatar w/ accent initial, author, relative date, stars, comment) inside ScrollArea with
+   229→    max-h-96, "Sem avaliações ainda" empty state, write-a-review form (author input prefilled
+   230→    with user.name, rating Slider 1-5 with live stars, comment Textarea) with inline validation
+   231→    errors; submit → api.createReview → queryClient.invalidateQueries(["product", slug]) + toast.
+   232→  • Related products grid (up to 4 ProductCard) titled "Você também vai curtir".
+   233→  • framer-motion entrance animations (initial opacity/y, animate + whileInView on sections).
+   234→  • All pt-BR copy, rounded-2xl/3xl, p-4/p-6, border-white/10, glass/glass-strong, accent tints
+   235→    via product.accent — no indigo/blue.
+   236→- Ran `bunx tsc --noEmit`: only error in new file is `@/stores/cart` module not found, which is
+   237→  the documented cart store contract (also imported by HomeView/ProductCard/CartDrawer/Header,
+   238→  built by another agent). No other type errors in the new file.
+   239→
+   240→Stage Summary:
+   241→- Produced: src/components/views/ProductDetailView.tsx (single file, default + named export).
+   242→- Complies with all contracts: useUIStore (params.id as slug, navigate), api.product/products/
+   243→  createReview, useCartStore.add + open, useAuthStore.user, useQueryClient.invalidateQueries,
+   244→  TanStack useQuery with proper keys, framer-motion, sonner toasts, shadcn ui primitives.
+   245→- No routes/pages created. No other files modified. No tests written.
+   246→
+   247→---
+   248→Task ID: 6
+   249→Agent: full-stack-developer
+   250→Task: Build AdminView (seller dashboard)
+   251→
+   252→Work Log:
+   253→- Read worklog.md for architecture, design system, stores, API client, types, format helpers.
+   254→- Inspected lib/client.ts, lib/types.ts, lib/format.ts, stores/ui.ts, stores/auth.ts,
+   255→  components/providers.tsx, app/page.tsx, app/globals.css (glass/glass-strong/neon vars,
+   256→  global cosmic scrollbar), and shadcn ui primitives (tabs, card, button, input, label,
+   257→  textarea, switch, badge, skeleton, separator, select, dialog, alert-dialog, table)
+   258→  to lock in contracts and design tokens.
+   259→- Verified `recharts`, `@tanstack/react-query`, `sonner`, `framer-motion`, `lucide-react`
+   260→  are present in node_modules.
+   261→- Built `src/components/views/AdminView.tsx` as a single "use client" file (~900 lines,
+   262→  TypeScript strict, pt-BR copy, dark cosmic theme, no indigo/blue) with these pieces:
+   263→  • `AdminGuard` — restricted-access screen shown when not admin: rose ShieldAlert icon,
+   264→    "Acesso restrito ao painel." copy, "Fazer login" (calls useUIStore.getState().openAuth
+   265→    ("login")) and "Voltar à loja" (navigate("home")) buttons.
+   266→  • Hydration-aware gate: waits for `useAuthStore.hydrated` then enforces `user.role ===
+   267→    "admin"`, else renders AdminGuard.
+   268→  • Header: "Painel do Comando" gradient title + admin email muted + "Voltar à loja".
+   269→  • `Tabs` (Visão geral | Pedidos | Produtos) with neon-cyan active state.
+   270→  • `OverviewTab`: 4 MetricCards (Pedidos hoje / Faturamento / Ticket médio / Produtos
+   271→    ativos) in `grid sm:grid-cols-2 lg:grid-cols-4 gap-4`, each glass with accent glow
+   272→    + framer-motion stagger; a BarChart of byStatus (x = orderStatusLabel, neon cyan
+   273→    bars, cosmic-styled tooltip); a PieChart donut of recent orders grouped by status
+   274→    using the neon palette ["#34e7ff","#ff5cf0","#a779ff","#c6ff5a","#ff7a3c"] with a
+   275→    custom legend; and a compact "Últimos pedidos" Table (top 6 from recent) with code,
+   276→    cliente, total, StatusBadge, date, wrapped in `max-h-96 overflow-y-auto`.
+   277→  • `OrdersTable`: full orders Table from `api.listOrders()` with columns Código / Cliente
+   278→    (name + email) / Itens (sum of quantities) / Total (formatPrice) / Status (badge +
+   279→    inline shadcn Select bound to `api.updateOrderStatus` → invalidate ["orders"] and
+   280→    ["admin-metrics"] + toast) / Data (formatDate). Sticky header inside `max-h-[28rem]
+   281→    overflow-y-auto`. Client-side search filter (code or customer name) with Search icon.
+   282→    Empty state + loading skeletons + error state.
+   283→  • `ProductsTable`: header with "Novo produto" button; glass Table with thumb (accent
+   284→    glow) + name/brand, category chip (accent-tinted), price, stock (color-coded by
+   285→    quantity), badge, flags (Destaque/Top/rating), Editar (Pencil) and Excluir (Trash)
+   286→    icon buttons. Sticky header + vertical scroll wrapper. Empty state with CTA.
+   287→  • `ProductFormModal` (shadcn Dialog): full create/edit form — name (auto-suggests slug
+   288→    via slugify unless user manually edits slug), brand, category select (Runner/
+   289→    Lifestyle/Performance/Skate/Casual), price/stock/rating numeric inputs, accent
+   290→    palette of 6 neon presets (cyan/magenta/violet/lime/gold/orange) + native color
+   291→    input fallback, badge select (Nenhum/Novo/Drop limitado/Mais vendido — stored as
+   292→    null when empty), description textarea, sizes chips 36–44 (toggle), images comma-
+   293→    separated URLs (defaults to `/products/<slug>.png`), featured + bestSeller switches.
+   294→    Validates name/brand/category/price/sizes before submit, calls api.createProduct
+   295→    or api.updateProduct(editing.id, body), invalidates ["products"] + ["admin-metrics"],
+   296→    toasts, closes modal. Loading state on Save button.
+   297→  • Delete: shadcn AlertDialog confirmation → api.deleteProduct → invalidate + toast.
+   298→  • All queries use TanStack `useQuery` with keys ["admin-metrics"], ["orders"],
+   299→    ["products"]; mutations use plain async handlers + `useQueryClient` invalidation
+   300→    per the contract (no useMutation).
+   301→  • framer-motion entrances on header and metric cards; pt-BR non-technical copy
+   302→    ("Painel", "Pedidos", "Produtos", "Salvar", "Remover", "Status", "Faturamento",
+   303→    "Ticket médio", "Hoje", "Voltar à loja"); rounded-2xl/3xl, p-4/p-6, border-white/10,
+   304→    glass/glass-strong throughout; mobile-first (tables horizontally scrollable, metrics
+   305→    stack on small screens, form grids collapse to single column).
+   306→- Ran `node_modules/typescript/bin/tsc --noEmit -p tsconfig.json`: ZERO errors in
+   307→  AdminView.tsx. All remaining reported errors are pre-existing and unrelated (the
+   308→  not-yet-installed `next`/`next/server` modules per worklog note, JSON-Prisma stub
+   309→  type friction in backend route files, and the examples/ and skills/ folders).
+   310→
+   311→Stage Summary:
+   312→- Created: src/components/views/AdminView.tsx (single "use client" file, default +
+   313→  named export, ~900 lines, TypeScript strict).
+   314→- Honors all contracts: useAuthStore (user, hydrated, role check), useUIStore
+   315→  (navigate, openAuth), api (adminMetrics, listOrders, updateOrderStatus, products,
+   316→  createProduct, updateProduct, deleteProduct), Order/Product/OrderStatus types,
+   317→  format helpers (formatPrice, formatDate, orderStatusLabel, orderStatusColor),
+   318→  sonner toasts, TanStack useQuery + useQueryClient invalidation with the specified
+   319→  query keys, recharts BarChart/PieChart imports, framer-motion entrances, shadcn
+   320→  ui primitives only.
+   321→- No new routes/pages/tests created. No other files modified.
+   322→- Agent context recorded at /home/z/my-project/agent-ctx/6-full-stack-developer.md.
+   323→
+   324→---
+   325→Task ID: 5
+   326→Agent: full-stack-developer
+   327→Task: Build AuthModal (animated sun/moon split login/register)
+   328→
+   329→Work Log:
+   330→- Read worklog.md for architecture/design system, then inspected the live
+   331→  contracts: src/stores/ui.ts (authModalOpen/authMode/openAuth/closeAuth),
+   332→  src/stores/auth.ts (setUser), src/lib/client.ts (api.login/register return
+   333→  PublicUser, throw Error on failure), src/lib/types.ts (PublicUser),
+   334→  src/app/globals.css (neon vars, glass-strong, astro-twinkle / animate-spin-slow
+   335→  keyframes, no indigo/blue brand), src/app/page.tsx (AuthModal already mounted)
+   336→  and src/hooks/use-mobile.ts (768px breakpoint) to lock the API surface.
+   337→- Built `src/components/views/AuthModal.tsx` as a single "use client" file with
+   338→  strict TypeScript and a custom framer-motion overlay (preferred over shadcn
+   339→  Dialog for full control of the split + sliding ball).
+   340→- Animation technique (the core):
+   341→  * DESKTOP — a `relative h-[560px]` stage holds two absolutely positioned
+   342→    panels each `w-1/2`. The FORM panel animates `x: "0%" | "100%"` and the
+   343→    BRAND panel animates `x: "100%" | "0%"` (framer-motion percentage x is
+   344→    relative to the element's own width = 50% of the card), so the two panels
+   345→    REALLY swap left/right via a GPU-friendly transform spring
+   346→    (stiffness 220, damping 28). The form *content* (login vs register) and
+   347→    the brand *copy* crossfade inside each panel with AnimatePresence
+   348→    (mode="wait", opacity-only, 0.2s) so the slide reads as the signature
+   349→    motion while content swaps gently.
+   350→  * CELESTIAL BALL — a `CelestialBall` is absolutely centered on the divider
+   351→    (left-1/2 top-1/2, negative margins for the 150px stage). An inner
+   352→    motion.div slides `x: -12 | +12` (spring 220/20) so the body drifts toward
+   353→    the form side it "invades". Two same-size (88px) bodies — `Moon` (pale
+   354→    grey-white radial with crater dots, lit hemisphere + cool glow on the LEFT)
+   355→    and `Sun` (warm gold/orange radial, 12 rotating rays via animate-spin-slow,
+   356→    hot hemisphere + warm glow on the RIGHT) — are stacked and crossfaded
+   357→    (opacity 0<->1, scale 0.5<->1, 0.5s easeInOut) so the moon morphs into the
+   358→    sun. Both bodies are exactly 88px (BALL_SIZE const) → identical visual size.
+   359→  * BRAND GRADIENT — two absolutely-stacked gradient layers (cool navy/violet/
+   360→    cyan for login-moon; warm umber/orange for register-sun) crossfade opacity
+   361→    over 0.6s, plus a deterministic twinkling starfield (astro-twinkle) for
+   362→    cosmic depth.
+   363→  * MOBILE — `useIsMobile()` switches to a single stacked layout: form on top,
+   364→    a 160px divider band holding the same CelestialBall (still morphs
+   365→    moon<->sun), brand panel below. Panels don't reorder vertically (per spec
+   366→    "form on top, brand below") but the brand copy/gradient + ball still swap.
+   367→    Container is `max-h-[88vh] overflow-y-auto` so short viewports scroll.
+   368→- Forms: shared `Field` (icon + input matching the mandated class
+   369→  `h-11 rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none
+   370→  focus:border-[var(--neon-cyan)]` + focus ring), `SubmitButton` (cyan->violet
+   371→  gradient, Loader2 spinner, whileHover/whileTap), `ToggleBrandButton` (the
+   372→  brand-panel CTA that calls openAuth with the other mode).
+   373→- Login form: email + password + "Esqueci minha senha" (toast
+   374→  "Em breve! Fale com a Nave.") + a tiny clickable demo line
+   375→  "Demonstração: admin@astrofeet.com / admin123" that fills the fields.
+   376→- Register form: name (>=2) + email (contains @) + password (>=6) with inline
+   377→  errors + toast. Validation runs on submit; errors clear on mode change
+   378→  (useEffect on `mode`) and loading resets on close (useEffect on `open`).
+   379→- On success: setUser(user) -> closeAuth() -> toast.success
+   380→  ("Bem-vindo a bordo!" / "Conta criada! Bem-vindo à órbita.").
+   381→  On error: toast.error(err.message).
+   382→- UX: Esc closes (keydown listener), backdrop click closes, X button top-right
+   383→  (z-30), body scroll lock + autofocus first input while open, ARIA dialog
+   384→  role + aria-modal + localized aria-label, pt-BR copy, no technical jargon.
+   385→- Verified with `tsc --noEmit -p tsconfig.json`: zero errors referencing
+   386→  AuthModal.tsx (remaining project errors are the documented missing `next`
+   387→  package + unrelated API routes from parallel agents). `bun run lint` could
+   388→  not run (eslint not installed in this env) — code follows the established
+   389→  style in sibling views.
+   390→
+   391→Stage Summary:
+   392→- Produced: src/components/views/AuthModal.tsx (single "use client" file,
+   393→  default-exported `AuthModal` named export, ~560 lines, TypeScript strict).
+   394→- Honors every contract: useUIStore (authModalOpen/authMode/openAuth/closeAuth),
+   395→  useAuthStore.setUser, api.login/register returning PublicUser, sonner toast,
+   396→  PublicUser type, useIsMobile hook, cn util. No new routes/pages/tests; no
+   397→  other files modified.
+   398→- Animation technique summary: two `w-1/2` panels animated with framer-motion
+   399→  percentage-based `x` transforms (spring) so they genuinely swap left<->right
+   400→  when the store mode flips; a single centered CelestialBall crossfades two
+   401→  same-size 88px bodies (moon cool/lit-left, sun warm/lit-right + rotating
+   402→  rays) and drifts +/-12px toward the form side; the brand panel's cosmic
+   403→  gradient crossfades cool<->warm in sync. Mobile stacks the same panels and
+   404→  keeps the ball morph on the horizontal divider.
+   405→
+   406→---
+   407→Task ID: FINAL
+   408→Agent: main (Z.ai Code)
+   409→Task: Astrofeet full rebuild — completion & QA
+   410→
+   411→Work Log:
+   412→- Built foundation: Prisma-shaped JSON store (src/lib/db.ts), auth (scrypt + HMAC cookie), types, format, serialize, API client, Zustand stores (cart/auth/ui/checkout).
+   413→- Built all backend API routes: auth (login/register/me/logout), products (GET/POST/PUT/DELETE + admin guard), orders (GET/POST with backend price/shipping recalc, PATCH status), reviews, admin metrics, AI chat (z-ai-web-dev-sdk LLM "Nave" agent).
+   414→- Generated 8 premium AI images (6 product shots + galaxy hero + lifestyle) via image-generation skill.
+   415→- Built app shell: GalaxyBackground, Header (neon pulsing logo), Footer (sticky, trust block, newsletter), ShipAssistant (floating rocket → AI chat), page.tsx view router.
+   416→- Built all 6 views: HomeView, ProductsView, ProductDetailView, CartDrawer, CheckoutView, OrderSuccessView, AuthModal (animated sun/moon split), AdminView (metrics + orders + product CRUD).
+   417→- Resolved environment install issues: manually downloaded next@16.1.1 + @next/swc-linux-x64-gnu@16.1.1 (registry slow), extracted to node_modules, created .bin/next symlink.
+   418→- Kept dev server persistent across shell commands via setsid orphan launch.
+   419→- Fixed Header SSR/client hydration mismatch (gated user/cart UI on mount).
+   420→
+   421→Verification (agent-browser + VLM):
+   422→- Home: HTTP 200, premium cosmic theme, all sections render, product images visible, footer at bottom. VLM verdict: "strong and cohesive, polished, no critical issues".
+   423→- Product detail: gallery + sizes + qty + add-to-cart + reviews + related all render.
+   424→- Cart drawer: opens, qty controls, free-ship progress, checkout CTA.
+   425→- Auth modal: sun/moon split renders, demo autofill works, admin login succeeds → header shows "Minha conta" + "Painel".
+   426→- Admin panel: metrics tab, orders tab (status select), products tab (CRUD) all functional.
+   427→- Checkout: full form → POST /api/orders 201 → "Pedido confirmado!" confirmation with order code. Backend recalculated totals.
+   428→- AI assistant: floating ship, chat panel, quick replies.
+   429→- Dev log: no errors (only expected 404s during image generation, now resolved).
+   430→
+   431→Stage Summary:
+   432→- Project is FULLY FUNCTIONAL and navigable end-to-end as a real sneaker store.
+   433→- Dev server running stable on port 3000 (setsid orphan, survives shell commands).
+   434→- Cron job 214859 created: every 15 min webDevReview (QA + continue dev).
+   435→- Known minor: 6 unused eslint-disable warnings (cosmetic, ignoreBuildErrors=true); SWC is 16.1.1 matching next 16.1.1 (was mismatched 16.1.3, now correct).
+   436→- Demo credentials: admin@astrofeet.com / admin123 (admin panel) · explorador@astrofeet.com / explorador123 (customer).
+   437→- Next-phase suggestions: real payment gateway integration, real Prisma/Postgres swap (db.ts is 1:1 Prisma-shaped), product image upload in admin, order tracking page, wishlist, size guide, more drops/animations.
+   438→

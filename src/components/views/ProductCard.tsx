@@ -1,10 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShoppingCart, Star } from "lucide-react";
+import { ShoppingCart, Star, Heart } from "lucide-react";
+import { useState } from "react";
 import type { Product } from "@/lib/types";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
+import { useWishlistStore } from "@/stores/wishlist";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -26,6 +28,9 @@ export function ProductCard({
 }) {
   const navigate = useUIStore((s) => s.navigate);
   const add = useCartStore((s) => s.add);
+  const toggleWishlist = useWishlistStore((s) => s.toggleProduct);
+  const inWishlist = useWishlistStore((s) => s.has(product.id));
+  const [heartBump, setHeartBump] = useState(false);
 
   function quickAdd(e: React.MouseEvent) {
     e.stopPropagation();
@@ -33,6 +38,18 @@ export function ProductCard({
     if (!size) return;
     add(product, size, 1);
     toast.success(`${product.name} adicionado ao carrinho`);
+  }
+
+  function toggleHeart(e: React.MouseEvent) {
+    e.stopPropagation();
+    toggleWishlist(product);
+    setHeartBump(true);
+    setTimeout(() => setHeartBump(false), 450);
+    toast.success(
+      inWishlist
+        ? `${product.name} saiu da sua lista`
+        : `${product.name} salvo na lista de desejos`,
+    );
   }
 
   return (
@@ -83,6 +100,26 @@ export function ProductCard({
             </span>
           )}
         </div>
+        {/* Wishlist heart (top-right, always visible on touch / hover on desktop) */}
+        <button
+          onClick={toggleHeart}
+          className={cn(
+            "absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur transition-all duration-200 hover:scale-110",
+            inWishlist
+              ? "border-[var(--neon-magenta)]/60 bg-[var(--neon-magenta)]/25 text-[var(--neon-magenta)] opacity-100 shadow-[0_0_12px_var(--neon-magenta)]"
+              : "border-white/20 bg-black/50 text-white/90 opacity-100",
+          )}
+          aria-label={
+            inWishlist
+              ? `Remover ${product.name} da lista de desejos`
+              : `Salvar ${product.name} na lista de desejos`
+          }
+          aria-pressed={inWishlist}
+        >
+          <Heart
+            className={cn("h-4 w-4", heartBump && "animate-heartbeat", inWishlist && "fill-current")}
+          />
+        </button>
         {/* Quick add */}
         <button
           onClick={quickAdd}

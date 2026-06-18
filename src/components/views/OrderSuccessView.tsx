@@ -401,11 +401,18 @@ export function OrderSuccessView() {
         className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center"
       >
         <Button
-          onClick={talkToNave}
+          onClick={() => navigate("track-order", { code: lastOrder.code })}
           className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black hover:opacity-90"
         >
           <Rocket className="h-4 w-4" />
-          Acompanhar na Nave
+          Rastrear pedido
+        </Button>
+        <Button
+          onClick={talkToNave}
+          variant="outline"
+          className="rounded-full border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold backdrop-blur transition hover:bg-white/10"
+        >
+          Falar com a Nave
         </Button>
         <Button
           onClick={() => navigate("products")}

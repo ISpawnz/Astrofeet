@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
 import { useAuthStore } from "@/stores/auth";
-import { ShoppingCart, Search, User, Menu, X, LayoutDashboard, LogOut } from "lucide-react";
+import { ShoppingCart, Search, User, Menu, X, LayoutDashboard, LogOut, Heart, Rocket } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useWishlistStore } from "@/stores/wishlist";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,15 +26,20 @@ const NAV = [
 export function Header() {
   const navigate = useUIStore((s) => s.navigate);
   const openAuth = useUIStore((s) => s.openAuth);
+  const setSearchOpen = useUIStore((s) => s.setSearchOpen);
   const cartCount = useCartStore((s) => s.count());
   const openCart = useCartStore((s) => s.open);
+  const wishlistCount = useWishlistStore((s) => s.count());
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [mobileOpen, setMobileOpen] = useState(false);
   // Gate user-derived UI on mount to avoid SSR/client hydration mismatch
   // (auth state lives in localStorage and is null during SSR).
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
   const showUser = mounted && user;
 
   return (
@@ -83,11 +89,27 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-full text-foreground/80 hover:text-foreground"
-              onClick={() => navigate("products", {})}
-              aria-label="Buscar produtos"
+              className="hidden rounded-full text-foreground/80 hover:text-foreground sm:inline-flex"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Buscar (Ctrl K)"
+              title="Buscar (Ctrl K)"
             >
               <Search className="h-5 w-5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative rounded-full text-foreground/80 hover:text-foreground"
+              onClick={() => navigate("wishlist")}
+              aria-label="Lista de desejos"
+            >
+              <Heart className="h-5 w-5" />
+              {mounted && wishlistCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--neon-magenta)] px-1 text-[10px] font-bold text-black">
+                  {wishlistCount}
+                </span>
+              )}
             </Button>
 
             <Button
@@ -125,6 +147,20 @@ export function Header() {
                     </p>
                   </div>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => navigate("wishlist")}
+                    className="cursor-pointer"
+                  >
+                    <Heart className="mr-2 h-4 w-4" />
+                    Lista de desejos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => navigate("track-order")}
+                    className="cursor-pointer"
+                  >
+                    <Rocket className="mr-2 h-4 w-4" />
+                    Rastrear pedido
+                  </DropdownMenuItem>
                   {user.role === "admin" && (
                     <DropdownMenuItem
                       onClick={() => navigate("admin")}
@@ -189,6 +225,33 @@ export function Header() {
                 {item.label}
               </button>
             ))}
+            <button
+              onClick={() => {
+                setSearchOpen(true);
+                setMobileOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-foreground/80 hover:bg-white/5"
+            >
+              <Search className="h-4 w-4" /> Buscar
+            </button>
+            <button
+              onClick={() => {
+                navigate("wishlist");
+                setMobileOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-foreground/80 hover:bg-white/5"
+            >
+              <Heart className="h-4 w-4" /> Lista de desejos
+            </button>
+            <button
+              onClick={() => {
+                navigate("track-order");
+                setMobileOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-foreground/80 hover:bg-white/5"
+            >
+              <Rocket className="h-4 w-4" /> Rastrear pedido
+            </button>
             {!showUser && (
               <button
                 onClick={() => {

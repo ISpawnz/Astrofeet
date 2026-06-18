@@ -6,12 +6,16 @@ import { Footer } from "@/components/layout/Footer";
 import { ShipAssistant } from "@/components/layout/ShipAssistant";
 import { CartDrawer } from "@/components/views/CartDrawer";
 import { AuthModal } from "@/components/views/AuthModal";
+import { SizeGuideModal } from "@/components/views/SizeGuideModal";
+import { SearchPalette } from "@/components/views/SearchPalette";
 import { HomeView } from "@/components/views/HomeView";
 import { ProductsView } from "@/components/views/ProductsView";
 import { ProductDetailView } from "@/components/views/ProductDetailView";
 import { CheckoutView } from "@/components/views/CheckoutView";
 import { OrderSuccessView } from "@/components/views/OrderSuccessView";
 import { AdminView } from "@/components/views/AdminView";
+import { WishlistView } from "@/components/views/WishlistView";
+import { TrackOrderView } from "@/components/views/TrackOrderView";
 import { useUIStore } from "@/stores/ui";
 
 export default function Page() {
@@ -28,10 +32,14 @@ export default function Page() {
         {view === "checkout" && <CheckoutView />}
         {view === "order-success" && <OrderSuccessView />}
         {view === "admin" && <AdminView />}
+        {view === "wishlist" && <WishlistView />}
+        {view === "track-order" && <TrackOrderView />}
       </main>
       <Footer />
       <CartDrawer />
       <AuthModal />
+      <SizeGuideModal />
+      <SearchPalette />
       <ShipAssistant />
     </div>
   );

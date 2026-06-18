@@ -2,17 +2,21 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Flame, Rocket, ShieldCheck } from "lucide-react";
+import { ArrowRight, Sparkles, Flame, Rocket, ShieldCheck, Clock } from "lucide-react";
 import { api } from "@/lib/client";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
+import { useRecentStore } from "@/stores/recent";
 import { ProductCard } from "./ProductCard";
 import { formatPrice } from "@/lib/format";
 import { toast } from "sonner";
+import type { Product } from "@/lib/types";
 
 export function HomeView() {
   const navigate = useUIStore((s) => s.navigate);
   const add = useCartStore((s) => s.add);
+  const recent = useRecentStore((s) => s.items);
+  const recentHydrated = useRecentStore((s) => s.hydrated);
 
   const { data: featured } = useQuery({
     queryKey: ["products", "featured"],
@@ -238,6 +242,41 @@ export function HomeView() {
             {bestSellers.slice(0, 4).map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
+          </div>
+        </Section>
+      )}
+
+      {/* ---------- RECENTLY VIEWED ---------- */}
+      {recentHydrated && recent.length > 0 && (
+        <Section
+          eyebrow="Sua rota recente"
+          title="Vistos por último"
+          icon={<Clock className="h-4 w-4 text-[var(--neon-violet)]" />}
+          action={() => navigate("products")}
+          actionLabel="Explorar mais"
+        >
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {recent.slice(0, 4).map((r, i) => {
+              const product: Product = {
+                id: r.id,
+                slug: r.slug,
+                name: r.name,
+                brand: r.brand,
+                category: "",
+                price: r.price,
+                description: "",
+                images: [r.image],
+                sizes: [],
+                stock: 0,
+                rating: 0,
+                accent: r.accent,
+                badge: null,
+                featured: false,
+                bestSeller: false,
+                createdAt: r.viewedAt,
+              };
+              return <ProductCard key={r.id} product={product} index={i} />;
+            })}
           </div>
         </Section>
       )}

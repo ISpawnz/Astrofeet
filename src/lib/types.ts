@@ -9,7 +9,9 @@ export type ViewName =
   | "checkout"
   | "order-success"
   | "admin"
-  | "account";
+  | "account"
+  | "wishlist"
+  | "track-order";
 
 export interface ViewParams {
   id?: string;
