@@ -3,9 +3,22 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { serializeProduct, serializeReview } from "@/lib/serialize";
 import { HttpError, handleApiError, ok } from "@/lib/api";
+import { sendEmailNotification } from "@/lib/notifications";
 import type { Product } from "@/lib/types";
 
 export const runtime = "nodejs";
+
+function isAllSizeStockZero(sizeStockJson: string | undefined): boolean {
+  if (!sizeStockJson) return true;
+  try {
+    const map = JSON.parse(sizeStockJson) as Record<string, number>;
+    const values = Object.values(map);
+    if (values.length === 0) return true;
+    return values.every((v) => v <= 0);
+  } catch {
+    return true;
+  }
+}
 
 async function findProduct(idOrSlug: string) {
   const product = await db.product.findFirst({
@@ -89,6 +102,54 @@ export async function PUT(
       data,
       include: { reviews: { select: { id: true } } },
     });
+
+    // Stock alert automation: if the product went from out-of-stock to in-stock,
+    // queue "produto voltou ao estoque" notifications to all subscribers.
+    try {
+      const wasOutOfStock =
+        (existing.stock as number) === 0 ||
+        isAllSizeStockZero(existing.sizeStock as string);
+      const newStock = typeof body.stock === "number" ? body.stock : (existing.stock as number);
+      const newSizeStock = data.sizeStock
+        ? (data.sizeStock as string)
+        : (existing.sizeStock as string);
+      const isInStockNow =
+        newStock > 0 && !isAllSizeStockZero(newSizeStock);
+      if (wasOutOfStock && isInStockNow) {
+        // Find all users subscribed to this product
+        const allUsers = await db.user.findMany({});
+        const productName = (updated.name as string) || "produto";
+        const productSlug = (updated.slug as string) || "";
+        for (const u of allUsers) {
+          let subscribedIds: string[] = [];
+          try {
+            subscribedIds = JSON.parse((u.stockAlerts as string) || "[]");
+          } catch {
+            subscribedIds = [];
+          }
+          if (subscribedIds.includes(id) && u.email) {
+            await sendEmailNotification({
+              type: "order_status",
+              to: u.email as string,
+              subject: `${productName} voltou ao estoque! 🚀`,
+              body: [
+                `Olá, ${u.name as string}!`,
+                "",
+                `Boa notícia: o sneaker "${productName}" que você marcou voltou ao estoque!`,
+                "",
+                "Corra antes que esgote de novo — os drops voam rápido por aqui.",
+                "",
+                "— Equipe Astrofeet",
+              ].join("\n"),
+              orderId: null,
+            });
+          }
+        }
+      }
+    } catch {
+      // Non-fatal: notification failure should never block product update.
+    }
+
     return ok({ product: serializeProduct(updated) });
   } catch (e) {
     return handleApiError(e);

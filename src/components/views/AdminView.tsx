@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -41,6 +41,9 @@ import {
   Sparkles,
   RefreshCw,
   ChevronDown,
+  Upload,
+  X,
+  Image as ImageIcon,
 } from "lucide-react";
 import { api } from "@/lib/client";
 import { useAuthStore } from "@/stores/auth";
@@ -796,10 +799,14 @@ interface ProductFormState {
   description: string;
   sizes: number[];
   sizeStock: Record<string, string>;
-  images: string;
+  images: string[];
   featured: boolean;
   bestSeller: boolean;
 }
+
+// Image upload limits (shared by upload zone + URL add).
+const MAX_PRODUCT_IMAGES = 5;
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
 
 function emptyForm(): ProductFormState {
   return {
@@ -815,7 +822,7 @@ function emptyForm(): ProductFormState {
     description: "",
     sizes: [...ALL_SIZES],
     sizeStock: {},
-    images: "",
+    images: [],
     featured: false,
     bestSeller: false,
   };
@@ -841,7 +848,7 @@ function formFromProduct(p: Product): ProductFormState {
     description: p.description,
     sizes: [...p.sizes].sort((a, b) => a - b),
     sizeStock,
-    images: p.images.join(", "),
+    images: [...p.images],
     featured: p.featured,
     bestSeller: p.bestSeller,
   };
@@ -860,12 +867,16 @@ function ProductFormModal({
   const [form, setForm] = useState<ProductFormState>(emptyForm());
   const [slugEdited, setSlugEdited] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync form whenever modal opens or editing target changes
   useEffect(() => {
     if (open) {
       setForm(editing ? formFromProduct(editing) : emptyForm());
       setSlugEdited(Boolean(editing));
+      setUrlInput("");
     }
   }, [open, editing]);
 
@@ -904,6 +915,75 @@ function ProductFormModal({
     }));
   }
 
+  // ----- Image management (upload + URL add + remove) -----
+
+  function handleFiles(files: File[]) {
+    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+    if (imageFiles.length === 0) {
+      toast.error("Selecione apenas arquivos de imagem.");
+      return;
+    }
+    const availableSlots = MAX_PRODUCT_IMAGES - form.images.length;
+    if (availableSlots <= 0) {
+      toast.error("Você já atingiu o limite de 5 imagens.");
+      return;
+    }
+    const toRead = imageFiles.slice(0, availableSlots);
+    if (imageFiles.length > toRead.length) {
+      toast.warning(
+        `Apenas ${availableSlots} imagem(ns) adicionada(s) — limite de 5.`,
+      );
+    }
+    for (const file of toRead) {
+      if (file.size > MAX_IMAGE_BYTES) {
+        toast.error(`"${file.name}" excede 2 MB.`);
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result =
+          typeof reader.result === "string" ? reader.result : "";
+        if (!result) return;
+        setForm((f) => {
+          if (f.images.length >= MAX_PRODUCT_IMAGES) return f;
+          return { ...f, images: [...f.images, result] };
+        });
+      };
+      reader.onerror = () => {
+        toast.error(`Não foi possível ler "${file.name}".`);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function addUrls() {
+    const urls = urlInput
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (urls.length === 0) return;
+    const availableSlots = MAX_PRODUCT_IMAGES - form.images.length;
+    if (availableSlots <= 0) {
+      toast.error("Você já atingiu o limite de 5 imagens.");
+      return;
+    }
+    const toAdd = urls.slice(0, availableSlots);
+    if (urls.length > toAdd.length) {
+      toast.warning(
+        `Apenas ${availableSlots} URL(s) adicionada(s) — limite de 5.`,
+      );
+    }
+    setForm((f) => ({ ...f, images: [...f.images, ...toAdd] }));
+    setUrlInput("");
+  }
+
+  function removeImage(index: number) {
+    setForm((f) => ({
+      ...f,
+      images: f.images.filter((_, i) => i !== index),
+    }));
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (saving) return;
@@ -924,12 +1004,8 @@ function ProductFormModal({
       return toast.error("Selecione ao menos um tamanho.");
 
     const slug = (form.slug.trim() || slugify(name)).toLowerCase();
-    const imagesRaw = form.images
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
     const images =
-      imagesRaw.length > 0 ? imagesRaw : [`/products/${slug}.png`];
+      form.images.length > 0 ? form.images : [`/products/${slug}.png`];
 
     // Build per-size stock map (only for selected sizes; parse ints).
     const sizeStockMap: Record<string, number> = {};
@@ -964,6 +1040,17 @@ function ProductFormModal({
       if (editing) {
         await api.updateProduct(editing.id, body);
         toast.success(`${name} atualizado com sucesso.`);
+        // Restock automation: if the product was out of stock and now has
+        // stock, the backend queues notifications to subscribed explorers.
+        if (editing.stock === 0 && stockNum > 0) {
+          toast.success(
+            "Produto reabastecido! Os exploradores inscritos serão avisados.",
+            {
+              icon: <Bell className="h-4 w-4 text-[var(--neon-cyan)]" />,
+              duration: 6000,
+            },
+          );
+        }
       } else {
         await api.createProduct(body);
         toast.success(`${name} adicionado ao catálogo.`);
@@ -1271,18 +1358,146 @@ function ProductFormModal({
           </div>
 
           {/* Images */}
-          <div className="space-y-1.5">
-            <Label htmlFor="p-images">Imagens (URLs separadas por vírgula)</Label>
-            <Input
-              id="p-images"
-              value={form.images}
-              onChange={(e) => update("images", e.target.value)}
-              placeholder={`/products/${form.slug || "slug"}.png`}
-              className="border-white/10 bg-white/5 font-mono text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              Se vazio, usaremos <code>/products/&lt;slug&gt;.png</code>.
-            </p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <ImageIcon className="h-3.5 w-3.5 text-[var(--neon-cyan)]" />
+                Imagens do produto
+              </Label>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                  form.images.length >= MAX_PRODUCT_IMAGES
+                    ? "bg-[var(--neon-magenta)]/15 text-[var(--neon-magenta)]"
+                    : "bg-white/5 text-muted-foreground",
+                )}
+              >
+                {form.images.length}/{MAX_PRODUCT_IMAGES}
+              </span>
+            </div>
+
+            {/* Drop zone */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!dragging) setDragging(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDragging(false);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDragging(false);
+                if (e.dataTransfer.files?.length) {
+                  handleFiles(Array.from(e.dataTransfer.files));
+                }
+              }}
+              className={cn(
+                "group flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-6 text-center transition",
+                dragging
+                  ? "border-[var(--neon-cyan)] bg-[var(--neon-cyan)]/10"
+                  : "border-white/15 bg-white/[0.02] hover:border-[var(--neon-cyan)]/50 hover:bg-white/[0.04]",
+              )}
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--neon-cyan)]/10 text-[var(--neon-cyan)] transition group-hover:scale-110">
+                <Upload className="h-5 w-5" />
+              </span>
+              <span className="text-sm font-medium">
+                Arraste imagens aqui ou clique para selecionar
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                PNG, JPG ou WEBP · até 2 MB cada · máx. {MAX_PRODUCT_IMAGES}{" "}
+                imagens
+              </span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.length) {
+                    handleFiles(Array.from(e.target.files));
+                  }
+                  e.target.value = "";
+                }}
+              />
+            </button>
+
+            {/* Thumbnails */}
+            {form.images.length > 0 && (
+              <div className="grid grid-cols-5 gap-2">
+                {form.images.map((src, i) => (
+                  <motion.div
+                    key={`${src.slice(0, 24)}-${i}`}
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.18, delay: i * 0.02 }}
+                    className="group relative aspect-square overflow-hidden rounded-xl border-2 border-white/10 bg-white/5"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={src}
+                      alt={`Imagem ${i + 1}`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      aria-label={`Remover imagem ${i + 1}`}
+                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition hover:bg-rose-500/80 group-hover:opacity-100"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* URL input */}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="p-images"
+                className="text-xs uppercase tracking-wider text-muted-foreground"
+              >
+                Ou cole URLs (separadas por vírgula)
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="p-images"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addUrls();
+                    }
+                  }}
+                  placeholder={`/products/${form.slug || "slug"}.png, https://...`}
+                  className="border-white/10 bg-white/5 font-mono text-sm"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addUrls}
+                  className="shrink-0 border-white/10 bg-white/5 hover:bg-white/10"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Adicionar</span>
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Se nenhuma imagem for enviada, usaremos{" "}
+                <code>/products/&lt;slug&gt;.png</code>.
+              </p>
+            </div>
           </div>
 
           <Separator className="bg-white/5" />
@@ -1520,18 +1735,33 @@ function ProductsTable() {
                       {formatPrice(p.price)}
                     </TableCell>
                     <TableCell>
-                      <span
-                        className={cn(
-                          "text-sm",
-                          p.stock === 0
-                            ? "text-rose-300"
-                            : p.stock <= 5
-                              ? "text-amber-300"
-                              : "text-foreground",
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={cn(
+                            "text-sm",
+                            p.stock === 0
+                              ? "text-rose-300"
+                              : p.stock <= 5
+                                ? "text-amber-300"
+                                : "text-foreground",
+                          )}
+                        >
+                          {p.stock}
+                        </span>
+                        {p.stock === 0 && (
+                          <span
+                            title="Produto esgotado — exploradores podem estar inscritos para alerta"
+                            aria-label="Produto esgotado — exploradores podem estar inscritos para alerta"
+                            className="relative flex h-5 w-5 items-center justify-center rounded-full bg-[var(--neon-magenta)]/15 text-[var(--neon-magenta)]"
+                          >
+                            <Bell className="h-3 w-3" />
+                            <span className="absolute -right-0.5 -top-0.5 flex h-2 w-2">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--neon-magenta)] opacity-75" />
+                              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--neon-magenta)]" />
+                            </span>
+                          </span>
                         )}
-                      >
-                        {p.stock}
-                      </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {p.badge ? (

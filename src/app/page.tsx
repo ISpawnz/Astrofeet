@@ -19,6 +19,7 @@ import { AdminView } from "@/components/views/AdminView";
 import { WishlistView } from "@/components/views/WishlistView";
 import { TrackOrderView } from "@/components/views/TrackOrderView";
 import { AccountView } from "@/components/views/AccountView";
+import { InfoView } from "@/components/views/InfoView";
 import { useUIStore } from "@/stores/ui";
 
 export default function Page() {
@@ -39,6 +40,7 @@ export default function Page() {
         {view === "wishlist" && <WishlistView />}
         {view === "track-order" && <TrackOrderView />}
         {view === "account" && <AccountView />}
+        {view === "info" && <InfoView />}
       </main>
       <Footer />
       <CartDrawer />

@@ -16,7 +16,7 @@
       "passwordHash": "scrypt$0f4af6a4a423c0bff419ae07b7675617$6b976126df54b318a0992838fed4f00cde9478a77247b4704a1eb69bb1b8545de6e542076b14cbdaa1e556c82305fa21a1d6b0a50e0ccc7885844bb5b0b2701b",
       "role": "customer",
       "createdAt": "2026-06-18T17:20:46.171Z",
-      "updatedAt": "2026-06-18T18:22:07.209Z",
+      "updatedAt": "2026-06-18T18:41:19.056Z",
       "stockAlerts": "[]"
     },
     {
@@ -140,15 +140,15 @@
       "description": "Solado com câmara de ar visível e cabedal em gradiente ígneo. O Meteor Air absorve o impacto e devolve energia a cada passada, como uma chuva de meteoros sob seus pés.",
       "images": "[\"/products/meteor-air.png\"]",
       "sizes": "[38,39,40,41,42,43,44]",
-      "stock": 15,
-      "sizeStock": "{\"38\":1,\"39\":2,\"40\":3,\"41\":3,\"42\":2,\"43\":2,\"44\":2}",
+      "stock": 10,
+      "sizeStock": "{\"38\":1,\"39\":2,\"40\":2,\"41\":2,\"42\":2,\"43\":2,\"44\":2}",
       "rating": 4.8,
       "accent": "#ff7a3c",
       "badge": "Drop limitado",
       "featured": false,
       "bestSeller": false,
       "createdAt": "2026-06-18T17:20:46.171Z",
-      "updatedAt": "2026-06-18T17:20:46.171Z"
+      "updatedAt": "2026-06-18T18:41:18.987Z"
     }
   ],
   "orders": [
@@ -463,6 +463,18 @@
       "body": "Olá, Teste Cron6!\n\nO cupom GALAXIA10 foi aplicado com sucesso ao seu pedido AST-758033.\n\nDesconto: 10% off → R$42,90\n\nObrigado por explorar a galáxia com a Astrofeet! 🚀\n— Equipe Astrofeet",
       "orderId": "99f0d4bc-8896-41d8-bcb0-b742bc07c906",
       "sentAt": "2026-06-18T18:02:38.034Z",
+      "status": "sent"
+    },
+    {
+      "id": "bd900aec-4878-42a9-95dc-87742380299a",
+      "createdAt": "2026-06-18T18:41:18.988Z",
+      "updatedAt": "2026-06-18T18:41:18.988Z",
+      "type": "order_status",
+      "to": "explorador@astrofeet.com",
+      "subject": "Meteor Air voltou ao estoque! 🚀",
+      "body": "Olá, Explorador Astrofeet!\n\nBoa notícia: o sneaker \"Meteor Air\" que você marcou voltou ao estoque!\n\nCorra antes que esgote de novo — os drops voam rápido por aqui.\n\n— Equipe Astrofeet",
+      "orderId": null,
+      "sentAt": "2026-06-18T18:41:18.988Z",
       "status": "sent"
     }
   ]

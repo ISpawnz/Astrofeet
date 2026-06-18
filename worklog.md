@@ -1737,3 +1737,184 @@ Applied new classes to:
 5. **Performance**: next/image optimization, code-split heavy views.
 6. **Accessibility audit**: ARIA labels, keyboard navigation, screen reader support.
 7. **SEO**: meta tags, structured data, sitemap.
+
+---
+Task ID: CRON-8A
+Agent: full-stack-developer
+Task: Info pages (Quem somos, Sustentabilidade, Contato, Trocas) + order details modal in AccountView
+
+Work Log:
+- Read worklog.md, page.tsx, Footer.tsx, AccountView.tsx, types.ts, format.ts, ui store, client.ts and HomeView for design-language reference.
+- Created `src/components/views/InfoView.tsx`: a new view driven by `useUIStore.params.page`. Renders a cosmic hero (orbit-divider + text-gradient-animated title + subtitle) followed by a glass-strong content panel. Four rich pt-BR pages:
+  * `quem-somos`: founding story + 3 value pillars (Sparkles / Rocket / Users) + gradient mission statement.
+  * `sustentabilidade`: opening copy + 4 initiatives (Recycle / Package / Leaf / RefreshCw) + lime CTA card "Pequenos passos, grande impacto planetário".
+  * `contato`: 3 contact channels (Rocket Nave AI / Mail / Instagram) + glass-strong panel with "Falar com a Nave" and "Rastrear pedido" buttons.
+  * `trocas`: 30-day policy + free first-exchange card, numbered 4-step process, conditions list, and a CTA panel that opens ShipAssistant.
+  Bottom of every page has "Voltar à loja" (navigate home) and "Falar com a Nave" (openNave) buttons. Mobile-first responsive, framer-motion staggered entrances.
+- Wired `InfoView` into `src/app/page.tsx`: added import and `{view === "info" && <InfoView />}` branch in the view router.
+- Updated `src/components/layout/Footer.tsx` LINK_COLUMNS: changed "Quem somos" → `info / { page: "quem-somos" }`, "Sustentabilidade" → `info / { page: "sustentabilidade" }`, "Contato" → `info / { page: "contato" }`, and "Trocas e devoluções" → `info / { page: "trocas" }`. The existing `handleLinkClick` else-branch routes `info` actions to `navigate()`. "Fale com a Nave" link kept as `nave` action.
+- Enhanced `src/components/views/AccountView.tsx` OrderCard details panel:
+  * Lifted product-image fetching to `OrdersTab`: collects every unique productId across orders, fires a single `api.products({ ids })` query, builds `imageMap: Record<string, string>`, and passes it to each `OrderCard`.
+  * Replaced the Package-icon placeholder in the items list with a real `<img>` thumbnail (w-12 h-12) using `imageMap[item.productId]`, falling back to a Package icon when no image is available.
+  * Added a panel header bar with order code (mono, cyan) + status badge + formatted createdAt date.
+  * Totals breakdown now shows the coupon code inline next to the emerald "Desconto" line (mono badge) when a coupon was applied.
+  * Added a dedicated emerald coupon badge section beneath the totals, repeating the code + amount saved.
+  * Address now uses `maskCEP()` for prettier CEP formatting.
+  * Added a panel footer with "Rastrear pedido" (navigate to track-order with code) and "Ver na Nave" (openNave) buttons.
+- Verified with `node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json 2>&1 | grep -E "InfoView|page.tsx|Footer|AccountView"` → ZERO errors in the modified files. Pre-existing backend / examples / skills errors remain untouched (DO NOT TOUCH). Dev server compiles cleanly and the new `/api/products?ids=...` request shows up in dev.log.
+- ESLint invocation failed with a `scopeManager.addGlobals is not a function` runtime error (ESLint 10.5 + bunx mismatch) — environment issue, not a code issue.
+
+Stage Summary:
+- `src/components/views/InfoView.tsx` (NEW)
+- `src/app/page.tsx` (added InfoView import + view router branch)
+- `src/components/layout/Footer.tsx` (updated LINK_COLUMNS to navigate to info pages)
+- `src/components/views/AccountView.tsx` (enhanced OrdersTab with product-image query, enhanced OrderCard details panel: image thumbnails, coupon badges, panel header with code+status+date, panel footer with Rastrear pedido + Ver na Nave buttons)
+
+---
+Task ID: CRON-8B
+Agent: full-stack-developer
+Task: Product image upload in admin (base64) + stock alert automation UI feedback
+
+Work Log:
+- Read worklog.md, lib/client.ts (createProduct/updateProduct signatures),
+  lib/types.ts (Product.images: string[]), and the existing
+  AdminView.tsx (~2740 lines) to understand ProductFormModal + ProductsTable.
+- Feature 1 — image upload in ProductFormModal:
+  - Migrated `ProductFormState.images` from `string` (comma-separated) to
+    `string[]` so uploaded base64 Data URLs and manually pasted URLs share
+    the same array (matches what `api.createProduct/updateProduct` already
+    expect). Updated `emptyForm()` → `images: []` and
+    `formFromProduct()` → `images: [...p.images]`.
+  - Added module constants `MAX_PRODUCT_IMAGES = 5` and
+    `MAX_IMAGE_BYTES = 2 * 1024 * 1024`.
+  - Added inside ProductFormModal: `fileInputRef`, `urlInput` and
+    `dragging` state; `handleFiles` (FileReader.readAsDataURL, 2 MB +
+    5-image validation with toast.error/warning), `addUrls` (comma-split
+    parse + 5-image cap), `removeImage(index)`.
+  - Replaced the previous single-line URL input with a richer section:
+    dashed/clickable drop zone (button + hidden file input, dragover/
+    dragleave/drop handlers, neon-cyan highlight when dragging), a
+    grid-cols-5 thumbnail grid (aspect-square, border-2 border-white/10,
+    hover-revealed X remove button, framer-motion scale-in entrance), and
+    the original URL text input BELOW the zone (now with an "Adicionar"
+    button + Enter-to-add).
+  - Updated `onSubmit` to use `form.images.length > 0 ? form.images :
+    [/products/<slug>.png]` (same CDN fallback preserved).
+- Feature 2 — stock alert automation UI feedback:
+  - In `ProductFormModal.onSubmit`, after a successful `api.updateProduct`,
+    if `editing.stock === 0 && stockNum > 0`, fire an extra
+    `toast.success("Produto reabastecido! Os exploradores inscritos serão
+    avisados.", { icon: <Bell className="h-4 w-4 text-[var(--neon-cyan)]" />,
+    duration: 6000 })`. Backend already queues the actual notifications.
+  - In `ProductsTable` "Estoque" cell, when `p.stock === 0`, render a
+    magenta Bell badge with an animated ping dot next to the stock number,
+    with `title` + `aria-label` = "Produto esgotado — exploradores podem
+    estar inscritos para alerta". No new endpoint needed.
+- Imports: added `useRef` to react, `Upload`/`X`/`Image as ImageIcon` to
+  lucide-react. `Bell` was already imported.
+- Verification: `node node_modules/typescript/bin/tsc --noEmit -p
+  tsconfig.json 2>&1 | grep AdminView` → 0 errors. Dev server (port 3000)
+  recompiled cleanly after each edit (`✓ Compiled in Nms` only, no
+  warnings/errors in dev.log). All remaining tsc errors are pre-existing
+  backend issues in `src/app/api/**` (addresses, coupons, orders, metrics)
+  that are explicitly out of scope.
+- Wrote agent context to `/home/z/my-project/agent-ctx/CRON-8B-full-stack-developer.md`.
+
+Stage Summary:
+- Modified: `src/components/views/AdminView.tsx` (only)
+  - `ProductFormState.images` → `string[]`
+  - `emptyForm` / `formFromProduct` updated for the new array shape
+  - `ProductFormModal`: + `fileInputRef`, `urlInput`, `dragging` state;
+    + `handleFiles` / `addUrls` / `removeImage` handlers;
+    + restock toast (`editing.stock === 0 && stockNum > 0`);
+    images section UI rewritten as drop zone + thumbnails + URL input
+  - `ProductsTable`: out-of-stock Bell indicator (magenta, animated ping)
+    next to the stock number with a pt-BR tooltip
+- No new files, no other files touched.
+
+---
+Task ID: CRON-8 (main thread)
+Agent: main (Z.ai Code) — 15-min webDevReview cron job (id 214859)
+Task: QA + stock alert automation + info pages + product image upload + order details enhancement + styling polish
+
+## Current project status assessment
+- Project stable from CRON-7 (product comparison, stock alerts, footer links wired, styling polish).
+- Dev server healthy on port 3000. HTTP 200.
+- agent-browser QA: all views passing, all features functional.
+- 39 pre-existing TS errors (all JSON-Prisma stub friction, non-runtime).
+
+## Completed modifications this round
+
+### Backend new features
+1. **Stock alert notification automation** (critical feature from recommendations):
+   - `PUT /api/products/[id]` now detects when a product transitions from out-of-stock (stock=0 OR all sizeStock=0) to in-stock (stock>0 AND not all sizeStock=0).
+   - When this transition happens, it scans all users for subscriptions to that product, and queues a "produto voltou ao estoque! 🚀" notification for each subscriber.
+   - Added `isAllSizeStockZero(sizeStockJson)` helper function.
+   - Non-fatal: notification failures never block the product update.
+   - **Verified end-to-end**: subscribed explorador to Meteor Air → admin set stock to 0 → admin restocked to 10 → explorador received "Meteor Air voltou ao estoque! 🚀" notification.
+
+### Frontend new features (via subagents)
+1. **Info pages** (subagent CRON-8A):
+   - New `InfoView.tsx` component with 4 rich pt-BR pages:
+     - **Quem somos**: brand story + 3 value pillars (Design de outro planeta, Conforto orbital, Comunidade de exploradores) + mission statement.
+     - **Sustentabilidade**: 4 initiatives (Materiais reciclados, Embalagem compostável, Logística neutra em carbono, Programa de troca circular) + CTA.
+     - **Contato**: 3 contact channels (Nave AI, E-mail, Instagram) + action buttons.
+     - **Trocas**: 30-day policy + 4 numbered steps + conditions + Nave CTA.
+   - Cosmic hero with orbit-divider + text-gradient-animated title + glass-strong content panel.
+   - Wired into `page.tsx` view router.
+   - Footer links updated: "Quem somos", "Sustentabilidade", "Contato", "Trocas e devoluções" now navigate to info pages (previously opened Nave chat).
+2. **Order details enhancement** (subagent CRON-8A):
+   - AccountView "Meus pedidos" tab: "Ver detalhes" now shows a rich order panel:
+     - Order code (mono cyan) + status badge + formatted date.
+     - Items list with real image thumbnails (w-12 h-12), name, size, quantity, unit price, subtotal.
+     - Totals breakdown with coupon code badge (if applied) + emerald discount line.
+     - Delivery address with masked CEP.
+     - Payment method with icon.
+     - "Rastrear pedido" + "Ver na Nave" action buttons.
+   - Batched product image fetching via `api.products({ ids })` for performance.
+3. **Product image upload in admin** (subagent CRON-8B):
+   - `ProductFormModal` now has a drag-and-drop image upload zone:
+     - Click or drag images to upload.
+     - File input accepts `image/*`, multiple files.
+     - Validates: max 5 images, max 2MB per image. Toast on validation error.
+     - Reads files as base64 Data URLs via FileReader.
+   - Thumbnail grid (grid-cols-5 gap-2) with remove button per image.
+   - URL text input kept below for manual entry.
+   - Form state `images` migrated from string to `string[]` (base64 + URLs coexist).
+4. **Stock alert UI feedback** (subagent CRON-8B):
+   - `ProductFormModal`: after saving, if product went from stock=0 to stock>0, shows toast "Produto reabastecido! Os exploradores inscritos serão avisados." (with Bell icon, 6s duration).
+   - `ProductsTable`: out-of-stock products (stock=0) show a magenta Bell badge with animated ping dot + tooltip "Produto esgotado — exploradores podem estar inscritos para alerta".
+
+### Styling polish
+- InfoView uses `text-gradient-animated` for page titles (cyan→violet→magenta animated gradient).
+- InfoView uses `orbit-divider` between sections.
+- Order details panel uses glass-strong with cyan accent for order code.
+- Image upload drop zone uses dashed border with neon-cyan highlight while dragging.
+- Thumbnail grid uses framer-motion scale-in entrance.
+
+## Verification results
+- TypeScript: 39 errors total (all pre-existing JSON-Prisma stub friction). ZERO errors in any frontend file or new backend file.
+- Dev server: HTTP 200, compiles cleanly, no runtime errors.
+- agent-browser QA:
+  - Info pages: "Quem somos" shows 3 value pillars (Design/Conforto/Comunidade). "Sustentabilidade" shows 4 initiatives (Materiais/Embalagem/Logística/Programa).
+  - Footer links: "Quem somos", "Sustentabilidade" navigate to info pages correctly.
+  - Admin product form: image upload zone present with file input (accept="image/*", multiple), drop zone text "Arraste imagens aqui ou clique para selecionar", thumbnail grid.
+- E2E API test (stock alert automation):
+  - Subscribe explorador to Meteor Air → subscribed=true.
+  - Admin sets stock to 0 → success.
+  - Admin restocks to 10 → success.
+  - Explorador's notifications now include "Meteor Air voltou ao estoque! 🚀" (automatically queued).
+
+## Unresolved issues / risks
+- 39 pre-existing TS errors (all JSON-Prisma stub friction). Non-runtime. Would be eliminated by switching to real Prisma client.
+- Image upload uses base64 Data URLs stored in the product's `images` JSON array. For large images or many products, this could bloat the JSON store file. A real implementation would use object storage (S3, Cloudinary, etc.).
+- Stock alert automation scans ALL users on every product update. For large user bases, this could be slow. Could add a `stockAlertSubscriptions` collection for better indexing.
+
+## Priority recommendations for next phase
+1. **Real Prisma/Postgres swap** — db.ts is 1:1 Prisma-shaped; drop-in once prisma installs. Eliminates all 39 TS errors.
+2. **Object storage for images** — replace base64 with S3/Cloudinary upload.
+3. **Performance**: next/image optimization, code-split heavy views.
+4. **Accessibility audit**: ARIA labels, keyboard navigation, screen reader support.
+5. **SEO**: meta tags, structured data, sitemap.
+6. **Order export**: CSV/JSON download in AccountView.
+7. **Admin order management enhancements**: bulk status updates, order search/filter.

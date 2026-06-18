@@ -11,7 +11,8 @@ export type ViewName =
   | "admin"
   | "account"
   | "wishlist"
-  | "track-order";
+  | "track-order"
+  | "info";
 
 export interface ViewParams {
   id?: string;

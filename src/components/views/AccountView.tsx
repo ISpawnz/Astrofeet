@@ -390,8 +390,17 @@ function AccountHeader({
 
 // ---------- Order card ----------
 
-function OrderCard({ order, index }: { order: Order; index: number }) {
+function OrderCard({
+  order,
+  index,
+  imageMap = {},
+}: {
+  order: Order;
+  index: number;
+  imageMap?: Record<string, string>;
+}) {
   const navigate = useUIStore((s) => s.navigate);
+  const openNave = useUIStore((s) => s.openNave);
   const [open, setOpen] = useState(false);
 
   const pay = paymentMethodInfo(order.payment.method);
@@ -533,6 +542,33 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="overflow-hidden border-t border-white/10"
               >
+                {/* Panel header — order code + status + date */}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-white/[0.02] px-5 py-4 sm:px-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                      <Hash className="h-4 w-4 text-[var(--neon-cyan)]" />
+                    </div>
+                    <div>
+                      <p className="font-mono text-sm font-black tracking-wider text-[var(--neon-cyan)] sm:text-base">
+                        {order.code}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        {formatDate(order.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "h-7 gap-1.5 rounded-full px-3 text-xs font-semibold",
+                      orderStatusColor(order.status),
+                    )}
+                  >
+                    {orderStatusLabel(order.status)}
+                  </Badge>
+                </div>
+
                 <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
                   {/* Items list */}
                   <div className="space-y-3">
@@ -541,37 +577,50 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
                       Itens do pedido
                     </h3>
                     <ul className="space-y-2.5">
-                      {items.map((item, i) => (
-                        <li
-                          key={`${item.productId}-${item.size}-${i}`}
-                          className="flex items-start gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3"
-                        >
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/5">
-                            <Package className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                          <div className="flex flex-1 flex-col">
-                            <p className="line-clamp-1 text-sm font-semibold">
-                              {item.name}
+                      {items.map((item, i) => {
+                        const img = imageMap[item.productId];
+                        return (
+                          <li
+                            key={`${item.productId}-${item.size}-${i}`}
+                            className="flex items-start gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3"
+                          >
+                            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                              {img ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={img}
+                                  alt={item.name}
+                                  className="h-full w-full object-contain"
+                                />
+                              ) : (
+                                <Package className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div className="flex flex-1 flex-col">
+                              <p className="line-clamp-1 text-sm font-semibold">
+                                {item.name}
+                              </p>
+                              <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Hash className="h-3 w-3" />
+                                  Tam. {item.size}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Layers className="h-3 w-3" />
+                                  Qtd. {item.quantity}
+                                </span>
+                                <span>{formatPrice(item.unitPrice)} / un.</span>
+                              </p>
+                            </div>
+                            <p className="self-center text-sm font-bold">
+                              {formatPrice(item.subtotal)}
                             </p>
-                            <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Hash className="h-3 w-3" />
-                                Tam. {item.size}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Layers className="h-3 w-3" />
-                                Qtd. {item.quantity}
-                              </span>
-                              <span>{formatPrice(item.unitPrice)} / un.</span>
-                            </p>
-                          </div>
-                          <p className="self-center text-sm font-bold">
-                            {formatPrice(item.subtotal)}
-                          </p>
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
 
+                    {/* Totals breakdown */}
                     <div className="mt-2 space-y-1.5 rounded-2xl border border-white/5 bg-white/[0.02] p-3 text-sm">
                       <div className="flex justify-between text-muted-foreground">
                         <span>Subtotal</span>
@@ -580,8 +629,16 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
                         </span>
                       </div>
                       {discount > 0 && (
-                        <div className="flex justify-between text-emerald-300">
-                          <span>Desconto</span>
+                        <div className="flex items-center justify-between text-emerald-300">
+                          <span className="flex items-center gap-1.5">
+                            <Ticket className="h-3.5 w-3.5" />
+                            Desconto
+                            {couponCode && (
+                              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider">
+                                {couponCode}
+                              </span>
+                            )}
+                          </span>
                           <span className="font-medium">
                             -{formatPrice(discount)}
                           </span>
@@ -603,6 +660,24 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
                         </span>
                       </div>
                     </div>
+
+                    {/* Coupon badge */}
+                    {couponCode && discount > 0 && (
+                      <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.07] px-3 py-2">
+                        <Sparkles className="h-4 w-4 shrink-0 text-emerald-300" />
+                        <p className="text-xs text-emerald-200">
+                          Cupom{" "}
+                          <span className="font-mono font-bold uppercase tracking-wider">
+                            {couponCode}
+                          </span>{" "}
+                          aplicado · você economizou{" "}
+                          <span className="font-bold">
+                            {formatPrice(discount)}
+                          </span>
+                          .
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Side: address + payment */}
@@ -627,7 +702,7 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
                           {order.address.city} · {order.address.state}
                         </p>
                         <p className="text-muted-foreground">
-                          CEP {order.address.cep}
+                          CEP {maskCEP(order.address.cep)}
                         </p>
                       </div>
                     </div>
@@ -661,6 +736,27 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
                     </div>
                   </div>
                 </div>
+
+                {/* Panel footer actions */}
+                <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/5 bg-white/[0.02] px-5 py-4 sm:px-6">
+                  <Button
+                    onClick={() =>
+                      navigate("track-order", { code: order.code })
+                    }
+                    className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-4 py-2 text-xs font-bold text-black hover:opacity-90"
+                  >
+                    <Truck className="h-4 w-4" />
+                    Rastrear pedido
+                  </Button>
+                  <Button
+                    onClick={() => openNave()}
+                    variant="outline"
+                    className="rounded-full border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+                  >
+                    <Rocket className="h-4 w-4" />
+                    Ver na Nave
+                  </Button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -674,6 +770,28 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
 
 function OrdersTab({ orders, isLoading }: { orders: Order[] | undefined; isLoading: boolean }) {
   const navigate = useUIStore((s) => s.navigate);
+
+  // Collect every unique product id across all orders so we can fetch
+  // their images in a single network round-trip.
+  const productIds = orders
+    ? Array.from(
+        new Set(orders.flatMap((o) => o.items.map((i) => i.productId))),
+      )
+    : [];
+  const joinedIds = productIds.join(",");
+
+  const { data: productsForImages } = useQuery({
+    queryKey: ["order-product-images", joinedIds],
+    queryFn: () => api.products({ ids: joinedIds }),
+    enabled: productIds.length > 0,
+  });
+
+  const imageMap: Record<string, string> = {};
+  if (productsForImages) {
+    for (const p of productsForImages) {
+      if (p.images?.[0]) imageMap[p.id] = p.images[0];
+    }
+  }
 
   if (isLoading) {
     return (
@@ -734,7 +852,12 @@ function OrdersTab({ orders, isLoading }: { orders: Order[] | undefined; isLoadi
         </p>
       </div>
       {sorted.map((order, i) => (
-        <OrderCard key={order.id} order={order} index={i} />
+        <OrderCard
+          key={order.id}
+          order={order}
+          index={i}
+          imageMap={imageMap}
+        />
       ))}
     </div>
   );

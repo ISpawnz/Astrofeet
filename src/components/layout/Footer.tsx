@@ -48,16 +48,16 @@ const LINK_COLUMNS = [
     title: "Ajuda",
     links: [
       { label: "Rastrear pedido", action: "track-order" as const, params: {} },
-      { label: "Trocas e devoluções", action: "nave" as const, params: {} },
+      { label: "Trocas e devoluções", action: "info" as const, params: { page: "trocas" } },
       { label: "Fale com a Nave", action: "nave" as const, params: {} },
     ],
   },
   {
     title: "Sobre",
     links: [
-      { label: "Quem somos", action: "nave" as const, params: {} },
-      { label: "Sustentabilidade", action: "nave" as const, params: {} },
-      { label: "Contato", action: "nave" as const, params: {} },
+      { label: "Quem somos", action: "info" as const, params: { page: "quem-somos" } },
+      { label: "Sustentabilidade", action: "info" as const, params: { page: "sustentabilidade" } },
+      { label: "Contato", action: "info" as const, params: { page: "contato" } },
     ],
   },
 ] as const;
