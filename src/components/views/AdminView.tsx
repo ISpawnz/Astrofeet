@@ -113,6 +113,7 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from "@/components/ui/collapsible";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -618,6 +619,15 @@ function OrdersTable() {
   const [query, setQuery] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
 
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState<OrderStatus>("paid");
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+
+  // Date range filter state (YYYY-MM-DD strings from <input type="date">)
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["orders"],
     queryFn: () => api.listOrders(),
@@ -626,13 +636,93 @@ function OrdersTable() {
   const filtered = useMemo(() => {
     if (!data) return [];
     const q = query.trim().toLowerCase();
-    if (!q) return data;
-    return data.filter(
-      (o) =>
-        o.code.toLowerCase().includes(q) ||
-        o.customer.name.toLowerCase().includes(q),
+    const fromTime = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null;
+    const toTime = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
+    return data.filter((o) => {
+      if (q) {
+        const matches =
+          o.code.toLowerCase().includes(q) ||
+          o.customer.name.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+      if (fromTime !== null || toTime !== null) {
+        const t = new Date(o.createdAt).getTime();
+        if (fromTime !== null && t < fromTime) return false;
+        if (toTime !== null && t > toTime) return false;
+      }
+      return true;
+    });
+  }, [data, query, dateFrom, dateTo]);
+
+  const dateFilterActive = Boolean(dateFrom || dateTo);
+
+  // Keep selection in sync with the visible list (drop ids that no longer match)
+  useEffect(() => {
+    if (selectedIds.length === 0) return;
+    const visibleIds = new Set(filtered.map((o) => o.id));
+    setSelectedIds((prev) =>
+      prev.filter((id) => visibleIds.has(id)),
     );
-  }, [data, query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered]);
+
+  const visibleIds = filtered.map((o) => o.id);
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
+  const someVisibleSelected =
+    visibleIds.some((id) => selectedIds.includes(id)) && !allVisibleSelected;
+
+  function toggleRow(id: string, checked: boolean) {
+    setSelectedIds((prev) =>
+      checked ? [...prev, id] : prev.filter((x) => x !== id),
+    );
+  }
+
+  function toggleAll(checked: boolean) {
+    if (checked) {
+      const next = new Set(selectedIds);
+      for (const id of visibleIds) next.add(id);
+      setSelectedIds([...next]);
+    } else {
+      const visible = new Set(visibleIds);
+      setSelectedIds((prev) => prev.filter((id) => !visible.has(id)));
+    }
+  }
+
+  function clearSelection() {
+    setSelectedIds([]);
+  }
+
+  function clearDateFilter() {
+    setDateFrom("");
+    setDateTo("");
+  }
+
+  async function onBulkUpdate() {
+    if (selectedIds.length === 0 || bulkSubmitting) return;
+    setBulkSubmitting(true);
+    try {
+      const result = await api.bulkUpdateStatus(selectedIds, bulkStatus);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-metrics"] }),
+      ]);
+      toast.success(
+        `${result.updated} pedido${result.updated === 1 ? "" : "s"} atualizado${
+          result.updated === 1 ? "" : "s"
+        } para "${orderStatusLabel(bulkStatus)}".`,
+      );
+      clearSelection();
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível atualizar os pedidos.",
+      );
+    } finally {
+      setBulkSubmitting(false);
+    }
+  }
 
   async function onStatusChange(order: Order, status: string) {
     setUpdating(order.id);
@@ -661,123 +751,276 @@ function OrdersTable() {
   }
 
   return (
-    <div className="glass rounded-2xl border border-white/10 p-4 sm:p-5">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="font-semibold">Todos os pedidos</h3>
-          <p className="text-xs text-muted-foreground">
-            Atualize o status de cada pedido em tempo real.
-          </p>
+    <div className="relative space-y-4">
+      <div className="glass rounded-2xl border border-white/10 p-4 sm:p-5">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-semibold">Todos os pedidos</h3>
+            <p className="text-xs text-muted-foreground">
+              Atualize o status de cada pedido em tempo real.
+            </p>
+          </div>
+          <div className="relative w-full sm:w-72">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por código ou cliente"
+              className="border-white/10 bg-white/5 pl-9"
+            />
+          </div>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por código ou cliente"
-            className="border-white/10 bg-white/5 pl-9"
-          />
+
+        {/* Date range filter */}
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <Label className="mb-1.5 flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              De
+            </Label>
+            <Input
+              type="date"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="border-white/10 bg-white/5 text-sm [color-scheme:dark]"
+            />
+          </div>
+          <div className="flex-1">
+            <Label className="mb-1.5 flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              Até
+            </Label>
+            <Input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="border-white/10 bg-white/5 text-sm [color-scheme:dark]"
+            />
+          </div>
+          {dateFilterActive && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={clearDateFilter}
+              className="h-9 shrink-0 border border-white/10 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+              Limpar filtro
+            </Button>
+          )}
+          <div className="hidden shrink-0 items-center text-xs text-muted-foreground sm:flex">
+            {filtered.length} pedido{filtered.length === 1 ? "" : "s"}
+          </div>
+        </div>
+
+        <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-white/5">
+          <Table>
+            <TableHeader className="sticky top-0 z-10 bg-[var(--card)] backdrop-blur">
+              <TableRow className="border-white/10 hover:bg-transparent">
+                <TableHead className="w-10 px-3">
+                  <Checkbox
+                    checked={
+                      allVisibleSelected
+                        ? true
+                        : someVisibleSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={(v) => toggleAll(v === true)}
+                    aria-label="Selecionar todos os pedidos visíveis"
+                    className="border-white/20 data-[state=checked]:bg-[var(--neon-cyan)] data-[state=checked]:text-black data-[state=checked]:border-[var(--neon-cyan)]"
+                  />
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Código
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Cliente
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Itens
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Total
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Status
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Data
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i} className="border-white/5">
+                    <TableCell colSpan={7}>
+                      <Skeleton className="h-7 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : filtered.length === 0 ? (
+                <TableRow className="border-white/5">
+                  <TableCell colSpan={7} className="py-12 text-center">
+                    <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                      <Inbox className="h-8 w-8 opacity-50" />
+                      {query || dateFilterActive
+                        ? "Nenhum pedido encontrado para esses filtros."
+                        : "Ainda não há pedidos registrados."}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filtered.map((o) => {
+                  const checked = selectedIds.includes(o.id);
+                  return (
+                    <TableRow
+                      key={o.id}
+                      className={cn(
+                        "border-white/5 transition-colors",
+                        checked && "bg-[var(--neon-cyan)]/[0.06]",
+                      )}
+                    >
+                      <TableCell className="px-3">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => toggleRow(o.id, v === true)}
+                          aria-label={`Selecionar pedido ${o.code}`}
+                          className="border-white/20 data-[state=checked]:bg-[var(--neon-cyan)] data-[state=checked]:text-black data-[state=checked]:border-[var(--neon-cyan)]"
+                        />
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-[var(--neon-cyan)]">
+                        {o.code}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{o.customer.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {o.customer.email}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{itemsCount(o)}</TableCell>
+                      <TableCell className="font-semibold">
+                        {formatPrice(o.total)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <StatusBadge status={o.status} />
+                          <Select
+                            value={o.status}
+                            disabled={updating === o.id}
+                            onValueChange={(v) => onStatusChange(o, v)}
+                          >
+                            <SelectTrigger
+                              size="sm"
+                              className="h-8 w-9 justify-center border-white/10 bg-white/5 px-0"
+                              aria-label="Alterar status"
+                            >
+                              {updating === o.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                              ) : (
+                                <span className="text-xs text-muted-foreground">···</span>
+                              )}
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STATUS_ORDER.map((s) => (
+                                <SelectItem key={s} value={s}>
+                                  {orderStatusLabel(s)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {formatDate(o.createdAt)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
         </div>
       </div>
 
-      <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-white/5">
-        <Table>
-          <TableHeader className="sticky top-0 z-10 bg-[var(--card)] backdrop-blur">
-            <TableRow className="border-white/10 hover:bg-transparent">
-              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
-                Código
-              </TableHead>
-              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
-                Cliente
-              </TableHead>
-              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
-                Itens
-              </TableHead>
-              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
-                Total
-              </TableHead>
-              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
-                Status
-              </TableHead>
-              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
-                Data
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i} className="border-white/5">
-                  <TableCell colSpan={6}>
-                    <Skeleton className="h-7 w-full" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : filtered.length === 0 ? (
-              <TableRow className="border-white/5">
-                <TableCell colSpan={6} className="py-12 text-center">
-                  <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-                    <Inbox className="h-8 w-8 opacity-50" />
-                    {query
-                      ? "Nenhum pedido encontrado para essa busca."
-                      : "Ainda não há pedidos registrados."}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((o) => (
-                <TableRow key={o.id} className="border-white/5">
-                  <TableCell className="font-mono text-xs text-[var(--neon-cyan)]">
-                    {o.code}
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{o.customer.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {o.customer.email}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">{itemsCount(o)}</TableCell>
-                  <TableCell className="font-semibold">
-                    {formatPrice(o.total)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <StatusBadge status={o.status} />
-                      <Select
-                        value={o.status}
-                        disabled={updating === o.id}
-                        onValueChange={(v) => onStatusChange(o, v)}
-                      >
-                        <SelectTrigger
-                          size="sm"
-                          className="h-8 w-9 justify-center border-white/10 bg-white/5 px-0"
-                          aria-label="Alterar status"
-                        >
-                          {updating === o.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                          ) : (
-                            <span className="text-xs text-muted-foreground">···</span>
-                          )}
-                        </SelectTrigger>
-                        <SelectContent>
-                          {STATUS_ORDER.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {orderStatusLabel(s)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {formatDate(o.createdAt)}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {/* Floating bulk action bar */}
+      {selectedIds.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 24 }}
+          transition={{ duration: 0.25 }}
+          className="sticky bottom-4 z-30"
+        >
+          <div className="glass-strong flex flex-col gap-3 rounded-2xl border border-[var(--neon-cyan)]/30 p-3 shadow-[0_8px_40px_-12px_rgba(52,231,255,0.35)] sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 items-center rounded-full bg-[var(--neon-cyan)]/15 px-3 text-sm font-bold text-[var(--neon-cyan)]">
+                {selectedIds.length}
+              </div>
+              <span className="text-sm font-medium">
+                {selectedIds.length === 1
+                  ? "1 selecionado"
+                  : `${selectedIds.length} selecionados`}
+              </span>
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="hidden items-center gap-1 text-xs text-muted-foreground transition hover:text-foreground sm:inline-flex"
+              >
+                <X className="h-3.5 w-3.5" />
+                Limpar seleção
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Select
+                value={bulkStatus}
+                onValueChange={(v) => setBulkStatus(v as OrderStatus)}
+                disabled={bulkSubmitting}
+              >
+                <SelectTrigger className="h-9 w-full border-white/15 bg-white/5 text-sm sm:w-44">
+                  <SelectValue placeholder="Novo status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_ORDER.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {orderStatusLabel(s)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                type="button"
+                onClick={onBulkUpdate}
+                disabled={bulkSubmitting}
+                className="btn-cosmic h-9 gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 text-sm font-bold text-black hover:opacity-90"
+              >
+                {bulkSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                Atualizar {selectedIds.length}{" "}
+                {selectedIds.length === 1 ? "pedido" : "pedidos"}
+              </Button>
+
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="inline-flex h-9 items-center justify-center gap-1 rounded-full px-3 text-xs font-medium text-muted-foreground transition hover:bg-white/5 hover:text-foreground sm:hidden"
+              >
+                <X className="h-3.5 w-3.5" />
+                Limpar
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }

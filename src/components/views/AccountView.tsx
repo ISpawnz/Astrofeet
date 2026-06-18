@@ -44,6 +44,8 @@ import {
   RefreshCw,
   Truck,
   Ticket,
+  Download,
+  FileJson,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
@@ -770,6 +772,7 @@ function OrderCard({
 
 function OrdersTab({ orders, isLoading }: { orders: Order[] | undefined; isLoading: boolean }) {
   const navigate = useUIStore((s) => s.navigate);
+  const [exporting, setExporting] = useState<"csv" | "json" | null>(null);
 
   // Collect every unique product id across all orders so we can fetch
   // their images in a single network round-trip.
@@ -790,6 +793,26 @@ function OrdersTab({ orders, isLoading }: { orders: Order[] | undefined; isLoadi
   if (productsForImages) {
     for (const p of productsForImages) {
       if (p.images?.[0]) imageMap[p.id] = p.images[0];
+    }
+  }
+
+  async function handleExport(format: "csv" | "json") {
+    try {
+      setExporting(format);
+      const blob = await api.exportOrders(format);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pedidos-astrofeet-${Date.now()}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`Pedidos exportados em ${format.toUpperCase()}.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao exportar.");
+    } finally {
+      setExporting(null);
     }
   }
 
@@ -846,10 +869,40 @@ function OrdersTab({ orders, isLoading }: { orders: Order[] | undefined; isLoadi
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {sorted.length} {sorted.length === 1 ? "pedido" : "pedidos"} no total
         </p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => handleExport("csv")}
+            disabled={exporting !== null}
+            aria-label="Exportar pedidos em CSV"
+            className="glass-chip inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {exporting === "csv" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--neon-cyan)]" />
+            ) : (
+              <Download className="h-3.5 w-3.5 text-[var(--neon-cyan)]" />
+            )}
+            <span className="hidden sm:inline">Exportar CSV</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleExport("json")}
+            disabled={exporting !== null}
+            aria-label="Exportar pedidos em JSON"
+            className="glass-chip inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {exporting === "json" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--neon-violet)]" />
+            ) : (
+              <FileJson className="h-3.5 w-3.5 text-[var(--neon-violet)]" />
+            )}
+            <span className="hidden sm:inline">Exportar JSON</span>
+          </button>
+        </div>
       </div>
       {sorted.map((order, i) => (
         <OrderCard

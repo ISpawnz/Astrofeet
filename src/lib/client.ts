@@ -322,6 +322,33 @@ export const api = {
     });
   },
 
+  // ---------- Order export ----------
+  async exportOrders(format: "csv" | "json" = "csv"): Promise<Blob> {
+    const res = await fetch(`/api/orders/export?format=${format}`, {
+      credentials: "include",
+    });
+    if (!res.ok) {
+      throw new Error(`Erro ${res.status}: não foi possível exportar.`);
+    }
+    return res.blob();
+  },
+
+  // ---------- Admin bulk status ----------
+  async bulkUpdateStatus(
+    orderIds: string[],
+    status: string,
+  ): Promise<{ updated: number; total: number }> {
+    const data = await request<{
+      updated: number;
+      total: number;
+      results: { id: string; code: string; success: boolean }[];
+    }>("/api/admin/bulk-status", {
+      method: "POST",
+      body: JSON.stringify({ orderIds, status }),
+    });
+    return { updated: data.updated, total: data.total };
+  },
+
   // ---------- Reviews ----------
   async createReview(payload: {
     productId: string;

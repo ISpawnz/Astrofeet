@@ -849,27 +849,20 @@ function ReviewsSection({
     if (user?.name) setAuthor(user.name);
   }, [user]);
 
-  const dist = useMemo(() => {
-    const base: Record<number, number> = {
-      5: 0,
-      4: 0,
-      3: 0,
-      2: 0,
-      1: 0,
-    };
-    reviews.forEach((r) => {
-      const k = Math.max(1, Math.min(5, Math.round(r.rating)));
-      base[k] += 1;
-    });
-    return base;
-  }, [reviews]);
+  // Distribution array for the rating-breakdown panel.
+  const distribution = useMemo(
+    () =>
+      [5, 4, 3, 2, 1].map((stars) => {
+        const count = reviews.filter((r) => r.rating === stars).length;
+        const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+        return { stars, count, pct };
+      }),
+    [reviews],
+  );
 
-  const avg = useMemo(() => {
-    if (reviews.length === 0) return 0;
-    return (
-      reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
-    );
-  }, [reviews]);
+  const avgRating = reviews.length > 0
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : product.rating;
 
   function resetForm() {
     setRating(0);
@@ -967,60 +960,78 @@ function ReviewsSection({
         )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        {/* Summary */}
-        <div className="glass-strong rounded-3xl border border-white/10 p-6">
-          <div className="flex flex-col items-center gap-2 text-center">
-            <p className="text-5xl font-black">{avg.toFixed(1)}</p>
-            <Stars value={avg} size={18} />
-            <p className="text-xs text-muted-foreground">
-              {reviews.length}{" "}
-              {reviews.length === 1 ? "avaliação" : "avaliações"}
+      <div className="space-y-6">
+        {/* Rating distribution panel — above the review list */}
+        {reviews.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="glass rounded-2xl border border-white/10 p-6 text-center sm:p-8"
+          >
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]">
+              <Star className="h-7 w-7 fill-amber-400 text-amber-400" />
+            </div>
+            <p className="font-semibold text-foreground">
+              Ainda não há avaliações. Seja o primeiro a avaliar!
             </p>
-          </div>
-
-          <Separator className="my-5 bg-white/10" />
-
-          <div className="space-y-2">
-            {[5, 4, 3, 2, 1].map((n) => {
-              const count = dist[n];
-              const pct =
-                reviews.length > 0 ? (count / reviews.length) * 100 : 0;
-              return (
-                <div
-                  key={n}
-                  className="flex items-center gap-2 text-xs"
-                >
-                  <span className="w-6 text-muted-foreground">{n}★</span>
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
-                    <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-amber-400 to-[var(--neon-magenta)]"
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${pct}%` }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.6 }}
-                    />
-                  </div>
-                  <span className="w-6 text-right text-muted-foreground">
-                    {count}
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="glass rounded-2xl border border-white/10 p-4 sm:p-6"
+          >
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
+              {/* Left column — average rating */}
+              <div className="flex flex-col items-center justify-center text-center sm:w-44 sm:shrink-0">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-gradient-animated text-5xl font-black leading-none sm:text-6xl">
+                    {avgRating.toFixed(1)}
                   </span>
+                  <Star className="h-6 w-6 self-center fill-amber-400 text-amber-400" />
                 </div>
-              );
-            })}
-          </div>
-        </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {reviews.length}{" "}
+                  {reviews.length === 1 ? "avaliação" : "avaliações"}
+                </p>
+              </div>
+
+              {/* Right column — 5 horizontal bars */}
+              <div className="flex-1 space-y-2">
+                {distribution.map(({ stars, count, pct }, idx) => (
+                  <div
+                    key={stars}
+                    className="flex items-center gap-3 text-xs"
+                  >
+                    <div className="flex w-8 shrink-0 items-center gap-1">
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      <span className="font-semibold text-foreground">
+                        {stars}
+                      </span>
+                    </div>
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+                      <motion.div
+                        className="h-full rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)]"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.6, delay: 0.08 * idx }}
+                      />
+                    </div>
+                    <span className="w-20 shrink-0 text-right text-muted-foreground">
+                      ({count}) · {Math.round(pct)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* List */}
-        <div className="space-y-4">
-          {reviews.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
-              <Star className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-              <p className="font-semibold">Sem avaliações ainda</p>
-              <p className="text-sm text-muted-foreground">
-                Seja o primeiro a avaliar este produto.
-              </p>
-            </div>
-          ) : (
+        {reviews.length > 0 && (
+          <div className="space-y-4">
             <ScrollArea className="max-h-[480px] rounded-3xl">
               <ul className="space-y-3 pr-3">
                 {reviews.map((r) => (
@@ -1058,8 +1069,8 @@ function ReviewsSection({
                 ))}
               </ul>
             </ScrollArea>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Review form — only when logged in and showForm is true */}

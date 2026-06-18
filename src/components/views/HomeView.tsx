@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Flame, Rocket, ShieldCheck, Clock } from "lucide-react";
+import { ArrowRight, Sparkles, Flame, Rocket, ShieldCheck, Clock, Trash2 } from "lucide-react";
 import { api } from "@/lib/client";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
@@ -17,6 +17,7 @@ export function HomeView() {
   const add = useCartStore((s) => s.add);
   const recent = useRecentStore((s) => s.items);
   const recentHydrated = useRecentStore((s) => s.hydrated);
+  const clearRecent = useRecentStore((s) => s.clear);
 
   const { data: featured } = useQuery({
     queryKey: ["products", "featured"],
@@ -300,37 +301,87 @@ export function HomeView() {
 
       {/* ---------- RECENTLY VIEWED ---------- */}
       {recentHydrated && recent.length > 0 && (
-        <Section
-          eyebrow="Sua rota recente"
-          title="Vistos por último"
-          icon={<Clock className="h-4 w-4 text-[var(--neon-violet)]" />}
-          action={() => navigate("products")}
-          actionLabel="Explorar mais"
-        >
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {recent.slice(0, 4).map((r, i) => {
-              const product: Product = {
-                id: r.id,
-                slug: r.slug,
-                name: r.name,
-                brand: r.brand,
-                category: "",
-                price: r.price,
-                description: "",
-                images: [r.image],
-                sizes: [],
-                stock: 0,
-                rating: 0,
-                accent: r.accent,
-                badge: null,
-                featured: false,
-                bestSeller: false,
-                createdAt: r.viewedAt,
-              };
-              return <ProductCard key={r.id} product={product} index={i} />;
-            })}
-          </div>
-        </Section>
+        <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
+          <div className="orbit-divider mb-6" />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="glass-strong relative overflow-hidden rounded-3xl border border-white/10 p-5 sm:p-7"
+          >
+            {/* glow accents */}
+            <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-[var(--neon-violet)] opacity-15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-[var(--neon-cyan)] opacity-15 blur-3xl" />
+
+            <div className="relative mb-5 flex items-end justify-between gap-3">
+              <div>
+                <p className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+                  <Clock className="h-4 w-4 text-[var(--neon-violet)]" />
+                  Sua rota recente
+                </p>
+                <h2 className="text-glow-hover mt-1 text-2xl font-black sm:text-3xl">
+                  Vistos recentemente
+                </h2>
+              </div>
+              <button
+                onClick={() => {
+                  clearRecent();
+                  toast.success("Histórico de visualizações limpo.");
+                }}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-[var(--neon-magenta)]/40 hover:bg-[var(--neon-magenta)]/10 hover:text-[var(--neon-magenta)]"
+                aria-label="Limpar histórico de visualizações"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Limpar
+              </button>
+            </div>
+
+            <div className="relative grid grid-cols-2 gap-4 lg:grid-cols-4">
+              {recent.slice(0, 4).map((r, i) => {
+                const product: Product = {
+                  id: r.id,
+                  slug: r.slug,
+                  name: r.name,
+                  brand: r.brand,
+                  category: "",
+                  price: r.price,
+                  description: "",
+                  images: [r.image],
+                  sizes: [],
+                  stock: 0,
+                  rating: 0,
+                  accent: r.accent,
+                  badge: null,
+                  featured: false,
+                  bestSeller: false,
+                  createdAt: r.viewedAt,
+                };
+                return (
+                  <motion.div
+                    key={r.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: i * 0.08 }}
+                  >
+                    <ProductCard product={product} index={i} />
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            <div className="relative mt-6 flex justify-center">
+              <button
+                onClick={() => navigate("products")}
+                className="btn-cosmic group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-2.5 text-sm font-bold text-black transition hover:opacity-90"
+              >
+                Continuar explorando
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+              </button>
+            </div>
+          </motion.div>
+        </section>
       )}
 
       {/* ---------- NEWSLETTER CTA ---------- */}
