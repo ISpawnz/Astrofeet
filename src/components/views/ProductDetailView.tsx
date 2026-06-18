@@ -249,10 +249,27 @@ function Info({
   const [size, setSize] = useState<number | null>(null);
   const [qty, setQty] = useState(1);
 
-  const maxQty = Math.max(1, Math.min(product.stock, 99));
+  // Per-size-aware max quantity (fall back to global stock when sizeStock absent).
+  const sizeStockMap = product.sizeStock ?? {};
+  const selectedSizeStock =
+    size !== null ? sizeStockMap[String(size)] : undefined;
+  const effectiveMax =
+    selectedSizeStock !== undefined ? selectedSizeStock : product.stock;
+  const maxQty = Math.max(1, Math.min(effectiveMax, 99));
   const installment = product.price / 10;
   const freeShipping = product.price >= FREE_SHIPPING_THRESHOLD;
   const reviewCount = reviews.length;
+
+  // Reset qty if it exceeds the newly-selected size's stock.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (qty > maxQty) setQty(Math.max(1, maxQty));
+  }, [maxQty, qty]);
+
+  function selectSize(s: number) {
+    setSize(s);
+    setQty(1);
+  }
 
   function requireSize(): boolean {
     if (size === null) {
@@ -377,21 +394,34 @@ function Info({
         <div className="flex flex-wrap gap-2">
           {product.sizes.map((s) => {
             const isSelected = size === s;
-            // Per-size stock simulation: if global stock is low, mark some sizes
-            // as low-stock; treat the product as out-of-stock only when stock === 0.
-            const soldOut = product.stock === 0;
+            // Per-size stock: prefer sizeStock map, fall back to global stock.
+            const sizeStockMap = product.sizeStock ?? {};
+            const perSize = sizeStockMap[String(s)];
+            const effectiveStock =
+              perSize !== undefined ? perSize : product.stock;
+            const soldOut = effectiveStock <= 0;
+            const lowStock = !soldOut && effectiveStock <= 2;
             return (
               <button
                 key={s}
-                onClick={() => !soldOut && setSize(s)}
+                onClick={() => !soldOut && selectSize(s)}
                 disabled={soldOut}
                 aria-pressed={isSelected}
+                title={
+                  soldOut
+                    ? `Tamanho ${s} esgotado`
+                    : lowStock
+                      ? `Últimas ${effectiveStock} unidades`
+                      : `Tamanho ${s}`
+                }
                 className={cn(
                   "relative h-12 min-w-14 rounded-xl border px-3 text-sm font-bold transition",
                   soldOut && "cursor-not-allowed opacity-40 line-through",
                   isSelected && !soldOut
                     ? "border-transparent text-black"
-                    : "border-white/10 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.06]",
+                    : lowStock
+                      ? "border-amber-500/40 bg-amber-500/5 text-amber-200 hover:border-amber-500/60"
+                      : "border-white/10 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.06]",
                 )}
                 style={
                   isSelected && !soldOut
@@ -406,6 +436,11 @@ function Info({
                 {isSelected && !soldOut && (
                   <Check className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-black p-0.5 text-white" />
                 )}
+                {!isSelected && lowStock && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-500/80 px-1 text-[8px] font-bold text-black">
+                    {effectiveStock} rest.
+                  </span>
+                )}
               </button>
             );
           })}
@@ -415,6 +450,16 @@ function Info({
             Este modelo está temporariamente esgotado.
           </p>
         )}
+        {size !== null && (() => {
+          const sizeStockMap = product.sizeStock ?? {};
+          const perSize = sizeStockMap[String(size)];
+          const eff = perSize !== undefined ? perSize : product.stock;
+          return eff <= 2 && eff > 0 ? (
+            <p className="text-xs font-medium text-amber-300">
+              Apenas {eff} unidade{eff === 1 ? "" : "s"} neste tamanho. Corra!
+            </p>
+          ) : null;
+        })()}
       </div>
 
       {/* Quantity + Stock */}

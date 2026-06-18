@@ -11,9 +11,9 @@ export const runtime = "nodejs";
 const FREE_SHIPPING_THRESHOLD = 300;
 const BASE_SHIPPING = 29.9;
 
-function computeShipping(subtotal: number): number {
-  if (subtotal <= 0) return 0;
-  if (subtotal >= FREE_SHIPPING_THRESHOLD) return 0;
+function computeShipping(subtotalAfterDiscount: number): number {
+  if (subtotalAfterDiscount <= 0) return 0;
+  if (subtotalAfterDiscount >= FREE_SHIPPING_THRESHOLD) return 0;
   return BASE_SHIPPING;
 }
 
@@ -38,6 +38,52 @@ export async function GET(req: NextRequest) {
   } catch (e) {
     return handleApiError(e);
   }
+}
+
+interface ResolvedCoupon {
+  code: string;
+  type: "percent" | "fixed";
+  value: number;
+  description: string;
+  discount: number;
+}
+
+async function resolveCoupon(
+  code: string | undefined,
+  subtotal: number,
+): Promise<ResolvedCoupon | null> {
+  if (!code) return null;
+  const upper = code.trim().toUpperCase();
+  if (!upper) return null;
+  const coupon = await db.coupon.findFirst({
+    where: { code: upper, active: true },
+  });
+  if (!coupon) throw new HttpError("Cupom inválido ou expirado.", 400);
+  if (coupon.expiresAt) {
+    const exp = new Date(coupon.expiresAt as string);
+    if (exp.getTime() < Date.now())
+      throw new HttpError("Este cupom expirou.", 400);
+  }
+  if (subtotal < (coupon.minSubtotal as number)) {
+    throw new HttpError(
+      `Cupom válido apenas para pedidos acima de R$${(coupon.minSubtotal as number).toFixed(2).replace(".", ",")}.`,
+      400,
+    );
+  }
+  let discount = 0;
+  if (coupon.type === "percent") {
+    discount = Number(((subtotal * (coupon.value as number)) / 100).toFixed(2));
+  } else {
+    discount = Number((coupon.value as number).toFixed(2));
+  }
+  discount = Math.min(discount, subtotal);
+  return {
+    code: coupon.code as string,
+    type: coupon.type as "percent" | "fixed",
+    value: coupon.value as number,
+    description: coupon.description as string,
+    discount,
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -78,13 +124,11 @@ export async function POST(req: NextRequest) {
     const byId = new Map(products.map((p) => [p.id, p]));
 
     const lineItems: OrderLineItem[] = [];
+    const sizeStockUpdates: { productId: string; size: number; qty: number }[] = [];
     for (const item of normalized) {
       const product = byId.get(item.productId);
       if (!product)
-        throw new HttpError(
-          `Um dos itens não está mais disponível.`,
-          400,
-        );
+        throw new HttpError(`Um dos itens não está mais disponível.`, 400);
       let sizes: number[] = [];
       try {
         sizes = JSON.parse(product.sizes || "[]");
@@ -96,11 +140,23 @@ export async function POST(req: NextRequest) {
           `Tamanho ${item.size} indisponível para ${product.name}.`,
           400,
         );
-      if (product.stock < item.quantity)
+
+      // Per-size stock check (fallback to global stock if sizeStock absent/empty)
+      let sizeStock: Record<string, number> = {};
+      try {
+        sizeStock = JSON.parse((product.sizeStock as string) || "{}");
+      } catch {
+        sizeStock = {};
+      }
+      const perSizeQty = sizeStock[String(item.size)];
+      const effectiveStock =
+        perSizeQty !== undefined ? perSizeQty : (product.stock as number);
+      if (effectiveStock < item.quantity)
         throw new HttpError(
           `Estoque insuficiente para ${product.name} (tamanho ${item.size}).`,
           400,
         );
+
       const unitPrice = product.price; // backend price, never trust frontend
       const subtotal = Number((unitPrice * item.quantity).toFixed(2));
       lineItems.push({
@@ -112,13 +168,25 @@ export async function POST(req: NextRequest) {
         unitPrice,
         subtotal,
       });
+      sizeStockUpdates.push({
+        productId: product.id,
+        size: item.size,
+        qty: item.quantity,
+      });
     }
 
     const subtotal = Number(
       lineItems.reduce((s, i) => s + i.subtotal, 0).toFixed(2),
     );
-    const shipping = computeShipping(subtotal);
-    const total = Number((subtotal + shipping).toFixed(2));
+
+    // Coupon — backend validates + computes discount
+    const couponCode = body.couponCode ? String(body.couponCode) : undefined;
+    const coupon = await resolveCoupon(couponCode, subtotal);
+    const discount = coupon?.discount ?? 0;
+    const afterDiscount = Number((subtotal - discount).toFixed(2));
+
+    const shipping = computeShipping(afterDiscount);
+    const total = Number((afterDiscount + shipping).toFixed(2));
 
     // Validate customer / address / payment
     const customer = body.customer as Order["customer"];
@@ -165,16 +233,36 @@ export async function POST(req: NextRequest) {
         payment: JSON.stringify({
           method: payment.method,
           cardLast4: payment.cardLast4 ?? undefined,
+          couponCode: coupon?.code,
+          discount,
         }),
       },
     });
 
-    // Decrement stock
+    // Decrement stock — both global and per-size
     for (const item of lineItems) {
       await db.product.update({
         where: { id: item.productId },
         data: { stock: { decrement: item.quantity } },
       });
+    }
+    for (const upd of sizeStockUpdates) {
+      const product = byId.get(upd.productId);
+      if (!product) continue;
+      let sizeStock: Record<string, number> = {};
+      try {
+        sizeStock = JSON.parse((product.sizeStock as string) || "{}");
+      } catch {
+        sizeStock = {};
+      }
+      const key = String(upd.size);
+      if (sizeStock[key] !== undefined) {
+        sizeStock[key] = Math.max(0, sizeStock[key] - upd.qty);
+        await db.product.update({
+          where: { id: upd.productId },
+          data: { sizeStock: JSON.stringify(sizeStock) },
+        });
+      }
     }
 
     return ok({ order: serializeOrder(order) }, 201);

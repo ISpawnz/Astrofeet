@@ -15,6 +15,7 @@ import {
   SEED_USERS,
   SEED_PRODUCTS,
   SEED_REVIEWS,
+  SEED_COUPONS,
   type SeedProduct,
 } from "@/lib/seed-data";
 
@@ -25,6 +26,7 @@ interface DBShape {
   products: Record<string, unknown>[];
   orders: Record<string, unknown>[];
   reviews: Record<string, unknown>[];
+  coupons: Record<string, unknown>[];
 }
 
 const DATE_FIELDS = new Set(["createdAt", "updatedAt"]);
@@ -44,8 +46,56 @@ function load(): DBShape {
         products: parsed.products ?? [],
         orders: parsed.orders ?? [],
         reviews: parsed.reviews ?? [],
+        coupons: parsed.coupons ?? [],
       };
       hydrateDates(_db);
+      // Auto-migrate: ensure products have sizeStock, and coupons are seeded
+      // if the collection is empty (preserves users/orders/reviews).
+      let migrated = false;
+      // Backfill sizeStock from seed data for products that lack it (by slug).
+      const seedBySlug = new Map(SEED_PRODUCTS.map((p) => [p.slug, p]));
+      for (const p of _db.products) {
+        if (p.sizeStock === undefined) {
+          p.sizeStock = "{}";
+          migrated = true;
+        }
+        const slug = p.slug as string;
+        const seed = seedBySlug.get(slug);
+        const current = (() => {
+          try {
+            return JSON.parse((p.sizeStock as string) || "{}");
+          } catch {
+            return {};
+          }
+        })();
+        if (
+          seed &&
+          seed.sizeStock &&
+          Object.keys(current).length === 0
+        ) {
+          p.sizeStock = seed.sizeStock;
+          migrated = true;
+        }
+      }
+      if (_db.coupons.length === 0) {
+        const now = new Date();
+        for (const c of SEED_COUPONS) {
+          _db.coupons.push({
+            id: genId(),
+            code: c.code,
+            type: c.type,
+            value: c.value,
+            minSubtotal: c.minSubtotal,
+            active: c.active,
+            description: c.description,
+            expiresAt: c.expiresAt,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+        migrated = true;
+      }
+      if (migrated) persistSync(_db);
       return _db;
     }
   } catch (e) {
@@ -92,7 +142,7 @@ function genId(): string {
 
 function seed(): DBShape {
   const now = new Date();
-  const db: DBShape = { users: [], products: [], orders: [], reviews: [] };
+  const db: DBShape = { users: [], products: [], orders: [], reviews: [], coupons: [] };
 
   for (const u of SEED_USERS) {
     db.users.push({
@@ -121,6 +171,7 @@ function seed(): DBShape {
       images: p.images,
       sizes: p.sizes,
       stock: p.stock,
+      sizeStock: p.sizeStock ?? "{}",
       rating: p.rating,
       accent: p.accent,
       badge: p.badge,
@@ -142,6 +193,21 @@ function seed(): DBShape {
       rating: r.rating,
       comment: r.comment,
       createdAt: now,
+    });
+  }
+
+  for (const c of SEED_COUPONS) {
+    db.coupons.push({
+      id: genId(),
+      code: c.code,
+      type: c.type,
+      value: c.value,
+      minSubtotal: c.minSubtotal,
+      active: c.active,
+      description: c.description,
+      expiresAt: c.expiresAt,
+      createdAt: now,
+      updatedAt: now,
     });
   }
 
@@ -438,6 +504,7 @@ export const db = {
   product: createModel("products"),
   order: createModel("orders"),
   review: createModel("reviews"),
+  coupon: createModel("coupons"),
   async $disconnect() {
     /* no-op */
   },

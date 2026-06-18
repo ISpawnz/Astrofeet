@@ -212,6 +212,53 @@ export function HomeView() {
         </motion.div>
       </section>
 
+      {/* ---------- COUPON SHOWCASE ---------- */}
+      <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[
+            { code: "GALAXIA10", label: "10% off em tudo", desc: "Bem-vindo à galáxia", color: "var(--neon-cyan)" },
+            { code: "ORBITA50", label: "R$50 off", desc: "Acima de R$300", color: "var(--neon-magenta)" },
+            { code: "DROP15", label: "15% off", desc: "Acima de R$500", color: "var(--neon-lime)" },
+          ].map((c, i) => (
+            <motion.button
+              key={c.code}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
+              whileHover={{ y: -4 }}
+              onClick={() => {
+                navigator.clipboard?.writeText(c.code).catch(() => {});
+                toast.success(`Cupom ${c.code} copiado! Use no checkout.`);
+              }}
+              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-white/20"
+            >
+              <div
+                className="absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-20 blur-2xl transition group-hover:opacity-40"
+                style={{ background: c.color }}
+              />
+              <div className="relative flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Cupom
+                  </p>
+                  <p className="font-mono text-lg font-black" style={{ color: c.color }}>
+                    {c.code}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{c.desc}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold">{c.label}</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground opacity-0 transition group-hover:opacity-100">
+                    Clique para copiar
+                  </p>
+                </div>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </section>
+
       {/* ---------- NOVIDADES ---------- */}
       {newest && newest.length > 0 && (
         <Section

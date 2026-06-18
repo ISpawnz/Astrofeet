@@ -117,6 +117,7 @@ export const api = {
     customer: Order["customer"];
     address: Order["address"];
     payment: Order["payment"];
+    couponCode?: string;
   }): Promise<Order> {
     const data = await request<{ order: Order }>("/api/orders", {
       method: "POST",
@@ -153,6 +154,26 @@ export const api = {
     const qs = new URLSearchParams({ code });
     if (email) qs.set("email", email);
     return request(`/api/orders/track?${qs.toString()}`);
+  },
+
+  // ---------- Coupons ----------
+  async validateCoupon(
+    code: string,
+    subtotal: number,
+  ): Promise<{
+    valid: boolean;
+    code: string;
+    type?: "percent" | "fixed";
+    value?: number;
+    description: string;
+    discount: number;
+    minSubtotal?: number;
+    message?: string;
+  }> {
+    return request("/api/coupons/validate", {
+      method: "POST",
+      body: JSON.stringify({ code, subtotal }),
+    });
   },
 
   // ---------- Reviews ----------

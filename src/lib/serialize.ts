@@ -14,6 +14,7 @@ export function serializeProduct(
     images: string;
     sizes: string;
     stock: number;
+    sizeStock?: string;
     rating: number;
     accent: string;
     badge: string | null;
@@ -26,6 +27,7 @@ export function serializeProduct(
 ): Product {
   let images: string[] = [];
   let sizes: number[] = [];
+  let sizeStock: Record<string, number> = {};
   try {
     images = JSON.parse(p.images || "[]");
   } catch {
@@ -35,6 +37,11 @@ export function serializeProduct(
     sizes = JSON.parse(p.sizes || "[]").map((n: unknown) => Number(n));
   } catch {
     sizes = [];
+  }
+  try {
+    sizeStock = JSON.parse(p.sizeStock || "{}");
+  } catch {
+    sizeStock = {};
   }
   if (!images.length) images = ["/products/placeholder.svg"];
   return {
@@ -48,6 +55,7 @@ export function serializeProduct(
     images,
     sizes,
     stock: p.stock,
+    sizeStock: Object.keys(sizeStock).length ? sizeStock : undefined,
     rating: p.rating,
     accent: p.accent,
     badge: p.badge,
@@ -55,6 +63,32 @@ export function serializeProduct(
     bestSeller: p.bestSeller,
     createdAt: p.createdAt.toISOString(),
     reviewCount: reviewCount ?? (p.reviews as { length?: number } | undefined)?.length ?? 0,
+  };
+}
+
+export function serializeCoupon(
+  c: {
+    id: string;
+    code: string;
+    type: string;
+    value: number;
+    minSubtotal: number;
+    active: boolean;
+    description: string;
+    expiresAt: string | null;
+    createdAt: Date;
+  },
+) {
+  return {
+    id: c.id,
+    code: c.code,
+    type: c.type as "percent" | "fixed",
+    value: c.value,
+    minSubtotal: c.minSubtotal,
+    active: c.active,
+    description: c.description,
+    expiresAt: c.expiresAt,
+    createdAt: c.createdAt.toISOString(),
   };
 }
 

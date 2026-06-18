@@ -36,6 +36,8 @@ export interface Product {
   images: string[];
   sizes: number[];
   stock: number;
+  /** Per-size stock map: { "38": 5, "39": 0, ... }. Optional — falls back to `stock` when absent. */
+  sizeStock?: Record<string, number>;
   rating: number;
   accent: string;
   badge: string | null;
@@ -43,6 +45,16 @@ export interface Product {
   bestSeller: boolean;
   createdAt: string;
   reviewCount?: number;
+}
+
+export interface Coupon {
+  code: string;
+  type: "percent" | "fixed";
+  value: number;
+  minSubtotal: number;
+  active: boolean;
+  description: string;
+  expiresAt?: string;
 }
 
 export interface Review {

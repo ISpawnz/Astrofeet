@@ -22,11 +22,25 @@ export interface SeedProduct {
   images: string;
   sizes: string;
   stock: number;
+  sizeStock?: string; // JSON: { "38": 5, "39": 0, ... }
   rating: number;
   accent: string;
   badge: string | null;
   featured: boolean;
   bestSeller: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SeedCoupon {
+  id: string;
+  code: string;
+  type: "percent" | "fixed";
+  value: number;
+  minSubtotal: number;
+  active: boolean;
+  description: string;
+  expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -78,6 +92,7 @@ export const SEED_PRODUCTS: Omit<SeedProduct, "id" | "createdAt" | "updatedAt">[
     images: JSON.stringify(["/products/orion-runner.png"]),
     sizes: JSON.stringify([38, 39, 40, 41, 42, 43]),
     stock: 32,
+    sizeStock: JSON.stringify({ "38": 4, "39": 6, "40": 7, "41": 6, "42": 5, "43": 4 }),
     rating: 4.7,
     accent: "#34e7ff",
     badge: "Novo",
@@ -95,6 +110,7 @@ export const SEED_PRODUCTS: Omit<SeedProduct, "id" | "createdAt" | "updatedAt">[
     images: JSON.stringify(["/products/lunar-drift.png"]),
     sizes: JSON.stringify([37, 38, 39, 40, 41, 42]),
     stock: 18,
+    sizeStock: JSON.stringify({ "37": 2, "38": 3, "39": 4, "40": 3, "41": 3, "42": 3 }),
     rating: 4.8,
     accent: "#c6ff5a",
     badge: "Drop limitado",
@@ -112,6 +128,7 @@ export const SEED_PRODUCTS: Omit<SeedProduct, "id" | "createdAt" | "updatedAt">[
     images: JSON.stringify(["/products/solar-pulse.png"]),
     sizes: JSON.stringify([39, 40, 41, 42, 43, 44]),
     stock: 24,
+    sizeStock: JSON.stringify({ "39": 3, "40": 5, "41": 5, "42": 4, "43": 4, "44": 3 }),
     rating: 4.9,
     accent: "#ffcf5a",
     badge: "Mais vendido",
@@ -129,6 +146,7 @@ export const SEED_PRODUCTS: Omit<SeedProduct, "id" | "createdAt" | "updatedAt">[
     images: JSON.stringify(["/products/nebula-dunk.png"]),
     sizes: JSON.stringify([37, 38, 39, 40, 41, 42, 43]),
     stock: 21,
+    sizeStock: JSON.stringify({ "37": 2, "38": 3, "39": 3, "40": 4, "41": 3, "42": 3, "43": 3 }),
     rating: 4.6,
     accent: "#a779ff",
     badge: "Novo",
@@ -146,6 +164,7 @@ export const SEED_PRODUCTS: Omit<SeedProduct, "id" | "createdAt" | "updatedAt">[
     images: JSON.stringify(["/products/void-classic.png"]),
     sizes: JSON.stringify([36, 37, 38, 39, 40, 42]),
     stock: 27,
+    sizeStock: JSON.stringify({ "36": 3, "37": 4, "38": 5, "39": 5, "40": 5, "42": 5 }),
     rating: 4.5,
     accent: "#ff5cf0",
     badge: null,
@@ -163,6 +182,7 @@ export const SEED_PRODUCTS: Omit<SeedProduct, "id" | "createdAt" | "updatedAt">[
     images: JSON.stringify(["/products/meteor-air.png"]),
     sizes: JSON.stringify([38, 39, 40, 41, 42, 43, 44]),
     stock: 15,
+    sizeStock: JSON.stringify({ "38": 1, "39": 2, "40": 3, "41": 3, "42": 2, "43": 2, "44": 2 }),
     rating: 4.8,
     accent: "#ff7a3c",
     badge: "Drop limitado",
@@ -180,6 +200,36 @@ export const SEED_REVIEWS: { slug: string; authorName: string; rating: number; c
   { slug: "solar-pulse", authorName: "Rafael T.", rating: 5, comment: "Melhor tênis de performance que já tive." },
   { slug: "void-classic", authorName: "Marcos L.", rating: 4, comment: "Clássico que faltava no meu armário. Aderência boa de skate." },
   { slug: "meteor-air", authorName: "Camila V.", rating: 5, comment: "O câmara de ar é sensacional, parece trampolim." },
+];
+
+export const SEED_COUPONS: Omit<SeedCoupon, "id" | "createdAt" | "updatedAt">[] = [
+  {
+    code: "GALAXIA10",
+    type: "percent",
+    value: 10,
+    minSubtotal: 0,
+    active: true,
+    description: "10% off em tudo. Bem-vindo à galáxia!",
+    expiresAt: null,
+  },
+  {
+    code: "ORBITA50",
+    type: "fixed",
+    value: 50,
+    minSubtotal: 300,
+    active: true,
+    description: "R$50 off em pedidos acima de R$300.",
+    expiresAt: null,
+  },
+  {
+    code: "DROP15",
+    type: "percent",
+    value: 15,
+    minSubtotal: 500,
+    active: true,
+    description: "15% off em pedidos acima de R$500. Para colecionadores de drops.",
+    expiresAt: null,
+  },
 ];
 
 export const nowIso = now;

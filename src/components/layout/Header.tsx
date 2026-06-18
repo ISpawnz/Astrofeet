@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
 import { useAuthStore } from "@/stores/auth";
-import { ShoppingCart, Search, User, Menu, X, LayoutDashboard, LogOut, Heart, Rocket } from "lucide-react";
+import { ShoppingCart, Search, User, Menu, X, LayoutDashboard, LogOut, Heart, Rocket, Package, UserCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useWishlistStore } from "@/stores/wishlist";
 import { Button } from "@/components/ui/button";
@@ -161,6 +161,20 @@ export function Header() {
                     <Rocket className="mr-2 h-4 w-4" />
                     Rastrear pedido
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => navigate("account")}
+                    className="cursor-pointer"
+                  >
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    Minha conta
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => navigate("account")}
+                    className="cursor-pointer"
+                  >
+                    <Package className="mr-2 h-4 w-4" />
+                    Meus pedidos
+                  </DropdownMenuItem>
                   {user.role === "admin" && (
                     <DropdownMenuItem
                       onClick={() => navigate("admin")}
@@ -209,7 +223,7 @@ export function Header() {
         <div
           className={cn(
             "overflow-hidden border-t border-white/5 transition-all md:hidden",
-            mobileOpen ? "max-h-80" : "max-h-0",
+            mobileOpen ? "max-h-96" : "max-h-0",
           )}
         >
           <nav className="flex flex-col gap-1 px-4 py-3">
@@ -252,6 +266,17 @@ export function Header() {
             >
               <Rocket className="h-4 w-4" /> Rastrear pedido
             </button>
+            {showUser && (
+              <button
+                onClick={() => {
+                  navigate("account");
+                  setMobileOpen(false);
+                }}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-foreground/80 hover:bg-white/5"
+              >
+                <UserCircle className="h-4 w-4" /> Minha conta
+              </button>
+            )}
             {!showUser && (
               <button
                 onClick={() => {

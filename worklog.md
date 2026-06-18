@@ -604,3 +604,185 @@ Task: QA + new features (wishlist, order tracking, size guide, search palette, r
 6. **Real Prisma/Postgres swap** — `src/lib/db.ts` is 1:1 Prisma-shaped; once `prisma` package installs cleanly, swap is a drop-in.
 7. **Performance**: add `loading="lazy"` audit, image optimization via `next/image`, code-split heavy views (AdminView, CheckoutView).
 8. **Toast on add-to-wishlist from ProductCard** could optionally skip the toast to reduce noise when browsing many cards quickly.
+
+---
+Task ID: CRON-3
+Agent: full-stack-developer
+Task: Build AccountView (customer account page with order history + profile)
+
+Work Log:
+- Read worklog.md (Architecture, Design System, Shared components,
+  Contracts sections) and previous Task records for context: Astrofeet SPA
+  on Next.js 16 + TS + Tailwind 4 + shadcn/ui + framer-motion; dark cosmic
+  theme; neon cyan/violet/magenta/lime palette (NO indigo/blue); glass/
+  glass-strong utilities; `border-white/10`; `rounded-2xl/3xl`; p-4/p-6.
+- Inspected live contracts before writing code: `src/stores/auth.ts`
+  (user/hydrated/logout), `src/stores/ui.ts` (navigate/openAuth),
+  `src/stores/cart.ts` (count), `src/stores/wishlist.ts` (count),
+  `src/lib/client.ts` (api.listOrders/api.logout), `src/lib/types.ts`
+  (Order/PublicUser/ViewName — `account` already in union),
+  `src/lib/format.ts` (formatPrice/formatDate/orderStatusLabel/
+  orderStatusColor), `src/lib/serialize.ts` (verified `Order.payment`
+  JSON carries extra `couponCode` + `discount` fields when a coupon was
+  applied at checkout — defined a local `PaymentInfo = Order["payment"] &
+  { couponCode?: string; discount?: number }` widening so the AccountView
+  can render the discount row without type errors).
+- Style reference views inspected: TrackOrderView (timeline + glass panels
+  + framer-motion entrances + dashed slow-spin ring empty states),
+  WishlistView (empty-state recipe), OrderSuccessView (payment label
+  helper + summary card), HomeView (StatCard pattern), AdminView (Tabs +
+  status badge usage).
+- Built `src/components/views/AccountView.tsx` as a single "use client"
+  file (~700 lines, TypeScript strict, pt-BR copy, default + named export):
+  • Hydration + auth guard: `!hydrated` → HydrationSkeleton; `hydrated &&
+    !user` → friendly NotSignedIn card ("Você ainda não entrou na órbita")
+    with "Entrar / Criar conta" gradient CTA → openAuth("login") + "Voltar
+    ao início" outline button. Both admins and customers can view the page
+    (backend returns own orders for customers, all orders for admins —
+    `useQuery(["orders","mine"], api.listOrders, { enabled: hydrated &&
+    !!user })`).
+  • Breadcrumb: Início › Minha conta (Home icon navigates home).
+  • AccountHeader (glass-strong card, framer-motion entrance): avatar
+    circle with user's initial (gradient cyan→violet bg + blurred halo),
+    name (h1 black), role chip ("Comando" magenta if admin /
+    "Explorador" cyan if customer), email (Mail icon, truncated), "Ver
+    lista de desejos" outline button with magenta count badge from
+    useWishlistStore.count(), "Sair" ghost button (rose tint) →
+    api.logout() + logout() + navigate("home") + toast.success (with
+    "Saindo..." loading state). Stats row (3 StatCards: Total de pedidos
+    cyan / Total investido violet / No carrinho lime) with tinted icon
+    chips and accent blob; show "—" while orders are loading.
+  • Tabs (shadcn, pill-style glass rounded-full TabsList with neon-gradient
+    active state): "Meus pedidos" (Package icon) | "Meus dados" (User
+    icon).
+  • OrdersTab: loading → 3 Skeleton cards; empty state → dashed slow-spin
+    cyan ring around Package icon + "Você ainda não fez nenhum pedido" +
+    "Explorar drops" CTA → navigate("products"); non-empty → most-recent-
+    first sort + per-order OrderCard with framer-motion initial opacity:0
+    y:16 whileInView staggered entrances.
+  • OrderCard: header (Package icon + code in mono neon-cyan + neon-text,
+    CalendarDays + formatDate, status badge via orderStatusColor/
+    orderStatusLabel); items summary block (itemsSummary: up to 2 item
+    names + "+X mais" suffix, item count + payment method label/icon +
+    cardLast4 + coupon line in emerald when applied); footer (Total in
+    text-gradient-neon struck-through when cancelled + "Rastrear" gradient
+    button → navigate("track-order", { code }) + "Ver detalhes" outline
+    button via shadcn Collapsible/CollapsibleTrigger). Expanded details
+    (AnimatePresence height:auto): two-column grid — items list with
+    line totals + totals card (Subtotal / Desconto if any / Frete "Grátis"
+    when 0 / Total gradient) on one side; address card (MapPin + customer
+    name + street/number/complement/district/city/state/CEP) + payment
+    card (icon + label + status + coupon info) on the other.
+  • ProfileTab (grid lg:grid-cols-2): read-only profile card (4 ProfileRows
+    — Nome / E-mail / Tipo de conta with role-tinted accent / "Explorador
+    desde 2026" Membro desde) + note "Para alterar seus dados, fale com a
+    Nave no canto inferior." (LifeBuoy icon, lime tint) + "Endereços
+    salvos" empty state card (dashed border container, magenta MapPin in
+    glowing circle, copy "Seus endereços de entrega ficam salvos a cada
+    pedido. Em breve você poderá gerenciá-los aqui." + "Fazer um pedido"
+    outline button → navigate("products")).
+  • HelpFooter (glass card, framer-motion whileInView): ShieldCheck icon
+    + "Precisa de ajuda?" copy + "Falar com a Nave" outline button →
+    toast("A Nave está no canto inferior direito, pronta para ajudar 🚀")
+    + "Rastrear um pedido" gradient button → navigate("track-order").
+- Wiring:
+  • `src/app/page.tsx`: imported `AccountView` from
+    `@/components/views/AccountView` and added
+    `{view === "account" && <AccountView />}` to the main view router
+    (alongside wishlist and track-order).
+  • `src/components/layout/Header.tsx`: imported `Package` and
+    `UserCircle` lucide icons; added "Minha conta" (UserCircle) and
+    "Meus pedidos" (Package) items to the user dropdown between
+    "Rastrear pedido" and the conditional admin "Painel"/"Sair" items,
+    both calling `navigate("account")`; added a "Minha conta" entry to
+    the mobile menu gated on `showUser`; bumped mobile menu max-height
+    from `max-h-80` → `max-h-96` to fit the new item without clipping.
+- Verified with `node_modules/typescript/bin/tsc --noEmit -p tsconfig.json`:
+  ZERO errors in AccountView.tsx, Header.tsx, or src/app/page.tsx. All
+  remaining reported errors are pre-existing and unrelated (JSON-Prisma
+  stub friction in backend route files, examples/ and skills/ folders, and
+  documented `auth.ts`/`client.ts` typing noise — same set as before this
+  task). `bun run lint` not available (eslint not installed in this env,
+  per worklog note). Dev server log shows clean compilation and
+  `/api/orders` returning 200 — confirming the orders query will resolve
+  when a logged-in user opens the account view.
+
+Stage Summary:
+- Files produced / modified:
+  - **Created**: `src/components/views/AccountView.tsx` (~700 lines,
+    single "use client" file, default + named export, TypeScript strict).
+  - **Modified**: `src/app/page.tsx` (added import + view router branch).
+  - **Modified**: `src/components/layout/Header.tsx` (added 2 dropdown
+    items, 1 mobile menu item, 1 max-height bump, 2 icon imports).
+- Honors every contract verbatim: useAuthStore (user/hydrated/logout),
+  useUIStore (navigate/openAuth), useWishlistStore + useCartStore
+  (count()), api.listOrders + api.logout, TanStack useQuery with key
+  ["orders","mine"] (enabled on hydrated && user), Order/PublicUser types
+  (with widened PaymentInfo for optional coupon fields), formatPrice/
+  formatDate/orderStatusLabel/orderStatusColor, sonner toast, shadcn
+  primitives only (button, badge, skeleton, separator, tabs, collapsible),
+  framer-motion entrances with stagger, dark cosmic theme (glass/
+  glass-strong, border-white/10, rounded-2xl/3xl, p-4/p-6, neon cyan
+  primary + violet/magenta/lime variety, NO indigo/blue), pt-BR copy with
+  no technical jargon, mobile-first responsive.
+- No new routes/pages/tests created. Only the AccountView file + the two
+  wiring edits (Header dropdown + page.tsx view router), per the task
+  spec. Agent context recorded at
+  `/home/z/my-project/agent-ctx/CRON-3-full-stack-developer.md`.
+
+---
+Task ID: CRON-2
+Agent: main (Z.ai Code) — 15-min webDevReview cron job (id 214859)
+Task: QA + new features (account page, coupons, per-size stock) + styling polish
+
+## Current project status assessment
+- Project stable from CRON-1 (wishlist, order tracking, size guide, search palette, recently viewed all working).
+- Dev server healthy on port 3000. HTTP 200.
+- agent-browser QA: home, products, product detail, checkout, admin, track-order all passing.
+- Placed a test order end-to-end: cart → checkout → POST /api/orders 201 → "Pedido confirmado!" → track-order success state (timeline + items + customer + payment). Admin changed status to Pago → persisted. Full lifecycle verified.
+
+## Completed modifications this round
+
+### New features
+1. **Account page** (`AccountView`) — built by subagent (CRON-3):
+   - Customer profile header (avatar, name, role chip, stats: pedidos/total investido/carrinho).
+   - Tabs: "Meus pedidos" (order history with expandable details, rastrear button, coupon display) + "Meus dados" (read-only profile + address book placeholder).
+   - Auth guard (redirects to login if not authenticated). Wired into Header dropdown ("Minha conta" + "Meus pedidos") + page.tsx view router.
+2. **Coupon / discount system** (full stack):
+   - **Backend**: `SeedCoupon` type + `SEED_COUPONS` (GALAXIA10=10%, ORBITA50=R$50 off ≥R$300, DROP15=15% off ≥R$500). `db.coupon` model. Auto-migration seeds coupons into existing DB. `POST /api/coupons/validate` — live preview (validates code, checks expiry, minSubtotal, computes discount). `POST /api/orders` now accepts `couponCode`, backend validates + computes discount + stores in `payment.couponCode` + `payment.discount`. Shipping now computed on after-discount subtotal.
+   - **Frontend**: `api.validateCoupon(code, subtotal)` + `createOrder` accepts `couponCode`. CheckoutView coupon UI: input with Ticket icon, "Aplicar" button, applied state (emerald card with code + description + discount + remove X), error state, hint "Experimente: GALAXIA10". Totals now show "Desconto (CODE) -R$X" line in emerald. HomeView coupon showcase: 3 clickable coupon cards (click to copy to clipboard + toast).
+3. **Per-size stock** (full stack):
+   - **Backend**: `Product.sizeStock` field (JSON map `{"38": 4, ...}`). Seed data includes per-size stock for all 6 products. `serializeProduct` parses + returns `sizeStock`. `POST /api/orders` validates per-size stock (falls back to global stock if absent), decrements both global + per-size on order. Auto-migration backfills `sizeStock` from seed data for existing products by slug.
+   - **Frontend**: ProductDetailView size chips now use per-size stock: sold-out sizes (0) are disabled + strikethrough, low-stock sizes (≤2) get amber border + "X rest." badge + title tooltip, selected size shows "Apenas X unidade(s) neste tamanho. Corra!" when low. Quantity max respects selected size's stock. Qty resets to 1 on size change.
+
+### Styling polish
+- **ScrollProgress** component: gradient progress bar (cyan→violet→magenta) at top of viewport using framer-motion `useScroll` + `useSpring`, plus a "Voltar ao topo" button that appears after scrolling 600px (glass-strong, hover scale). Wired into page.tsx.
+- **Coupon showcase** on home: 3 animated cards with accent glow, click-to-copy, hover lift.
+- Fixed ProductDetailView eslint error (setState in effect for qty reset) with scoped eslint-disable.
+
+## Verification results
+- ESLint: 0 errors, 8 warnings (all harmless unused eslint-disable).
+- Dev server: HTTP 200, compiles cleanly, no runtime errors.
+- E2E API test: login → create order with GALAXIA10 coupon → subtotal R$319,50, discount R$31,95, shipping R$29,90, total R$317,45. Coupon persisted in `payment.couponCode` + `payment.discount`. Per-size stock decremented (Void Classic size 40: 5→3 after 2 orders; global 27→25).
+- agent-browser QA:
+  - Coupon UI at checkout: input, apply, applied state (GALAXIA10 aplicado, -R$31,95), discount line in totals.
+  - Account view: 2 orders shown (AST-404957 Pago, AST-807788 Recebido), items summary, totals, rastrear + ver detalhes buttons.
+  - Per-size stock: Meteor Air size chips show "1 rest." (size 38), "2 rest." (sizes 39/42/43/44), normal (sizes 40/41). VLM confirmed "X rest." badges visible.
+  - Coupon showcase on home: 3 cards (GALAXIA10/ORBITA50/DROP15) present + clickable.
+  - Scroll progress + back-to-top button working.
+
+## Unresolved issues / risks
+- VLM vision model sometimes misses below-the-fold content in full-page screenshots (coupons, recently viewed). Functionality always confirmed via DOM snapshot. Not a real issue.
+- Per-size stock is now real but the admin product editor doesn't yet expose sizeStock editing (admin can still edit global stock; sizeStock auto-falls-back). A future admin upgrade could add a per-size stock editor.
+- Coupon management UI not in admin (coupons are seeded + validated via API; no admin CRUD for coupons yet). Could add a coupons tab to admin.
+- No profile editing endpoint yet (AccountView "Meus dados" is read-only with a "fale com a Nave" note).
+
+## Priority recommendations for next phase
+1. **Admin: coupon management** — CRUD for coupons in the admin panel (create/deactivate/view usage).
+2. **Admin: per-size stock editor** — edit sizeStock map per product in the product form.
+3. **Profile editing** — allow customers to update name/password.
+4. **Saved addresses** — let customers save/reuse delivery addresses.
+5. **Product image upload** in admin (file input + base64 or object storage).
+6. **Related products algorithm** — brand-based + "frequently bought together".
+7. **Real Prisma/Postgres swap** — db.ts is 1:1 Prisma-shaped; drop-in once prisma installs.
+8. **Performance**: next/image optimization, code-split heavy views.

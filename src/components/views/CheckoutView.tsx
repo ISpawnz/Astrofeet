@@ -13,6 +13,9 @@ import {
   ShoppingBag,
   Loader2,
   Sparkles,
+  Ticket,
+  Check,
+  X,
 } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { useUIStore } from "@/stores/ui";
@@ -100,6 +103,16 @@ export function CheckoutView() {
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Coupon state
+  const [couponInput, setCouponInput] = useState("");
+  const [couponState, setCouponState] = useState<{
+    status: "idle" | "validating" | "applied" | "error";
+    code?: string;
+    description?: string;
+    discount?: number;
+    message?: string;
+  }>({ status: "idle" });
+
   // Prefill from authenticated user
   useEffect(() => {
     if (user) {
@@ -112,8 +125,43 @@ export function CheckoutView() {
   }, [user]);
 
   const sub = subtotal();
-  const shipping = sub === 0 || sub >= FREE_SHIPPING ? 0 : BASE_SHIPPING;
-  const total = sub + shipping;
+  const discount = couponState.status === "applied" ? couponState.discount ?? 0 : 0;
+  const afterDiscount = Math.max(0, sub - discount);
+  const shipping = afterDiscount === 0 || afterDiscount >= FREE_SHIPPING ? 0 : BASE_SHIPPING;
+  const total = afterDiscount + shipping;
+
+  async function applyCoupon() {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponState({ status: "validating" });
+    try {
+      const res = await api.validateCoupon(code, sub);
+      if (res.valid) {
+        setCouponState({
+          status: "applied",
+          code: res.code,
+          description: res.description,
+          discount: res.discount,
+        });
+        toast.success(`Cupom ${res.code} aplicado! -${formatPrice(res.discount)}`);
+      } else {
+        setCouponState({
+          status: "error",
+          message: res.message ?? "Cupom não aplicável.",
+        });
+        toast.error(res.message ?? "Cupom não aplicável.");
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Cupom inválido.";
+      setCouponState({ status: "error", message: msg });
+      toast.error(msg);
+    }
+  }
+
+  function removeCoupon() {
+    setCouponInput("");
+    setCouponState({ status: "idle" });
+  }
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -195,6 +243,8 @@ export function CheckoutView() {
           method: form.payment,
           cardLast4,
         },
+        couponCode:
+          couponState.status === "applied" ? couponState.code : undefined,
       });
 
       clear();
@@ -666,6 +716,89 @@ export function CheckoutView() {
 
             <Separator className="my-4 bg-white/10" />
 
+            {/* Coupon */}
+            <div className="mb-3">
+              {couponState.status === "applied" ? (
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+                      <Check className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-xs font-bold text-emerald-300">
+                        {couponState.code} aplicado
+                      </p>
+                      <p className="text-[11px] text-emerald-300/70">
+                        {couponState.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-emerald-300">
+                      -{formatPrice(couponState.discount ?? 0)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="text-emerald-300/60 transition hover:text-emerald-200"
+                      aria-label="Remover cupom"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Ticket className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value.toUpperCase());
+                        if (couponState.status === "error")
+                          setCouponState({ status: "idle" });
+                      }}
+                      placeholder="Cupom de desconto"
+                      className="h-10 w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-3 text-sm uppercase tracking-wider outline-none placeholder:text-muted-foreground/60 focus:border-[var(--neon-cyan)]"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={applyCoupon}
+                    disabled={
+                      !couponInput.trim() || couponState.status === "validating"
+                    }
+                    className="h-10 shrink-0 rounded-xl bg-white/10 px-4 text-sm font-semibold transition hover:bg-white/15 disabled:opacity-40"
+                  >
+                    {couponState.status === "validating" ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Aplicar"
+                    )}
+                  </button>
+                </div>
+              )}
+              {couponState.status === "error" && (
+                <p className="mt-1.5 text-xs text-rose-400">
+                  {couponState.message}
+                </p>
+              )}
+              {couponState.status === "idle" && (
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Experimente:{" "}
+                  <button
+                    type="button"
+                    onClick={() => setCouponInput("GALAXIA10")}
+                    className="font-mono font-semibold text-[var(--neon-cyan)] hover:underline"
+                  >
+                    GALAXIA10
+                  </button>{" "}
+                  (10% off)
+                </p>
+              )}
+            </div>
+
             {/* Totals */}
             <div className="space-y-1.5 text-sm">
               <div className="flex justify-between text-muted-foreground">
@@ -674,6 +807,12 @@ export function CheckoutView() {
                   {formatPrice(sub)}
                 </span>
               </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-emerald-400">
+                  <span>Desconto ({couponState.code})</span>
+                  <span className="font-semibold">-{formatPrice(discount)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-muted-foreground">
                 <span>Frete</span>
                 {shipping === 0 ? (
@@ -686,7 +825,7 @@ export function CheckoutView() {
                   </span>
                 )}
               </div>
-              {shipping === 0 && sub > 0 && (
+              {shipping === 0 && afterDiscount > 0 && (
                 <p className="flex items-center gap-1.5 text-xs text-[var(--neon-lime)]">
                   <Sparkles className="h-3 w-3" />
                   Frete grátis liberado!

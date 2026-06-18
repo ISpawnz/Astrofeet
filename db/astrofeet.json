@@ -37,7 +37,8 @@
       "featured": true,
       "bestSeller": false,
       "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T15:33:27.790Z"
+      "updatedAt": "2026-06-18T15:33:27.790Z",
+      "sizeStock": "{\"38\":4,\"39\":6,\"40\":7,\"41\":6,\"42\":5,\"43\":4}"
     },
     {
       "id": "0a11af5d-f300-4afd-b34e-912707cae162",
@@ -56,7 +57,8 @@
       "featured": true,
       "bestSeller": true,
       "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T15:15:44.053Z"
+      "updatedAt": "2026-06-18T15:15:44.053Z",
+      "sizeStock": "{\"37\":2,\"38\":3,\"39\":4,\"40\":3,\"41\":3,\"42\":3}"
     },
     {
       "id": "acb1cea4-6f15-4922-ba99-237dbf346b0e",
@@ -75,7 +77,8 @@
       "featured": true,
       "bestSeller": true,
       "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T15:15:44.053Z"
+      "updatedAt": "2026-06-18T15:15:44.053Z",
+      "sizeStock": "{\"39\":3,\"40\":5,\"41\":5,\"42\":4,\"43\":4,\"44\":3}"
     },
     {
       "id": "c986f99c-16ed-4ab9-90a1-be2c2201c1d6",
@@ -94,7 +97,8 @@
       "featured": false,
       "bestSeller": false,
       "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T15:15:44.053Z"
+      "updatedAt": "2026-06-18T15:15:44.053Z",
+      "sizeStock": "{\"37\":2,\"38\":3,\"39\":3,\"40\":4,\"41\":3,\"42\":3,\"43\":3}"
     },
     {
       "id": "6ab33e56-72c5-44ae-8150-d37ee3bff44f",
@@ -106,14 +110,15 @@
       "description": "Clássico atemporal com contraste escuro para looks noturnos. Camurça preta, detalhes em neon magenta e solado vulcanizado de aderência absurda. Um void que combina com tudo.",
       "images": "[\"/products/void-classic.png\"]",
       "sizes": "[36,37,38,39,40,42]",
-      "stock": 27,
+      "stock": 25,
       "rating": 4.5,
       "accent": "#ff5cf0",
       "badge": null,
       "featured": false,
       "bestSeller": true,
       "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T15:15:44.053Z"
+      "updatedAt": "2026-06-18T16:19:50.966Z",
+      "sizeStock": "{\"36\":3,\"37\":4,\"38\":5,\"39\":5,\"40\":3,\"42\":5}"
     },
     {
       "id": "26738dfe-d3ca-45d9-ad74-899baa095a96",
@@ -125,14 +130,15 @@
       "description": "Solado com câmara de ar visível e cabedal em gradiente ígneo. O Meteor Air absorve o impacto e devolve energia a cada passada, como uma chuva de meteoros sob seus pés.",
       "images": "[\"/products/meteor-air.png\"]",
       "sizes": "[38,39,40,41,42,43,44]",
-      "stock": 15,
+      "stock": 14,
       "rating": 4.8,
       "accent": "#ff7a3c",
       "badge": "Drop limitado",
       "featured": false,
       "bestSeller": false,
       "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T15:15:44.053Z"
+      "updatedAt": "2026-06-18T16:00:04.958Z",
+      "sizeStock": "{\"38\":1,\"39\":2,\"40\":3,\"41\":3,\"42\":2,\"43\":2,\"44\":2}"
     }
   ],
   "orders": [
@@ -150,6 +156,51 @@
       "customer": "{\"name\":\"Comando Astrofeet\",\"email\":\"admin@astrofeet.com\",\"phone\":\"(11) 99999-0000\"}",
       "address": "{\"cep\":\"01310-100\",\"street\":\"Av. Paulista\",\"number\":\"1000\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
       "payment": "{\"method\":\"card\",\"cardLast4\":\"1111\"}"
+    },
+    {
+      "id": "97ba41f3-c41e-4ff1-bab6-574cd0e155ac",
+      "createdAt": "2026-06-18T16:00:04.957Z",
+      "updatedAt": "2026-06-18T16:01:24.976Z",
+      "code": "AST-404957",
+      "userId": "0b32c14b-29a8-494b-a52e-4b1957d04435",
+      "status": "paid",
+      "items": "[{\"productId\":\"26738dfe-d3ca-45d9-ad74-899baa095a96\",\"slug\":\"meteor-air\",\"name\":\"Meteor Air\",\"quantity\":1,\"size\":41,\"unitPrice\":459,\"subtotal\":459}]",
+      "subtotal": 459,
+      "shipping": 0,
+      "total": 459,
+      "customer": "{\"name\":\"Comando Astrofeet\",\"email\":\"admin@astrofeet.com\",\"phone\":\"(11) 99999-0000\"}",
+      "address": "{\"cep\":\"01310-100\",\"street\":\"Av. Paulista\",\"number\":\"1000\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
+      "payment": "{\"method\":\"card\",\"cardLast4\":\"1111\"}"
+    },
+    {
+      "id": "0b9e3df6-ba7f-43dc-b231-9dcf984238cd",
+      "createdAt": "2026-06-18T16:19:42.804Z",
+      "updatedAt": "2026-06-18T16:19:42.804Z",
+      "code": "AST-582804",
+      "userId": "f76722d5-870c-4f39-a710-5b6557ef3ded",
+      "status": "paid",
+      "items": "[{\"productId\":\"6ab33e56-72c5-44ae-8150-d37ee3bff44f\",\"slug\":\"void-classic\",\"name\":\"Void Classic\",\"quantity\":1,\"size\":40,\"unitPrice\":319.5,\"subtotal\":319.5}]",
+      "subtotal": 319.5,
+      "shipping": 29.9,
+      "total": 317.45,
+      "customer": "{\"name\":\"Teste Cupom\",\"email\":\"explorador@astrofeet.com\",\"phone\":\"\"}",
+      "address": "{\"cep\":\"01310-100\",\"street\":\"Av Paulista\",\"number\":\"100\",\"complement\":\"\",\"district\":\"Centro\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
+      "payment": "{\"method\":\"pix\",\"couponCode\":\"GALAXIA10\",\"discount\":31.95}"
+    },
+    {
+      "id": "514d7c0d-59c4-4212-bc29-4b64f5b78b5f",
+      "createdAt": "2026-06-18T16:19:50.965Z",
+      "updatedAt": "2026-06-18T16:19:50.965Z",
+      "code": "AST-590965",
+      "userId": "f76722d5-870c-4f39-a710-5b6557ef3ded",
+      "status": "paid",
+      "items": "[{\"productId\":\"6ab33e56-72c5-44ae-8150-d37ee3bff44f\",\"slug\":\"void-classic\",\"name\":\"Void Classic\",\"quantity\":1,\"size\":40,\"unitPrice\":319.5,\"subtotal\":319.5}]",
+      "subtotal": 319.5,
+      "shipping": 29.9,
+      "total": 317.45,
+      "customer": "{\"name\":\"Teste Cupom2\",\"email\":\"explorador@astrofeet.com\",\"phone\":\"\"}",
+      "address": "{\"cep\":\"01310-100\",\"street\":\"Av Paulista\",\"number\":\"100\",\"complement\":\"\",\"district\":\"Centro\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
+      "payment": "{\"method\":\"pix\",\"couponCode\":\"GALAXIA10\",\"discount\":31.95}"
     }
   ],
   "reviews": [
@@ -224,6 +275,44 @@
       "rating": 5,
       "comment": "O câmara de ar é sensacional, parece trampolim.",
       "createdAt": "2026-06-18T15:15:44.053Z"
+    }
+  ],
+  "coupons": [
+    {
+      "id": "69029523-640d-4077-a7d0-ca0b2a026fe0",
+      "code": "GALAXIA10",
+      "type": "percent",
+      "value": 10,
+      "minSubtotal": 0,
+      "active": true,
+      "description": "10% off em tudo. Bem-vindo à galáxia!",
+      "expiresAt": null,
+      "createdAt": "2026-06-18T16:05:21.288Z",
+      "updatedAt": "2026-06-18T16:05:21.288Z"
+    },
+    {
+      "id": "c4366b51-34cc-436a-ba99-62006eb544de",
+      "code": "ORBITA50",
+      "type": "fixed",
+      "value": 50,
+      "minSubtotal": 300,
+      "active": true,
+      "description": "R$50 off em pedidos acima de R$300.",
+      "expiresAt": null,
+      "createdAt": "2026-06-18T16:05:21.288Z",
+      "updatedAt": "2026-06-18T16:05:21.288Z"
+    },
+    {
+      "id": "9c76a846-2e80-44e7-ade2-1b872447b3e0",
+      "code": "DROP15",
+      "type": "percent",
+      "value": 15,
+      "minSubtotal": 500,
+      "active": true,
+      "description": "15% off em pedidos acima de R$500. Para colecionadores de drops.",
+      "expiresAt": null,
+      "createdAt": "2026-06-18T16:05:21.288Z",
+      "updatedAt": "2026-06-18T16:05:21.288Z"
     }
   ]
 }
