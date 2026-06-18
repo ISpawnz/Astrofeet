@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser, requireAdmin } from "@/lib/auth";
 import { serializeOrder } from "@/lib/serialize";
 import { HttpError, handleApiError, ok } from "@/lib/api";
+import { sendEmailNotification, buildOrderConfirmationBody } from "@/lib/notifications";
 import type { OrderLineItem, Order } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -263,6 +264,29 @@ export async function POST(req: NextRequest) {
           data: { sizeStock: JSON.stringify(sizeStock) },
         });
       }
+    }
+
+    // Queue a confirmation "email" notification (mock).
+    try {
+      const serializedOrder = serializeOrder(order);
+      await sendEmailNotification({
+        type: "order_created",
+        to: customer.email,
+        subject: `Pedido ${order.code} confirmado · Astrofeet`,
+        body: buildOrderConfirmationBody({
+          code: order.code,
+          customer: { name: customer.name },
+          items: serializedOrder.items,
+          total: serializedOrder.total,
+          subtotal: serializedOrder.subtotal,
+          shipping: serializedOrder.shipping,
+          payment: serializedOrder.payment,
+          address: serializedOrder.address,
+        }),
+        orderId: order.id,
+      });
+    } catch {
+      // Non-fatal: notification failure should never block order creation.
     }
 
     return ok({ order: serializeOrder(order) }, 201);

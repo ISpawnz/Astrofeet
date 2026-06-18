@@ -1,4 +1,4 @@
-import type { Product, Review, Order, OrderLineItem } from "@/lib/types";
+import type { Product, Review, Order, OrderLineItem, Address, Notification, NotificationType } from "@/lib/types";
 
 // Parse the JSON-encoded arrays stored on the Product model and return a clean
 // public shape (never leak internal storage details to the client).
@@ -161,5 +161,59 @@ export function serializeOrder(o: {
     address,
     payment,
     createdAt: o.createdAt.toISOString(),
+  };
+}
+
+export function serializeAddress(a: {
+  id: string;
+  userId: string;
+  label: string;
+  recipient: string;
+  cep: string;
+  street: string;
+  number: string;
+  complement?: string;
+  district: string;
+  city: string;
+  state: string;
+  isDefault: boolean;
+  createdAt: Date;
+}): Address {
+  return {
+    id: a.id,
+    userId: a.userId,
+    label: a.label,
+    recipient: a.recipient,
+    cep: a.cep,
+    street: a.street,
+    number: a.number,
+    complement: a.complement || undefined,
+    district: a.district,
+    city: a.city,
+    state: a.state,
+    isDefault: Boolean(a.isDefault),
+    createdAt: a.createdAt.toISOString(),
+  };
+}
+
+export function serializeNotification(n: {
+  id: string;
+  type: string;
+  to: string;
+  subject: string;
+  body: string;
+  orderId?: string | null;
+  sentAt: Date;
+  status: string;
+}): Notification {
+  return {
+    id: n.id,
+    type: n.type as NotificationType,
+    to: n.to,
+    subject: n.subject,
+    body: n.body,
+    orderId: n.orderId ?? null,
+    sentAt: n.sentAt.toISOString(),
+    status: n.status as Notification["status"],
   };
 }

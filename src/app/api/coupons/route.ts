@@ -12,7 +12,36 @@ export async function GET() {
     const coupons = await db.coupon.findMany({
       orderBy: { createdAt: "desc" },
     });
-    return ok({ coupons: coupons.map(serializeCoupon) });
+    const orders = await db.order.findMany({});
+    // Tally usage per coupon code by scanning the payment JSON.
+    const usageByCode = new Map<string, { count: number; totalDiscount: number }>();
+    for (const o of orders) {
+      try {
+        const payment = JSON.parse((o.payment as string) || "{}") as {
+          couponCode?: string;
+          discount?: number;
+        };
+        if (payment.couponCode) {
+          const code = String(payment.couponCode).toUpperCase();
+          const prev = usageByCode.get(code) ?? { count: 0, totalDiscount: 0 };
+          prev.count += 1;
+          prev.totalDiscount += Number(payment.discount ?? 0);
+          usageByCode.set(code, prev);
+        }
+      } catch {
+        /* ignore malformed payment JSON */
+      }
+    }
+    const serialized = coupons.map((c) => {
+      const base = serializeCoupon(c);
+      const usage = usageByCode.get((c.code as string).toUpperCase());
+      return {
+        ...base,
+        usageCount: usage?.count ?? 0,
+        totalDiscount: Number((usage?.totalDiscount ?? 0).toFixed(2)),
+      };
+    });
+    return ok({ coupons: serialized });
   } catch (e) {
     return handleApiError(e);
   }

@@ -20,11 +20,11 @@ export function HomeView() {
 
   const { data: featured } = useQuery({
     queryKey: ["products", "featured"],
-    queryFn: () => api.products({ featured: "true" }),
+    queryFn: () => api.products({ featured: true }),
   });
   const { data: bestSellers } = useQuery({
     queryKey: ["products", "bestSeller"],
-    queryFn: () => api.products({ bestSeller: "true" }),
+    queryFn: () => api.products({ bestSeller: true }),
   });
   const { data: newest } = useQuery({
     queryKey: ["products", "newest"],
@@ -75,7 +75,7 @@ export function HomeView() {
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <button
                 onClick={() => navigate("products")}
-                className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black transition hover:opacity-90"
+                className="btn-cosmic group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black transition hover:opacity-90"
               >
                 Explorar drops
                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
@@ -264,7 +264,12 @@ export function HomeView() {
         <Section
           eyebrow="Recém-chegados"
           title="Novidades no radar"
-          icon={<Sparkles className="h-4 w-4 text-[var(--neon-cyan)]" />}
+          icon={
+            <span className="relative flex h-2 w-2">
+              <span className="pulse-dot absolute inline-flex h-full w-full rounded-full bg-[var(--neon-lime)]" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--neon-lime)]" />
+            </span>
+          }
           action={() => navigate("products", { sort: "newest" })}
           actionLabel="Ver novidades"
         >
@@ -386,18 +391,19 @@ function Section({
 }) {
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
+      <div className="orbit-divider mb-6" />
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
           <p className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
             {icon}
             {eyebrow}
           </p>
-          <h2 className="mt-1 text-2xl font-black sm:text-3xl">{title}</h2>
+          <h2 className="text-glow-hover mt-1 text-2xl font-black sm:text-3xl">{title}</h2>
         </div>
         {action && actionLabel && (
           <button
             onClick={action}
-            className="group inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[var(--neon-cyan)] hover:underline"
+            className="nav-underline group inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[var(--neon-cyan)]"
           >
             {actionLabel}
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />

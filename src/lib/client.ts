@@ -6,6 +6,8 @@ import type {
   Order,
   PublicUser,
   Coupon,
+  Address,
+  Notification,
 } from "@/lib/types";
 
 async function request<T>(
@@ -23,8 +25,12 @@ async function request<T>(
   const text = await res.text();
   const data = text ? safeParse(text) : null;
   if (!res.ok) {
+    const parsedMessage =
+      data && typeof data === "object" && "message" in data
+        ? String((data as { message?: unknown }).message)
+        : "";
     const message =
-      (data && (data as { message?: string }).message) ||
+      parsedMessage ||
       `Erro ${res.status}: não foi possível concluir a ação.`;
     throw new Error(message);
   }
@@ -221,6 +227,75 @@ export const api = {
       body: JSON.stringify({ name }),
     });
     return data.user;
+  },
+  async changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    await request<{ ok: true }>("/api/auth/password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
+
+  // ---------- Addresses ----------
+  async listAddresses(): Promise<Address[]> {
+    const data = await request<{ addresses: Address[] }>("/api/addresses");
+    return data.addresses;
+  },
+  async createAddress(body: {
+    label: string;
+    recipient: string;
+    cep: string;
+    street: string;
+    number: string;
+    complement?: string;
+    district?: string;
+    city: string;
+    state: string;
+    isDefault?: boolean;
+  }): Promise<Address> {
+    const data = await request<{ address: Address }>("/api/addresses", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    return data.address;
+  },
+  async updateAddress(
+    id: string,
+    body: Partial<{
+      label: string;
+      recipient: string;
+      cep: string;
+      street: string;
+      number: string;
+      complement: string;
+      district: string;
+      city: string;
+      state: string;
+      isDefault: boolean;
+    }>,
+  ): Promise<Address> {
+    const data = await request<{ address: Address }>(
+      `/api/addresses/${id}`,
+      { method: "PATCH", body: JSON.stringify(body) },
+    );
+    return data.address;
+  },
+  async deleteAddress(id: string): Promise<void> {
+    await request<{ ok: true }>(`/api/addresses/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  // ---------- Notifications (mock email) ----------
+  async listNotifications(limit?: number): Promise<Notification[]> {
+    const qs = new URLSearchParams();
+    if (limit) qs.set("limit", String(limit));
+    const data = await request<{ notifications: Notification[] }>(
+      `/api/notifications?${qs.toString()}`,
+    );
+    return data.notifications;
   },
 
   // ---------- Reviews ----------

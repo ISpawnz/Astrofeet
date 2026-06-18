@@ -16,7 +16,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: null,
+      user: null as PublicUser | null,
       hydrated: false,
       setHydrated: (v) => set({ hydrated: v }),
       setUser: (user) => set({ user }),

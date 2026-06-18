@@ -1,27 +1,27 @@
 {
   "users": [
     {
-      "id": "0b32c14b-29a8-494b-a52e-4b1957d04435",
+      "id": "c076bd5c-b502-436b-9f72-c13e60d7a40c",
       "email": "admin@astrofeet.com",
       "name": "Comando Astrofeet",
-      "passwordHash": "scrypt$59baf04fbfb8991c623a29bcb82964ef$58619aa83a18d122d7717cc136abbcba6c81e5d106f01ef5a6363bd3d0003d26ff81c0a9348e2b5f748a898fd5c8147a85df51cd75861d2eb3902c3a3b3820fe",
+      "passwordHash": "scrypt$3eff938000ec085fa6a93c551f95c06b$0b46dd7133dfd132a8649caffc0a9d18219ada75e93f714adbb2b9e464221cbfcc7eb99921873e5574b2ddbb4e872947fffe8642cef02ca36f3be9f4109de14a",
       "role": "admin",
-      "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T16:40:25.451Z"
+      "createdAt": "2026-06-18T17:20:46.171Z",
+      "updatedAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "f76722d5-870c-4f39-a710-5b6557ef3ded",
+      "id": "fd7c1b0f-8a88-4454-a053-0fb2840bad05",
       "email": "explorador@astrofeet.com",
       "name": "Explorador Astrofeet",
-      "passwordHash": "scrypt$3898057fd9fbc0d604a53355d1ac7e53$40b44a9bb5c3e1b9e9d4cf1bb5bdb54647836bfbcd8b62a26fbb4036a4cdbeba2b0031362116ee95bf4e0b2d8b562274e1c2a1212f6b01b5c44b9ca87ee2ea82",
+      "passwordHash": "scrypt$0f4af6a4a423c0bff419ae07b7675617$6b976126df54b318a0992838fed4f00cde9478a77247b4704a1eb69bb1b8545de6e542076b14cbdaa1e556c82305fa21a1d6b0a50e0ccc7885844bb5b0b2701b",
       "role": "customer",
-      "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T15:15:44.053Z"
+      "createdAt": "2026-06-18T17:20:46.171Z",
+      "updatedAt": "2026-06-18T17:20:46.171Z"
     }
   ],
   "products": [
     {
-      "id": "bc9a1f56-72a9-4adc-949d-cf2c987d5f2b",
+      "id": "92d887d9-0168-4319-bfa8-8ad5e59e6ddd",
       "slug": "orion-runner",
       "name": "Orion Runner",
       "brand": "Astrofeet Lab",
@@ -30,18 +30,18 @@
       "description": "Leve, limpo e veloz. O Orion Runner foi feito para quem quer um visual de órbita baixa sem abrir mão do conforto no dia a dia. Cabedal em malha translúcida com acabamento refletivo e entressola responsiva.",
       "images": "[\"/products/orion-runner.png\"]",
       "sizes": "[38,39,40,41,42,43]",
-      "stock": 30,
+      "stock": 32,
+      "sizeStock": "{\"38\":4,\"39\":6,\"40\":7,\"41\":6,\"42\":5,\"43\":4}",
       "rating": 4.7,
       "accent": "#34e7ff",
       "badge": "Novo",
       "featured": true,
       "bestSeller": false,
-      "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T15:33:27.790Z",
-      "sizeStock": "{\"38\":4,\"39\":6,\"40\":7,\"41\":6,\"42\":5,\"43\":4}"
+      "createdAt": "2026-06-18T17:20:46.171Z",
+      "updatedAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "0a11af5d-f300-4afd-b34e-912707cae162",
+      "id": "e3d6a75a-733f-4b7e-9497-f870cd7fa19f",
       "slug": "lunar-drift",
       "name": "Lunar Drift",
       "brand": "Astrofeet Lab",
@@ -51,17 +51,17 @@
       "images": "[\"/products/lunar-drift.png\"]",
       "sizes": "[37,38,39,40,41,42]",
       "stock": 18,
+      "sizeStock": "{\"37\":2,\"38\":3,\"39\":4,\"40\":3,\"41\":3,\"42\":3}",
       "rating": 4.8,
       "accent": "#c6ff5a",
       "badge": "Drop limitado",
       "featured": true,
       "bestSeller": true,
-      "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T15:15:44.053Z",
-      "sizeStock": "{\"37\":2,\"38\":3,\"39\":4,\"40\":3,\"41\":3,\"42\":3}"
+      "createdAt": "2026-06-18T17:20:46.171Z",
+      "updatedAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "acb1cea4-6f15-4922-ba99-237dbf346b0e",
+      "id": "e04353b5-e916-411c-b2db-b9558ab62780",
       "slug": "solar-pulse",
       "name": "Solar Pulse",
       "brand": "Nebula Wear",
@@ -71,17 +71,17 @@
       "images": "[\"/products/solar-pulse.png\"]",
       "sizes": "[39,40,41,42,43,44]",
       "stock": 24,
+      "sizeStock": "{\"39\":3,\"40\":5,\"41\":5,\"42\":4,\"43\":4,\"44\":3}",
       "rating": 4.9,
       "accent": "#ffcf5a",
       "badge": "Mais vendido",
       "featured": true,
       "bestSeller": true,
-      "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T15:15:44.053Z",
-      "sizeStock": "{\"39\":3,\"40\":5,\"41\":5,\"42\":4,\"43\":4,\"44\":3}"
+      "createdAt": "2026-06-18T17:20:46.171Z",
+      "updatedAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "c986f99c-16ed-4ab9-90a1-be2c2201c1d6",
+      "id": "3a144039-7cfe-4911-9081-d0b3c9055f80",
       "slug": "nebula-dunk",
       "name": "Nebula Dunk",
       "brand": "Nebula Wear",
@@ -91,17 +91,17 @@
       "images": "[\"/products/nebula-dunk.png\"]",
       "sizes": "[37,38,39,40,41,42,43]",
       "stock": 21,
+      "sizeStock": "{\"37\":2,\"38\":3,\"39\":3,\"40\":4,\"41\":3,\"42\":3,\"43\":3}",
       "rating": 4.6,
       "accent": "#a779ff",
       "badge": "Novo",
       "featured": false,
       "bestSeller": false,
-      "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T15:15:44.053Z",
-      "sizeStock": "{\"37\":2,\"38\":3,\"39\":3,\"40\":4,\"41\":3,\"42\":3,\"43\":3}"
+      "createdAt": "2026-06-18T17:20:46.171Z",
+      "updatedAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "6ab33e56-72c5-44ae-8150-d37ee3bff44f",
+      "id": "a618ef1d-ac1e-47ba-9781-1f07ec26ba1c",
       "slug": "void-classic",
       "name": "Void Classic",
       "brand": "Astrofeet Lab",
@@ -110,18 +110,18 @@
       "description": "Clássico atemporal com contraste escuro para looks noturnos. Camurça preta, detalhes em neon magenta e solado vulcanizado de aderência absurda. Um void que combina com tudo.",
       "images": "[\"/products/void-classic.png\"]",
       "sizes": "[36,37,38,39,40,42]",
-      "stock": 25,
+      "stock": 24,
+      "sizeStock": "{\"36\":3,\"37\":4,\"38\":5,\"39\":5,\"40\":2,\"42\":5}",
       "rating": 4.5,
       "accent": "#ff5cf0",
       "badge": null,
       "featured": false,
       "bestSeller": true,
-      "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T16:19:50.966Z",
-      "sizeStock": "{\"36\":3,\"37\":4,\"38\":5,\"39\":5,\"40\":3,\"42\":5}"
+      "createdAt": "2026-06-18T17:20:46.171Z",
+      "updatedAt": "2026-06-18T17:36:34.116Z"
     },
     {
-      "id": "26738dfe-d3ca-45d9-ad74-899baa095a96",
+      "id": "7736d18b-865a-4b40-9720-3473597654c6",
       "slug": "meteor-air",
       "name": "Meteor Air",
       "brand": "Nebula Wear",
@@ -130,156 +130,141 @@
       "description": "Solado com câmara de ar visível e cabedal em gradiente ígneo. O Meteor Air absorve o impacto e devolve energia a cada passada, como uma chuva de meteoros sob seus pés.",
       "images": "[\"/products/meteor-air.png\"]",
       "sizes": "[38,39,40,41,42,43,44]",
-      "stock": 14,
+      "stock": 15,
+      "sizeStock": "{\"38\":1,\"39\":2,\"40\":3,\"41\":3,\"42\":2,\"43\":2,\"44\":2}",
       "rating": 4.8,
       "accent": "#ff7a3c",
       "badge": "Drop limitado",
       "featured": false,
       "bestSeller": false,
-      "createdAt": "2026-06-18T15:15:44.053Z",
-      "updatedAt": "2026-06-18T16:00:04.958Z",
-      "sizeStock": "{\"38\":1,\"39\":2,\"40\":3,\"41\":3,\"42\":2,\"43\":2,\"44\":2}"
+      "createdAt": "2026-06-18T17:20:46.171Z",
+      "updatedAt": "2026-06-18T17:20:46.171Z"
     }
   ],
   "orders": [
     {
-      "id": "c3bc36de-1107-433c-b496-e52c59cc26bf",
-      "createdAt": "2026-06-18T15:33:27.789Z",
-      "updatedAt": "2026-06-18T15:33:27.789Z",
-      "code": "AST-807788",
-      "userId": "0b32c14b-29a8-494b-a52e-4b1957d04435",
+      "id": "80038878-85fe-4ebd-8cd7-41a0cdf58c3f",
+      "createdAt": "2026-06-18T17:36:18.390Z",
+      "updatedAt": "2026-06-18T17:36:18.390Z",
+      "code": "AST-178390",
+      "userId": "fd7c1b0f-8a88-4454-a053-0fb2840bad05",
       "status": "created",
-      "items": "[{\"productId\":\"bc9a1f56-72a9-4adc-949d-cf2c987d5f2b\",\"slug\":\"orion-runner\",\"name\":\"Orion Runner\",\"quantity\":2,\"size\":40,\"unitPrice\":279.99,\"subtotal\":559.98}]",
-      "subtotal": 559.98,
-      "shipping": 0,
-      "total": 559.98,
-      "customer": "{\"name\":\"Comando Astrofeet\",\"email\":\"admin@astrofeet.com\",\"phone\":\"(11) 99999-0000\"}",
-      "address": "{\"cep\":\"01310-100\",\"street\":\"Av. Paulista\",\"number\":\"1000\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
-      "payment": "{\"method\":\"card\",\"cardLast4\":\"1111\"}"
-    },
-    {
-      "id": "97ba41f3-c41e-4ff1-bab6-574cd0e155ac",
-      "createdAt": "2026-06-18T16:00:04.957Z",
-      "updatedAt": "2026-06-18T16:01:24.976Z",
-      "code": "AST-404957",
-      "userId": "0b32c14b-29a8-494b-a52e-4b1957d04435",
-      "status": "paid",
-      "items": "[{\"productId\":\"26738dfe-d3ca-45d9-ad74-899baa095a96\",\"slug\":\"meteor-air\",\"name\":\"Meteor Air\",\"quantity\":1,\"size\":41,\"unitPrice\":459,\"subtotal\":459}]",
-      "subtotal": 459,
-      "shipping": 0,
-      "total": 459,
-      "customer": "{\"name\":\"Comando Astrofeet\",\"email\":\"admin@astrofeet.com\",\"phone\":\"(11) 99999-0000\"}",
-      "address": "{\"cep\":\"01310-100\",\"street\":\"Av. Paulista\",\"number\":\"1000\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
-      "payment": "{\"method\":\"card\",\"cardLast4\":\"1111\"}"
-    },
-    {
-      "id": "0b9e3df6-ba7f-43dc-b231-9dcf984238cd",
-      "createdAt": "2026-06-18T16:19:42.804Z",
-      "updatedAt": "2026-06-18T16:19:42.804Z",
-      "code": "AST-582804",
-      "userId": "f76722d5-870c-4f39-a710-5b6557ef3ded",
-      "status": "paid",
-      "items": "[{\"productId\":\"6ab33e56-72c5-44ae-8150-d37ee3bff44f\",\"slug\":\"void-classic\",\"name\":\"Void Classic\",\"quantity\":1,\"size\":40,\"unitPrice\":319.5,\"subtotal\":319.5}]",
+      "items": "[{\"productId\":\"a618ef1d-ac1e-47ba-9781-1f07ec26ba1c\",\"slug\":\"void-classic\",\"name\":\"Void Classic\",\"quantity\":1,\"size\":40,\"unitPrice\":319.5,\"subtotal\":319.5}]",
       "subtotal": 319.5,
       "shipping": 29.9,
       "total": 317.45,
-      "customer": "{\"name\":\"Teste Cupom\",\"email\":\"explorador@astrofeet.com\",\"phone\":\"\"}",
-      "address": "{\"cep\":\"01310-100\",\"street\":\"Av Paulista\",\"number\":\"100\",\"complement\":\"\",\"district\":\"Centro\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
-      "payment": "{\"method\":\"pix\",\"couponCode\":\"GALAXIA10\",\"discount\":31.95}"
+      "customer": "{\"name\":\"Explorador Astrofeet\",\"email\":\"explorador@astrofeet.com\",\"phone\":\"11999999999\"}",
+      "address": "{\"cep\":\"01310100\",\"street\":\"Av. Paulista\",\"number\":\"1578\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
+      "payment": "{\"method\":\"card\",\"cardLast4\":\"4242\",\"couponCode\":\"GALAXIA10\",\"discount\":31.95}"
     },
     {
-      "id": "514d7c0d-59c4-4212-bc29-4b64f5b78b5f",
-      "createdAt": "2026-06-18T16:19:50.965Z",
-      "updatedAt": "2026-06-18T16:19:50.965Z",
-      "code": "AST-590965",
-      "userId": "f76722d5-870c-4f39-a710-5b6557ef3ded",
-      "status": "paid",
-      "items": "[{\"productId\":\"6ab33e56-72c5-44ae-8150-d37ee3bff44f\",\"slug\":\"void-classic\",\"name\":\"Void Classic\",\"quantity\":1,\"size\":40,\"unitPrice\":319.5,\"subtotal\":319.5}]",
+      "id": "dd839786-5f29-4467-a2b8-c204d3208bbd",
+      "createdAt": "2026-06-18T17:36:26.362Z",
+      "updatedAt": "2026-06-18T17:36:26.362Z",
+      "code": "AST-186362",
+      "userId": "fd7c1b0f-8a88-4454-a053-0fb2840bad05",
+      "status": "created",
+      "items": "[{\"productId\":\"a618ef1d-ac1e-47ba-9781-1f07ec26ba1c\",\"slug\":\"void-classic\",\"name\":\"Void Classic\",\"quantity\":1,\"size\":40,\"unitPrice\":319.5,\"subtotal\":319.5}]",
       "subtotal": 319.5,
       "shipping": 29.9,
       "total": 317.45,
-      "customer": "{\"name\":\"Teste Cupom2\",\"email\":\"explorador@astrofeet.com\",\"phone\":\"\"}",
-      "address": "{\"cep\":\"01310-100\",\"street\":\"Av Paulista\",\"number\":\"100\",\"complement\":\"\",\"district\":\"Centro\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
-      "payment": "{\"method\":\"pix\",\"couponCode\":\"GALAXIA10\",\"discount\":31.95}"
+      "customer": "{\"name\":\"Explorador Astrofeet\",\"email\":\"explorador@astrofeet.com\",\"phone\":\"11999999999\"}",
+      "address": "{\"cep\":\"01310100\",\"street\":\"Av. Paulista\",\"number\":\"1578\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
+      "payment": "{\"method\":\"card\",\"cardLast4\":\"4242\",\"couponCode\":\"GALAXIA10\",\"discount\":31.95}"
+    },
+    {
+      "id": "d23eea94-c47f-48a5-996e-35eb1ade68d8",
+      "createdAt": "2026-06-18T17:36:34.115Z",
+      "updatedAt": "2026-06-18T17:36:34.115Z",
+      "code": "AST-194115",
+      "userId": "fd7c1b0f-8a88-4454-a053-0fb2840bad05",
+      "status": "created",
+      "items": "[{\"productId\":\"a618ef1d-ac1e-47ba-9781-1f07ec26ba1c\",\"slug\":\"void-classic\",\"name\":\"Void Classic\",\"quantity\":1,\"size\":40,\"unitPrice\":319.5,\"subtotal\":319.5}]",
+      "subtotal": 319.5,
+      "shipping": 29.9,
+      "total": 317.45,
+      "customer": "{\"name\":\"Explorador Astrofeet\",\"email\":\"explorador@astrofeet.com\",\"phone\":\"11999999999\"}",
+      "address": "{\"cep\":\"01310100\",\"street\":\"Av. Paulista\",\"number\":\"1578\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
+      "payment": "{\"method\":\"card\",\"cardLast4\":\"4242\",\"couponCode\":\"GALAXIA10\",\"discount\":31.95}"
     }
   ],
   "reviews": [
     {
-      "id": "a97a412a-46ce-4154-a85a-cf4be9f1f52d",
-      "productId": "bc9a1f56-72a9-4adc-949d-cf2c987d5f2b",
+      "id": "cc34d314-c292-45ab-818a-22648f53ddd8",
+      "productId": "92d887d9-0168-4319-bfa8-8ad5e59e6ddd",
       "userId": null,
       "authorName": "Lucas M.",
       "rating": 5,
       "comment": "Confortável demais, parece que tô flutuando. Visual de outro nível.",
-      "createdAt": "2026-06-18T15:15:44.053Z"
+      "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "8ba85251-eb2a-4a31-a267-177f3c667eb4",
-      "productId": "bc9a1f56-72a9-4adc-949d-cf2c987d5f2b",
+      "id": "d7316c8e-e1dd-4096-93df-770690e7a0ee",
+      "productId": "92d887d9-0168-4319-bfa8-8ad5e59e6ddd",
       "userId": null,
       "authorName": "Bianca R.",
       "rating": 4,
       "comment": "Lindo, só achei meio justo no peito do pé. Recomendo pegar meia numeração acima.",
-      "createdAt": "2026-06-18T15:15:44.053Z"
+      "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "469412b5-155f-4462-952d-e1c013e72e8a",
-      "productId": "0a11af5d-f300-4afd-b34e-912707cae162",
+      "id": "d61af882-5b23-44bf-9203-36fcb80a0854",
+      "productId": "e3d6a75a-733f-4b7e-9497-f870cd7fa19f",
       "userId": null,
       "authorName": "Pedro H.",
       "rating": 5,
       "comment": "Couro macio e acabamento impecável. Vale cada real.",
-      "createdAt": "2026-06-18T15:15:44.053Z"
+      "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "f8fc44b6-e7a9-44ac-b367-1415cabdb4e6",
-      "productId": "0a11af5d-f300-4afd-b34e-912707cae162",
+      "id": "d09dae50-3a15-46ce-94c5-caf065947495",
+      "productId": "e3d6a75a-733f-4b7e-9497-f870cd7fa19f",
       "userId": null,
       "authorName": "Ana C.",
       "rating": 5,
       "comment": "Combina com tudo, virei meu cotidiano.",
-      "createdAt": "2026-06-18T15:15:44.053Z"
+      "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "7263f94a-9f18-4fcc-ab78-815829a548d0",
-      "productId": "acb1cea4-6f15-4922-ba99-237dbf346b0e",
+      "id": "bb40daff-90af-4c3d-8b62-d1742e81d44d",
+      "productId": "e04353b5-e916-411c-b2db-b9558ab62780",
       "userId": null,
       "authorName": "Júlia S.",
       "rating": 5,
       "comment": "Corro meia maratona com ele, leveza absurda.",
-      "createdAt": "2026-06-18T15:15:44.053Z"
+      "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "bac7cb77-8209-4179-a9bf-d36671dbfb1b",
-      "productId": "acb1cea4-6f15-4922-ba99-237dbf346b0e",
+      "id": "6f5ab72d-425a-478e-a70d-b0f9618cf2d2",
+      "productId": "e04353b5-e916-411c-b2db-b9558ab62780",
       "userId": null,
       "authorName": "Rafael T.",
       "rating": 5,
       "comment": "Melhor tênis de performance que já tive.",
-      "createdAt": "2026-06-18T15:15:44.053Z"
+      "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "89afec4f-5ccd-46da-9915-ec5a8220ea0a",
-      "productId": "6ab33e56-72c5-44ae-8150-d37ee3bff44f",
+      "id": "d2737bff-daba-4418-b600-2ea97e44d647",
+      "productId": "a618ef1d-ac1e-47ba-9781-1f07ec26ba1c",
       "userId": null,
       "authorName": "Marcos L.",
       "rating": 4,
       "comment": "Clássico que faltava no meu armário. Aderência boa de skate.",
-      "createdAt": "2026-06-18T15:15:44.053Z"
+      "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "b9e2ca3d-4dd8-4a36-a19a-3f34b96726a5",
-      "productId": "26738dfe-d3ca-45d9-ad74-899baa095a96",
+      "id": "09608873-9400-4ec4-b423-4263dbb22415",
+      "productId": "7736d18b-865a-4b40-9720-3473597654c6",
       "userId": null,
       "authorName": "Camila V.",
       "rating": 5,
       "comment": "O câmara de ar é sensacional, parece trampolim.",
-      "createdAt": "2026-06-18T15:15:44.053Z"
+      "createdAt": "2026-06-18T17:20:46.171Z"
     }
   ],
   "coupons": [
     {
-      "id": "69029523-640d-4077-a7d0-ca0b2a026fe0",
+      "id": "7d8edd26-87a7-4ebc-ba73-a011debf4e6c",
       "code": "GALAXIA10",
       "type": "percent",
       "value": 10,
@@ -287,11 +272,11 @@
       "active": true,
       "description": "10% off em tudo. Bem-vindo à galáxia!",
       "expiresAt": null,
-      "createdAt": "2026-06-18T16:05:21.288Z",
-      "updatedAt": "2026-06-18T16:05:21.288Z"
+      "createdAt": "2026-06-18T17:20:46.171Z",
+      "updatedAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "c4366b51-34cc-436a-ba99-62006eb544de",
+      "id": "335ca488-ed5b-4d67-bde2-bfc8deec6a8f",
       "code": "ORBITA50",
       "type": "fixed",
       "value": 50,
@@ -299,11 +284,11 @@
       "active": true,
       "description": "R$50 off em pedidos acima de R$300.",
       "expiresAt": null,
-      "createdAt": "2026-06-18T16:05:21.288Z",
-      "updatedAt": "2026-06-18T16:05:21.288Z"
+      "createdAt": "2026-06-18T17:20:46.171Z",
+      "updatedAt": "2026-06-18T17:20:46.171Z"
     },
     {
-      "id": "9c76a846-2e80-44e7-ade2-1b872447b3e0",
+      "id": "fb79dafa-b9ec-4663-bd65-7dfe8b156fe1",
       "code": "DROP15",
       "type": "percent",
       "value": 15,
@@ -311,8 +296,64 @@
       "active": true,
       "description": "15% off em pedidos acima de R$500. Para colecionadores de drops.",
       "expiresAt": null,
-      "createdAt": "2026-06-18T16:05:21.288Z",
-      "updatedAt": "2026-06-18T16:05:21.288Z"
+      "createdAt": "2026-06-18T17:20:46.171Z",
+      "updatedAt": "2026-06-18T17:20:46.171Z"
+    }
+  ],
+  "addresses": [
+    {
+      "id": "e5913521-e915-4c56-9f55-dfa1f09f59e5",
+      "createdAt": "2026-06-18T17:31:44.998Z",
+      "updatedAt": "2026-06-18T17:31:44.998Z",
+      "userId": "fd7c1b0f-8a88-4454-a053-0fb2840bad05",
+      "label": "Casa",
+      "recipient": "Explorador Astrofeet",
+      "cep": "01310100",
+      "street": "Av. Paulista",
+      "number": "1578",
+      "complement": "Apto 92",
+      "district": "Bela Vista",
+      "city": "São Paulo",
+      "state": "SP",
+      "isDefault": false
+    }
+  ],
+  "notifications": [
+    {
+      "id": "b141413e-01ac-4f37-8a53-0fefbbd74a7c",
+      "createdAt": "2026-06-18T17:36:18.391Z",
+      "updatedAt": "2026-06-18T17:36:18.391Z",
+      "type": "order_created",
+      "to": "explorador@astrofeet.com",
+      "subject": "Pedido AST-178390 confirmado · Astrofeet",
+      "body": "Olá, Explorador Astrofeet!\n\nRecebemos seu pedido AST-178390 e já estamos preparando sua caixa estelar.\n\nITENS DO PEDIDO:\n  • Void Classic — tam. 40 × 1 — R$319,50\n\nSubtotal: R$319,50\nDesconto (GALAXIA10): -R$31,95\nFrete: R$29,90\nTotal: R$317,45\n\nEntrega: Av. Paulista, 1578 — São Paulo/SP\nPagamento: cartão final 4242\n\nObrigado por explorar a galáxia com a Astrofeet. 🚀\n— Equipe Astrofeet",
+      "orderId": "80038878-85fe-4ebd-8cd7-41a0cdf58c3f",
+      "sentAt": "2026-06-18T17:36:18.391Z",
+      "status": "sent"
+    },
+    {
+      "id": "90ecd881-622d-4dce-abbf-7380be730344",
+      "createdAt": "2026-06-18T17:36:26.363Z",
+      "updatedAt": "2026-06-18T17:36:26.363Z",
+      "type": "order_created",
+      "to": "explorador@astrofeet.com",
+      "subject": "Pedido AST-186362 confirmado · Astrofeet",
+      "body": "Olá, Explorador Astrofeet!\n\nRecebemos seu pedido AST-186362 e já estamos preparando sua caixa estelar.\n\nITENS DO PEDIDO:\n  • Void Classic — tam. 40 × 1 — R$319,50\n\nSubtotal: R$319,50\nDesconto (GALAXIA10): -R$31,95\nFrete: R$29,90\nTotal: R$317,45\n\nEntrega: Av. Paulista, 1578 — São Paulo/SP\nPagamento: cartão final 4242\n\nObrigado por explorar a galáxia com a Astrofeet. 🚀\n— Equipe Astrofeet",
+      "orderId": "dd839786-5f29-4467-a2b8-c204d3208bbd",
+      "sentAt": "2026-06-18T17:36:26.363Z",
+      "status": "sent"
+    },
+    {
+      "id": "8f29fb73-89ad-4f69-85d9-dbfdcae2e249",
+      "createdAt": "2026-06-18T17:36:34.116Z",
+      "updatedAt": "2026-06-18T17:36:34.116Z",
+      "type": "order_created",
+      "to": "explorador@astrofeet.com",
+      "subject": "Pedido AST-194115 confirmado · Astrofeet",
+      "body": "Olá, Explorador Astrofeet!\n\nRecebemos seu pedido AST-194115 e já estamos preparando sua caixa estelar.\n\nITENS DO PEDIDO:\n  • Void Classic — tam. 40 × 1 — R$319,50\n\nSubtotal: R$319,50\nDesconto (GALAXIA10): -R$31,95\nFrete: R$29,90\nTotal: R$317,45\n\nEntrega: Av. Paulista, 1578 — São Paulo/SP\nPagamento: cartão final 4242\n\nObrigado por explorar a galáxia com a Astrofeet. 🚀\n— Equipe Astrofeet",
+      "orderId": "d23eea94-c47f-48a5-996e-35eb1ade68d8",
+      "sentAt": "2026-06-18T17:36:34.116Z",
+      "status": "sent"
     }
   ]
 }

@@ -92,7 +92,7 @@ export function ShipAssistant() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 280, damping: 26 }}
-            className="fixed bottom-24 right-5 z-50 flex h-[30rem] w-[min(22rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-3xl glass-strong shadow-2xl"
+            className="gradient-border-animated fixed bottom-24 right-5 z-50 flex h-[30rem] w-[min(22rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-3xl glass-strong shadow-2xl"
           >
             {/* Header */}
             <div className="flex items-center gap-3 border-b border-white/10 bg-gradient-to-r from-[var(--neon-cyan)]/10 to-[var(--neon-magenta)]/10 p-4">

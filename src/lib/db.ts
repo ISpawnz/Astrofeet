@@ -27,13 +27,23 @@ interface DBShape {
   orders: Record<string, unknown>[];
   reviews: Record<string, unknown>[];
   coupons: Record<string, unknown>[];
+  addresses: Record<string, unknown>[];
+  notifications: Record<string, unknown>[];
 }
 
-const DATE_FIELDS = new Set(["createdAt", "updatedAt"]);
+const DATE_FIELDS = new Set(["createdAt", "updatedAt", "sentAt"]);
 
 // ---------- low-level load / persist ----------
-let _db: DBShape | null = null;
-let _writeChain: Promise<void> = Promise.resolve();
+// Use globalThis so the cache survives module reloads (Turbopack HMR can
+// otherwise give each route module its own _db instance, causing data divergence).
+const _global = globalThis as unknown as { __astrofeet_db?: DBShape | null; __astrofeet_write_chain?: Promise<void> };
+let _db: DBShape | null = _global.__astrofeet_db ?? null;
+let _writeChain: Promise<void> = _global.__astrofeet_write_chain ?? Promise.resolve();
+
+function _persistGlobal() {
+  _global.__astrofeet_db = _db;
+  _global.__astrofeet_write_chain = _writeChain;
+}
 
 function load(): DBShape {
   if (_db) return _db;
@@ -47,6 +57,8 @@ function load(): DBShape {
         orders: parsed.orders ?? [],
         reviews: parsed.reviews ?? [],
         coupons: parsed.coupons ?? [],
+        addresses: parsed.addresses ?? [],
+        notifications: parsed.notifications ?? [],
       };
       hydrateDates(_db);
       // Auto-migrate: ensure products have sizeStock, and coupons are seeded
@@ -96,6 +108,7 @@ function load(): DBShape {
         migrated = true;
       }
       if (migrated) persistSync(_db);
+      _persistGlobal();
       return _db;
     }
   } catch (e) {
@@ -103,6 +116,7 @@ function load(): DBShape {
   }
   _db = seed();
   persistSync(_db);
+  _persistGlobal();
   return _db;
 }
 
@@ -132,6 +146,7 @@ function persist(): Promise<void> {
       console.error("[db] persist failed:", e);
     }
   });
+  _persistGlobal();
   return _writeChain;
 }
 
@@ -142,7 +157,7 @@ function genId(): string {
 
 function seed(): DBShape {
   const now = new Date();
-  const db: DBShape = { users: [], products: [], orders: [], reviews: [], coupons: [] };
+  const db: DBShape = { users: [], products: [], orders: [], reviews: [], coupons: [], addresses: [], notifications: [] };
 
   for (const u of SEED_USERS) {
     db.users.push({
@@ -505,6 +520,8 @@ export const db = {
   order: createModel("orders"),
   review: createModel("reviews"),
   coupon: createModel("coupons"),
+  address: createModel("addresses"),
+  notification: createModel("notifications"),
   async $disconnect() {
     /* no-op */
   },

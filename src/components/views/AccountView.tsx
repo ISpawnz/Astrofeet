@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
@@ -33,6 +33,12 @@ import {
   Check,
   X,
   Loader2,
+  Star,
+  Trash2,
+  Eye,
+  EyeOff,
+  Lock,
+  Plus,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
@@ -44,14 +50,18 @@ import {
   formatDate,
   orderStatusLabel,
   orderStatusColor,
+  maskCEP,
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Order, PublicUser } from "@/lib/types";
+import type { Order, PublicUser, Address } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Tabs,
   TabsContent,
@@ -63,6 +73,24 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ---------- Helpers ----------
 
@@ -752,6 +780,15 @@ function ProfileTab({ user }: { user: PublicUser }) {
   const [nameValue, setNameValue] = useState(user.name);
   const [savingName, setSavingName] = useState(false);
 
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   useEffect(() => {
     setNameValue(user.name);
   }, [user.name]);
@@ -781,8 +818,47 @@ function ProfileTab({ user }: { user: PublicUser }) {
     }
   }
 
+  function resetPasswordFields() {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  }
+
+  async function handleChangePassword() {
+    if (!currentPassword) {
+      toast.error("Informe sua senha atual.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("A nova senha precisa ter ao menos 6 caracteres.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      toast.error("A nova senha precisa ser diferente da atual.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("As senhas não coincidem.");
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      await api.changePassword(currentPassword, newPassword);
+      toast.success("Senha atualizada com sucesso.");
+      resetPasswordFields();
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível atualizar a senha agora.",
+      );
+    } finally {
+      setSavingPassword(false);
+    }
+  }
+
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className="space-y-5">
       {/* Read-only profile */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -887,12 +963,14 @@ function ProfileTab({ user }: { user: PublicUser }) {
         <div className="mt-5 flex items-start gap-2 rounded-2xl border border-white/5 bg-white/[0.02] p-3.5">
           <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-[var(--neon-lime)]" />
           <p className="text-xs text-muted-foreground">
-            Para trocar seu e-mail ou senha, fale com a Nave no canto inferior.
+            Para trocar seu e-mail, fale com a Nave no canto inferior.
           </p>
         </div>
       </motion.div>
 
-      {/* Address book (empty state) */}
+      <Separator className="bg-white/10" />
+
+      {/* Segurança / trocar senha */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -900,33 +978,701 @@ function ProfileTab({ user }: { user: PublicUser }) {
         className="glass rounded-3xl p-6"
       >
         <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          <MapPin className="h-4 w-4 text-[var(--neon-magenta)]" />
-          Endereços salvos
+          <Lock className="h-4 w-4 text-[var(--neon-lime)]" />
+          Segurança
         </h2>
-        <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-8 text-center">
-          <div className="relative flex h-20 w-20 items-center justify-center">
-            <div className="absolute inset-0 rounded-full bg-[var(--neon-magenta)]/15 blur-2xl" />
+        <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+          Mantenha sua conta protegida com uma senha forte.
+        </p>
+        <div className="mt-4 max-w-md space-y-3">
+          <PasswordInputRow
+            id="pw-current"
+            label="Senha atual"
+            value={currentPassword}
+            onChange={setCurrentPassword}
+            show={showCurrent}
+            onToggle={() => setShowCurrent((v) => !v)}
+          />
+          <PasswordInputRow
+            id="pw-new"
+            label="Nova senha"
+            value={newPassword}
+            onChange={setNewPassword}
+            show={showNew}
+            onToggle={() => setShowNew((v) => !v)}
+            hint="Ao menos 6 caracteres."
+          />
+          <PasswordInputRow
+            id="pw-confirm"
+            label="Confirmar nova senha"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            show={showConfirm}
+            onToggle={() => setShowConfirm((v) => !v)}
+          />
+          <div className="flex justify-end pt-1">
+            <Button
+              onClick={handleChangePassword}
+              disabled={savingPassword}
+              className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 py-2.5 text-sm font-bold text-black hover:opacity-90 disabled:opacity-70"
+            >
+              {savingPassword ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Lock className="h-4 w-4" />
+              )}
+              Salvar senha
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ---------- Password input helper ----------
+
+function PasswordInputRow({
+  id,
+  label,
+  value,
+  onChange,
+  show,
+  onToggle,
+  hint,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  show: boolean;
+  onToggle: () => void;
+  hint?: string;
+}) {
+  return (
+    <div>
+      <Label htmlFor={id} className="mb-1.5 block text-sm">
+        {label}
+      </Label>
+      <div className="relative">
+        <Input
+          id={id}
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-11 rounded-xl border-white/10 bg-white/5 pr-11 text-sm outline-none transition-colors focus:border-[var(--neon-cyan)] focus-visible:ring-0 focus-visible:ring-offset-0"
+          autoComplete="current-password"
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+          aria-label={show ? `Ocultar ${label.toLowerCase()}` : `Mostrar ${label.toLowerCase()}`}
+        >
+          {show ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+      {hint && (
+        <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>
+      )}
+    </div>
+  );
+}
+
+// ---------- Addresses tab ----------
+
+interface AddressFormState {
+  label: string;
+  recipient: string;
+  cep: string;
+  street: string;
+  number: string;
+  complement: string;
+  district: string;
+  city: string;
+  state: string;
+  isDefault: boolean;
+}
+
+const emptyAddressForm: AddressFormState = {
+  label: "",
+  recipient: "",
+  cep: "",
+  street: "",
+  number: "",
+  complement: "",
+  district: "",
+  city: "",
+  state: "",
+  isDefault: false,
+};
+
+function formFromAddress(addr: Address): AddressFormState {
+  return {
+    label: addr.label ?? "",
+    recipient: addr.recipient ?? "",
+    cep: addr.cep ?? "",
+    street: addr.street ?? "",
+    number: addr.number ?? "",
+    complement: addr.complement ?? "",
+    district: addr.district ?? "",
+    city: addr.city ?? "",
+    state: addr.state ?? "",
+    isDefault: !!addr.isDefault,
+  };
+}
+
+const addrInputClass =
+  "h-11 rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[var(--neon-cyan)] focus-visible:ring-0 focus-visible:ring-offset-0";
+
+function AddressFormModal({
+  open,
+  onOpenChange,
+  address,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  address: Address | null;
+}) {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState<AddressFormState>(emptyAddressForm);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setForm(address ? formFromAddress(address) : emptyAddressForm);
+    }
+  }, [open, address]);
+
+  function update<K extends keyof AddressFormState>(
+    key: K,
+    value: AddressFormState[K],
+  ) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function validate(): string | null {
+    if (!form.label.trim()) return "Informe um apelido para o endereço.";
+    if (!form.recipient.trim()) return "Informe quem recebe no endereço.";
+    if (form.cep.replace(/\D/g, "").length !== 8)
+      return "CEP inválido (8 dígitos).";
+    if (!form.street.trim()) return "Informe a rua.";
+    if (!form.number.trim()) return "Informe o número.";
+    if (!form.city.trim()) return "Informe a cidade.";
+    if (form.state.trim().length !== 2) return "UF precisa ter 2 letras.";
+    return null;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const err = validate();
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    setSaving(true);
+    try {
+      const body = {
+        label: form.label.trim(),
+        recipient: form.recipient.trim(),
+        cep: form.cep.replace(/\D/g, ""),
+        street: form.street.trim(),
+        number: form.number.trim(),
+        complement: form.complement.trim() || undefined,
+        district: form.district.trim() || undefined,
+        city: form.city.trim(),
+        state: form.state.trim().toUpperCase(),
+        isDefault: form.isDefault,
+      };
+      if (address) {
+        await api.updateAddress(address.id, body);
+        toast.success("Endereço atualizado com sucesso!");
+      } else {
+        await api.createAddress(body);
+        toast.success("Endereço salvo com sucesso!");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      onOpenChange(false);
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível salvar o endereço agora.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const isEdit = !!address;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl rounded-3xl border-white/10 bg-[var(--card)] p-0">
+        <div className="max-h-[88vh] overflow-y-auto p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+              <MapPin className="h-5 w-5 text-[var(--neon-magenta)]" />
+              {isEdit ? "Editar endereço" : "Novo endereço"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {isEdit
+                ? "Atualize os dados do endereço salvo."
+                : "Preencha os dados do endereço de entrega."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={handleSubmit}
+            className="mt-4 grid gap-4 sm:grid-cols-6"
+          >
+            <div className="sm:col-span-3">
+              <Label htmlFor="addr-label" className="mb-1.5 block text-sm">
+                Apelido
+              </Label>
+              <Input
+                id="addr-label"
+                value={form.label}
+                onChange={(e) => update("label", e.target.value)}
+                placeholder="Casa, Trabalho..."
+                className={addrInputClass}
+                maxLength={40}
+              />
+            </div>
+            <div className="sm:col-span-3">
+              <Label
+                htmlFor="addr-recipient"
+                className="mb-1.5 block text-sm"
+              >
+                Quem recebe
+              </Label>
+              <Input
+                id="addr-recipient"
+                value={form.recipient}
+                onChange={(e) => update("recipient", e.target.value)}
+                placeholder="Nome de quem recebe"
+                className={addrInputClass}
+                maxLength={80}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="addr-cep" className="mb-1.5 block text-sm">
+                CEP
+              </Label>
+              <Input
+                id="addr-cep"
+                value={form.cep}
+                onChange={(e) => update("cep", maskCEP(e.target.value))}
+                placeholder="00000-000"
+                className={addrInputClass}
+                inputMode="numeric"
+              />
+            </div>
+            <div className="sm:col-span-4">
+              <Label htmlFor="addr-street" className="mb-1.5 block text-sm">
+                Rua
+              </Label>
+              <Input
+                id="addr-street"
+                value={form.street}
+                onChange={(e) => update("street", e.target.value)}
+                placeholder="Av. Via Láctea"
+                className={addrInputClass}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="addr-number" className="mb-1.5 block text-sm">
+                Número
+              </Label>
+              <Input
+                id="addr-number"
+                value={form.number}
+                onChange={(e) => update("number", e.target.value)}
+                placeholder="42"
+                className={addrInputClass}
+                inputMode="numeric"
+              />
+            </div>
+            <div className="sm:col-span-4">
+              <Label
+                htmlFor="addr-complement"
+                className="mb-1.5 block text-sm"
+              >
+                Complemento{" "}
+                <span className="text-muted-foreground">(opcional)</span>
+              </Label>
+              <Input
+                id="addr-complement"
+                value={form.complement}
+                onChange={(e) => update("complement", e.target.value)}
+                placeholder="Apto, bloco..."
+                className={addrInputClass}
+              />
+            </div>
+            <div className="sm:col-span-3">
+              <Label htmlFor="addr-district" className="mb-1.5 block text-sm">
+                Bairro{" "}
+                <span className="text-muted-foreground">(opcional)</span>
+              </Label>
+              <Input
+                id="addr-district"
+                value={form.district}
+                onChange={(e) => update("district", e.target.value)}
+                placeholder="Galáxia"
+                className={addrInputClass}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="addr-city" className="mb-1.5 block text-sm">
+                Cidade
+              </Label>
+              <Input
+                id="addr-city"
+                value={form.city}
+                onChange={(e) => update("city", e.target.value)}
+                placeholder="São Paulo"
+                className={addrInputClass}
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <Label htmlFor="addr-state" className="mb-1.5 block text-sm">
+                UF
+              </Label>
+              <Input
+                id="addr-state"
+                value={form.state}
+                onChange={(e) =>
+                  update(
+                    "state",
+                    e.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase(),
+                  )
+                }
+                placeholder="SP"
+                maxLength={2}
+                className={addrInputClass}
+              />
+            </div>
+            <div className="sm:col-span-6 flex items-center justify-between gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3.5">
+              <div>
+                <p className="text-sm font-semibold">Salvar como padrão</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Endereços padrão aparecem primeiro na hora de finalizar a
+                  compra.
+                </p>
+              </div>
+              <Switch
+                checked={form.isDefault}
+                onCheckedChange={(v) => update("isDefault", v)}
+              />
+            </div>
+
+            <DialogFooter className="sm:col-span-6 mt-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="rounded-full border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-white/10"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving}
+                className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 py-2.5 text-sm font-bold text-black hover:opacity-90 disabled:opacity-70"
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                {isEdit ? "Salvar alterações" : "Salvar endereço"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AddressCard({
+  address,
+  index,
+  onEdit,
+  onSetDefault,
+  onAskDelete,
+}: {
+  address: Address;
+  index: number;
+  onEdit: () => void;
+  onSetDefault: () => void;
+  onAskDelete: () => void;
+}) {
+  const parts: string[] = [`${address.street}, ${address.number}`];
+  if (address.complement) parts.push(address.complement);
+  if (address.district) parts.push(address.district);
+  parts.push(`${address.city} · ${address.state}`);
+  parts.push(`CEP ${address.cep}`);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.4) }}
+      className="glass relative overflow-hidden rounded-3xl p-5"
+    >
+      <div
+        className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-30 blur-2xl"
+        style={{ background: "var(--neon-magenta)" }}
+        aria-hidden
+      />
+
+      <div className="relative flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--neon-magenta)]/15 text-[var(--neon-magenta)]">
+            <MapPin className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="text-base font-bold leading-tight">
+              {address.label}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {address.recipient}
+            </p>
+          </div>
+        </div>
+        {address.isDefault && (
+          <Badge
+            variant="outline"
+            className="rounded-full border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300"
+          >
+            <Star className="mr-1 h-3 w-3" />
+            Padrão
+          </Badge>
+        )}
+      </div>
+
+      <div className="relative mt-3 space-y-0.5 text-sm text-foreground/85">
+        {parts.map((p, i) => (
+          <p
+            key={i}
+            className={
+              i === parts.length - 1
+                ? "font-mono text-xs text-muted-foreground"
+                : ""
+            }
+          >
+            {p}
+          </p>
+        ))}
+      </div>
+
+      <div className="relative mt-4 flex flex-wrap items-center gap-2">
+        <Button
+          onClick={onEdit}
+          variant="outline"
+          className="rounded-full border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Editar
+        </Button>
+        {!address.isDefault && (
+          <Button
+            onClick={onSetDefault}
+            variant="outline"
+            className="rounded-full border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+          >
+            <Star className="h-3.5 w-3.5 text-[var(--neon-lime)]" />
+            Tornar padrão
+          </Button>
+        )}
+        <Button
+          onClick={onAskDelete}
+          variant="ghost"
+          className="ml-auto rounded-full px-3.5 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Excluir
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
+function AddressesTab() {
+  const user = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s.hydrated);
+  const queryClient = useQueryClient();
+  const { data: addresses, isLoading } = useQuery({
+    queryKey: ["addresses"],
+    queryFn: () => api.listAddresses(),
+    enabled: hydrated && !!user,
+  });
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Address | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  function openCreate() {
+    setEditing(null);
+    setModalOpen(true);
+  }
+  function openEdit(addr: Address) {
+    setEditing(addr);
+    setModalOpen(true);
+  }
+
+  async function handleSetDefault(addr: Address) {
+    try {
+      await api.updateAddress(addr.id, { isDefault: true });
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      toast.success(`"${addr.label}" é agora seu endereço padrão.`);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Não foi possível atualizar.",
+      );
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await api.deleteAddress(id);
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      toast.success("Endereço removido.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Não foi possível remover.",
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-48 rounded-3xl bg-white/5" />
+        ))}
+      </div>
+    );
+  }
+
+  const list = addresses ?? [];
+
+  return (
+    <div className="space-y-5">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+        className="glass flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+      >
+        <div className="space-y-1">
+          <h2 className="flex items-center gap-2 text-lg font-bold sm:text-xl">
+            <MapPin className="h-5 w-5 text-[var(--neon-magenta)]" />
+            Meus endereços
+          </h2>
+          <p className="text-xs text-muted-foreground sm:text-sm">
+            Mantenha seus endereços de entrega salvos para finalizar mais
+            rápido.
+          </p>
+        </div>
+        <Button
+          onClick={openCreate}
+          className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 py-2.5 text-sm font-bold text-black hover:opacity-90"
+        >
+          <Plus className="h-4 w-4" />
+          Novo endereço
+        </Button>
+      </motion.div>
+
+      {list.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="glass mx-auto flex max-w-xl flex-col items-center gap-5 rounded-3xl p-10 text-center sm:p-14"
+        >
+          <div className="relative flex h-24 w-24 items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-[var(--neon-magenta)]/15 blur-3xl" />
+            <div className="absolute inset-0 animate-spin-slow rounded-full border-2 border-dashed border-[var(--neon-magenta)]/30" />
             <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5">
               <MapPin className="h-8 w-8 text-[var(--neon-magenta)]" />
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-sm font-bold">Nenhum endereço salvo ainda</p>
-            <p className="mx-auto max-w-xs text-xs text-muted-foreground">
-              Seus endereços de entrega ficam salvos a cada pedido. Em breve
-              você poderá gerenciá-los aqui.
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold sm:text-2xl">
+              Você ainda não tem endereços salvos
+            </h3>
+            <p className="mx-auto max-w-sm text-sm text-muted-foreground">
+              Salve seus endereços de entrega favoritos para finalizar suas
+              compras em poucos cliques.
             </p>
           </div>
           <Button
-            onClick={() => navigate("products")}
-            variant="outline"
-            className="rounded-full border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+            onClick={openCreate}
+            className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black hover:opacity-90"
           >
-            <Compass className="h-4 w-4" />
-            Fazer um pedido
+            <Plus className="h-4 w-4" />
+            Adicionar endereço
           </Button>
+        </motion.div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {list.map((addr, i) => (
+            <AddressCard
+              key={addr.id}
+              address={addr}
+              index={i}
+              onEdit={() => openEdit(addr)}
+              onSetDefault={() => handleSetDefault(addr)}
+              onAskDelete={() => setDeletingId(addr.id)}
+            />
+          ))}
         </div>
-      </motion.div>
+      )}
+
+      <AddressFormModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        address={editing}
+      />
+
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={(o) => !o && setDeletingId(null)}
+      >
+        <AlertDialogContent className="rounded-3xl border-white/10 bg-[var(--card)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-rose-400" />
+              Remover endereço?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              Esta ação não pode ser desfeita. O endereço será removido da sua
+              lista, mas seus pedidos anteriores continuam salvos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-full border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-white/10">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingId && handleDelete(deletingId)}
+              className="rounded-full bg-rose-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-600"
+            >
+              <Trash2 className="h-4 w-4" />
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -1030,12 +1776,22 @@ export function AccountView() {
             <User className="h-4 w-4" />
             Meus dados
           </TabsTrigger>
+          <TabsTrigger
+            value="enderecos"
+            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+          >
+            <MapPin className="h-4 w-4" />
+            Endereços
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="orders" className="mt-6">
           <OrdersTab orders={orders} isLoading={isLoading} />
         </TabsContent>
         <TabsContent value="profile" className="mt-6">
           <ProfileTab user={user} />
+        </TabsContent>
+        <TabsContent value="enderecos" className="mt-6">
+          <AddressesTab />
         </TabsContent>
       </Tabs>
 

@@ -34,11 +34,25 @@ import {
   Power,
   Copy,
   Check,
+  Bell,
+  Mail,
+  Clock,
+  Truck,
+  Sparkles,
+  RefreshCw,
+  ChevronDown,
 } from "lucide-react";
 import { api } from "@/lib/client";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
-import type { Order, Product, OrderStatus, Coupon } from "@/lib/types";
+import type {
+  Order,
+  Product,
+  OrderStatus,
+  Coupon,
+  Notification,
+  NotificationType,
+} from "@/lib/types";
 import {
   formatPrice,
   formatDate,
@@ -91,6 +105,11 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -251,6 +270,38 @@ function MetricCardSkeleton() {
       <Skeleton className="h-11 w-11 rounded-xl" />
       <Skeleton className="mt-4 h-9 w-24" />
       <Skeleton className="mt-2 h-3 w-20" />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Mini stat (compact glass card with icon + number + label)
+// ---------------------------------------------------------------------------
+
+interface MiniStatProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent: string;
+}
+
+function MiniStat({ icon, label, value, accent }: MiniStatProps) {
+  return (
+    <div className="glass flex items-center gap-3 rounded-2xl border border-white/10 p-3 sm:p-4">
+      <div
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10"
+        style={{ color: accent, background: `${accent}1f` }}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-lg font-bold leading-tight tracking-tight">
+          {value}
+        </p>
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+      </div>
     </div>
   );
 }
@@ -2041,6 +2092,33 @@ function CouponsTab() {
         </Button>
       </div>
 
+      {data && data.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <MiniStat
+            icon={<Ticket className="h-4 w-4" />}
+            label="Cupons ativos"
+            value={String(data.filter((c) => c.active).length)}
+            accent="#34e7ff"
+          />
+          <MiniStat
+            icon={<Receipt className="h-4 w-4" />}
+            label="Total de usos"
+            value={String(
+              data.reduce((acc, c) => acc + (c.usageCount ?? 0), 0),
+            )}
+            accent="#ff5cf0"
+          />
+          <MiniStat
+            icon={<TrendingUp className="h-4 w-4" />}
+            label="Desconto gerado"
+            value={formatPrice(
+              data.reduce((acc, c) => acc + (c.totalDiscount ?? 0), 0),
+            )}
+            accent="#c6ff5a"
+          />
+        </div>
+      )}
+
       {isError ? (
         <div className="glass rounded-2xl border border-white/10 p-8 text-center text-sm text-muted-foreground">
           <p className="mb-4">
@@ -2079,6 +2157,12 @@ function CouponsTab() {
                     Status
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Usos
+                  </TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Desconto gerado
+                  </TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
                     Validade
                   </TableHead>
                   <TableHead className="text-right text-xs uppercase tracking-wider text-muted-foreground">
@@ -2090,14 +2174,14 @@ function CouponsTab() {
                 {isLoading ? (
                   Array.from({ length: 4 }).map((_, i) => (
                     <TableRow key={i} className="border-white/5">
-                      <TableCell colSpan={8}>
+                      <TableCell colSpan={10}>
                         <Skeleton className="h-9 w-full" />
                       </TableCell>
                     </TableRow>
                   ))
                 ) : !data || data.length === 0 ? (
                   <TableRow className="border-white/5">
-                    <TableCell colSpan={8} className="py-12 text-center">
+                    <TableCell colSpan={10} className="py-12 text-center">
                       <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
                           <Ticket className="h-6 w-6 opacity-60" />
@@ -2180,6 +2264,27 @@ function CouponsTab() {
                           >
                             Inativo
                           </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {(c.usageCount ?? 0) > 0 ? (
+                          <Badge
+                            variant="outline"
+                            className="rounded-full border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 text-[11px] font-semibold text-cyan-300"
+                          >
+                            {c.usageCount}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {(c.totalDiscount ?? 0) > 0 ? (
+                          <span className="text-sm font-semibold text-emerald-300">
+                            {formatPrice(c.totalDiscount ?? 0)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
@@ -2290,6 +2395,235 @@ function CouponsTab() {
 }
 
 // ---------------------------------------------------------------------------
+// Notifications tab
+// ---------------------------------------------------------------------------
+
+type NotificationIcon = React.ComponentType<{ className?: string }>;
+
+const NOTIFICATION_META: Record<
+  NotificationType,
+  { Icon: NotificationIcon; color: string }
+> = {
+  order_created: { Icon: Package, color: "#34e7ff" },
+  order_status: { Icon: Truck, color: "#a779ff" },
+  coupon_applied: { Icon: Ticket, color: "#ff5cf0" },
+  welcome: { Icon: Sparkles, color: "#c6ff5a" },
+};
+
+function NotificationStatusBadge({
+  status,
+}: {
+  status: Notification["status"];
+}) {
+  const map: Record<
+    Notification["status"],
+    { label: string; className: string }
+  > = {
+    sent: {
+      label: "Enviado",
+      className:
+        "border-emerald-500/30 bg-emerald-500/15 text-emerald-300",
+    },
+    queued: {
+      label: "Na fila",
+      className: "border-amber-500/30 bg-amber-500/15 text-amber-300",
+    },
+    failed: {
+      label: "Falhou",
+      className: "border-rose-500/30 bg-rose-500/15 text-rose-300",
+    },
+  };
+  const s = map[status] ?? map.sent;
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+        s.className,
+      )}
+    >
+      {s.label}
+    </Badge>
+  );
+}
+
+function NotificationsTab() {
+  const queryClient = useQueryClient();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => api.listNotifications(50),
+  });
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="space-y-4"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="font-semibold">Central de notificações</h3>
+          <p className="text-xs text-muted-foreground">
+            Veja os e-mails enviados automaticamente pela loja (simulação).
+          </p>
+        </div>
+        <Button
+          onClick={() =>
+            queryClient.invalidateQueries({ queryKey: ["notifications"] })
+          }
+          variant="outline"
+          disabled={isFetching}
+          className="border-white/10 bg-white/5 hover:bg-white/10"
+        >
+          <RefreshCw
+            className={cn("h-4 w-4", isFetching && "animate-spin")}
+          />
+          Atualizar
+        </Button>
+      </div>
+
+      {isError ? (
+        <div className="glass rounded-2xl border border-white/10 p-8 text-center text-sm text-muted-foreground">
+          <p className="mb-4">
+            Não foi possível carregar as notificações. Tente novamente em
+            instantes.
+          </p>
+          <Button
+            onClick={() => refetch()}
+            variant="outline"
+            className="border-white/10 bg-white/5 hover:bg-white/10"
+          >
+            Tentar novamente
+          </Button>
+        </div>
+      ) : isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+          ))}
+        </div>
+      ) : !data || data.length === 0 ? (
+        <div className="glass rounded-2xl border border-white/10 p-10 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
+            <Bell className="h-7 w-7 opacity-60" />
+          </div>
+          <p className="font-medium text-foreground">
+            Nenhuma notificação enviada ainda.
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Quando um pedido for criado ou tiver o status alterado, o e-mail
+            aparecerá aqui.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="max-h-[32rem] space-y-3 overflow-y-auto pr-1">
+            {data.map((n, i) => {
+              const meta = NOTIFICATION_META[n.type] ?? NOTIFICATION_META.order_created;
+              const isOpen = expandedId === n.id;
+              return (
+                <motion.div
+                  key={n.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    delay: Math.min(i * 0.04, 0.4),
+                  }}
+                >
+                  <Collapsible
+                    open={isOpen}
+                    onOpenChange={(open) =>
+                      setExpandedId(open ? n.id : null)
+                    }
+                  >
+                    <div className="glass rounded-2xl border border-white/10 p-4 transition-colors hover:bg-white/[0.03]">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10"
+                          style={{
+                            color: meta.color,
+                            background: `${meta.color}1f`,
+                          }}
+                        >
+                          <meta.Icon className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <CollapsibleTrigger asChild>
+                              <button
+                                type="button"
+                                className="text-left text-sm font-medium leading-tight transition-colors hover:text-[var(--neon-cyan)]"
+                              >
+                                {n.subject}
+                              </button>
+                            </CollapsibleTrigger>
+                            <NotificationStatusBadge status={n.status} />
+                          </div>
+                          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            <span className="inline-flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              Para: {n.to}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {formatDate(n.sentAt)}
+                            </span>
+                            {n.orderId && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  toast(`Pedido ${n.orderId}`)
+                                }
+                                className="inline-flex items-center gap-1 text-[var(--neon-cyan)] transition-colors hover:underline"
+                              >
+                                <Package className="h-3 w-3" />
+                                Ver pedido
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <CollapsibleTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 hover:bg-white/10"
+                            aria-label={isOpen ? "Recolher" : "Expandir"}
+                          >
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 transition-transform",
+                                isOpen && "rotate-180",
+                              )}
+                            />
+                          </Button>
+                        </CollapsibleTrigger>
+                      </div>
+                      <CollapsibleContent>
+                        <pre className="mt-3 whitespace-pre-wrap break-words rounded-xl bg-black/30 p-3 font-mono text-xs leading-relaxed text-foreground/90">
+                          {n.body}
+                        </pre>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+                </motion.div>
+              );
+            })}
+          </div>
+          <p className="text-center text-xs text-muted-foreground">
+            Mostrando {data.length}{" "}
+            {data.length === 1 ? "notificação" : "notificações"}
+          </p>
+        </>
+      )}
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main AdminView
 // ---------------------------------------------------------------------------
 
@@ -2374,6 +2708,13 @@ export function AdminView() {
             <Ticket className="h-4 w-4" />
             Cupons
           </TabsTrigger>
+          <TabsTrigger
+            value="notificacoes"
+            className="data-[state=active]:bg-[var(--neon-cyan)]/15 data-[state=active]:text-[var(--neon-cyan)] rounded-lg px-4 py-2"
+          >
+            <Bell className="h-4 w-4" />
+            Notificações
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -2387,6 +2728,9 @@ export function AdminView() {
         </TabsContent>
         <TabsContent value="cupons">
           <CouponsTab />
+        </TabsContent>
+        <TabsContent value="notificacoes">
+          <NotificationsTab />
         </TabsContent>
       </Tabs>
     </div>

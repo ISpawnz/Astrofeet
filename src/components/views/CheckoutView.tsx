@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -16,6 +17,7 @@ import {
   Ticket,
   Check,
   X,
+  MapPin,
 } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { useUIStore } from "@/stores/ui";
@@ -30,10 +32,13 @@ import {
   maskExpiry,
   maskPhone,
 } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import type { Address } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   RadioGroup,
@@ -123,6 +128,55 @@ export function CheckoutView() {
       }));
     }
   }, [user]);
+
+  // Saved addresses (only fetched when logged in)
+  const { data: savedAddresses } = useQuery({
+    queryKey: ["addresses"],
+    queryFn: () => api.listAddresses(),
+    enabled: !!user,
+  });
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null,
+  );
+
+  function fillFromAddress(addr: Address) {
+    setForm((f) => ({
+      ...f,
+      cep: addr.cep,
+      street: addr.street,
+      number: addr.number,
+      complement: addr.complement ?? "",
+      district: addr.district ?? "",
+      city: addr.city,
+      state: addr.state,
+    }));
+    setSelectedAddressId(addr.id);
+    setErrors((e) => {
+      const next = { ...e };
+      delete next.cep;
+      delete next.street;
+      delete next.number;
+      delete next.district;
+      delete next.city;
+      delete next.state;
+      return next;
+    });
+    toast.success(`Endereço “${addr.label}” preenchido.`);
+  }
+
+  function clearAddressForm() {
+    setForm((f) => ({
+      ...f,
+      cep: "",
+      street: "",
+      number: "",
+      complement: "",
+      district: "",
+      city: "",
+      state: "",
+    }));
+    setSelectedAddressId(null);
+  }
 
   const sub = subtotal();
   const discount = couponState.status === "applied" ? couponState.discount ?? 0 : 0;
@@ -396,6 +450,100 @@ export function CheckoutView() {
               </span>
               Entrega
             </legend>
+
+            {/* Saved addresses quick-fill */}
+            {savedAddresses && savedAddresses.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="mt-4"
+              >
+                <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 text-[var(--neon-violet)]" />
+                  <span>
+                    Selecione um endereço salvo ou preencha manualmente
+                    abaixo.
+                  </span>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {savedAddresses.map((addr, i) => {
+                    const active = selectedAddressId === addr.id;
+                    return (
+                      <motion.button
+                        key={addr.id}
+                        type="button"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          duration: 0.3,
+                          delay: Math.min(i * 0.05, 0.3),
+                        }}
+                        onClick={() => fillFromAddress(addr)}
+                        className={cn(
+                          "group relative flex min-w-[220px] shrink-0 flex-col gap-1 rounded-2xl border p-3.5 text-left transition-all",
+                          active
+                            ? "border-[var(--neon-cyan)] bg-[var(--neon-cyan)]/10 neon-ring-soft"
+                            : "border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]",
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-1.5 text-sm font-bold">
+                            <MapPin className="h-3.5 w-3.5 text-[var(--neon-magenta)]" />
+                            {addr.label}
+                          </span>
+                          {active ? (
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--neon-cyan)] text-black">
+                              <Check className="h-3 w-3" />
+                            </span>
+                          ) : addr.isDefault ? (
+                            <Badge
+                              variant="outline"
+                              className="rounded-full border-emerald-500/30 bg-emerald-500/15 px-1.5 py-0 text-[9px] font-bold text-emerald-300"
+                            >
+                              Padrão
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <p className="line-clamp-1 text-xs text-muted-foreground">
+                          {addr.recipient}
+                        </p>
+                        <p className="line-clamp-1 text-xs text-muted-foreground">
+                          {addr.city} · {addr.state}
+                        </p>
+                        <span
+                          className={cn(
+                            "mt-1 inline-flex items-center gap-1 text-[11px] font-semibold",
+                            active
+                              ? "text-[var(--neon-cyan)]"
+                              : "text-muted-foreground group-hover:text-foreground",
+                          )}
+                        >
+                          {active ? (
+                            <>
+                              <Check className="h-3 w-3" />
+                              Selecionado
+                            </>
+                          ) : (
+                            "Usar"
+                          )}
+                        </span>
+                      </motion.button>
+                    );
+                  })}
+                  {/* Clear button */}
+                  <button
+                    type="button"
+                    onClick={clearAddressForm}
+                    className="flex min-w-[100px] shrink-0 items-center justify-center gap-1 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-4 text-xs font-semibold text-muted-foreground transition hover:border-white/25 hover:text-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Limpar
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
             <div className="mt-4 grid gap-4 sm:grid-cols-6">
               <div className="sm:col-span-2">
                 <Label htmlFor="ck-cep" className="mb-1.5 block text-sm">

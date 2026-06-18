@@ -77,7 +77,7 @@ export function Header() {
               <button
                 key={item.label}
                 onClick={() => navigate(item.view, item.params)}
-                className="rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition hover:bg-white/5 hover:text-foreground"
+                className="nav-underline rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition hover:bg-white/5 hover:text-foreground"
               >
                 {item.label}
               </button>
@@ -106,7 +106,7 @@ export function Header() {
             >
               <Heart className="h-5 w-5" />
               {mounted && wishlistCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--neon-magenta)] px-1 text-[10px] font-bold text-black">
+                <span className="animate-pop-in absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--neon-magenta)] px-1 text-[10px] font-bold text-black shadow-[0_0_12px_var(--neon-magenta)]">
                   {wishlistCount}
                 </span>
               )}
@@ -121,7 +121,7 @@ export function Header() {
             >
               <ShoppingCart className="h-5 w-5" />
               {mounted && cartCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--neon-cyan)] px-1 text-[10px] font-bold text-black">
+                <span className="animate-pop-in absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--neon-cyan)] px-1 text-[10px] font-bold text-black shadow-[0_0_12px_var(--neon-cyan)]">
                   {cartCount}
                 </span>
               )}
