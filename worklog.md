@@ -2193,3 +2193,268 @@ Task: QA + order export + admin bulk actions + rating distribution + recently vi
 5. **SEO**: meta tags, structured data, sitemap.
 6. **Admin product search/filter** — search by name, filter by category/brand in the products tab.
 7. **Customer loyalty program** — points for purchases, redeemable for discounts.
+
+---
+Task ID: CRON-10B
+Agent: full-stack-developer
+Task: Customer loyalty program UI + product quick view modal
+
+Work Log:
+- Read worklog.md (last ~600 lines, CRON-9 → CRON-9B summaries) for
+  context on established design language (glass / glass-strong,
+  text-gradient-animated, orbit rings, btn-cosmic, brand neons, pt-BR
+  copy, framer-motion entrances). Read AccountView.tsx, ProductCard.tsx,
+  src/app/page.tsx, src/stores/ui.ts, src/lib/client.ts (confirmed
+  api.getLoyalty + api.redeemLoyalty + api.product already wired),
+  src/lib/types.ts, src/lib/format.ts, src/components/ui/dialog.tsx,
+  ProductDetailView hero/orbit-ring patterns for design parity.
+  Confirmed backend `GET /api/loyalty` returns 401 properly for
+  unauth; loyalty redeem endpoint exists.
+
+Feature 1 — Loyalty "Recompensas" tab in AccountView:
+- Added `Gift`, `TrendingUp`, `Copy` to the lucide-react import block
+  (Star, Sparkles, Clock, Loader2, motion, useQuery, useQueryClient,
+  toast, formatPrice, formatDate, Button, Skeleton, cn all already
+  imported).
+- Created a new `LoyaltyTab()` component (placed right before
+  `// ---------- Main ----------`), featuring:
+  * `useQuery(["loyalty"], api.getLoyalty, { enabled: hydrated && !!user })`.
+  * Local `redeemingCost: number | null` state for per-card spinner.
+  * Computed `nextTier` (smallest unreached tier), `prevTier`, and
+    `progressPct` (0-100) for the progress bar.
+  * `REDEEM_TIERS` const array: 100 pts → R$5 (cyan), 250 pts →
+    R$12.50 (violet), 500 pts → R$25 (magenta).
+  * `handleRedeem(cost)` calls `api.redeemLoyalty(cost)`, toasts
+    `Cupom {code} criado! Use no checkout.` (with Gift icon), copies
+    the coupon code to clipboard via `navigator.clipboard.writeText`,
+    toasts `Código copiado!` (with Copy icon) on success, invalidates
+    `["loyalty"]`, shows toast.error on failure. Per-card "Resgatando…"
+    state via Loader2 spinner while submitting.
+  * Hero card (glass-strong, rounded-3xl, p-6/p-8) with violet +
+    cyan gradient glow blobs + floating `Sparkles` icon
+    (`animate-astro-float`). Large balance `text-gradient-animated`
+    5xl/6xl + "pontos estelares" label + lime "Vale R$ X em
+    descontos" + animated progress bar (cyan → violet → magenta
+    gradient, framer-motion width animation). Loading skeleton while
+    `isLoading`.
+  * Info banner (glass, amber accent): "Ganhe 1 ponto para cada R$1
+    gasto. Use os pontos para resgatar cupons de desconto
+    exclusivos."
+  * Redemption section with `Gift` icon title + 3-card grid
+    (sm:grid-cols-3). Each card: tier-cost (3xl, neon-colored), "pts"
+    label, "Cupom de desconto" subtitle, value (formatPrice),
+    "Resgatar" button (gradient cyan→violet when canRedeem, disabled
+    glass style when points insufficient) with `title="Pontos
+    insuficientes"` tooltip. Framer-motion entrance.
+  * History section with `Clock` icon title + scrollable list
+    (`max-h-64 overflow-y-auto`) of entries. Each entry: TrendingUp
+    icon (lime) + description + formatDate + "+N" lime chip. Staggered
+    framer-motion x-slide entrance (delay = i * 0.05). Empty state
+    ("Você ainda não ganhou pontos. Faça um pedido para começar!")
+    with "Explorar drops" gradient CTA → navigate("products").
+- Wired a 6th TabsTrigger (value="recompensas", Star icon, label
+  "Recompensas") into the existing TabsList after the "Alertas"
+  trigger, and a matching TabsContent rendering `<LoyaltyTab />`
+  after the "alertas" content. Same active-tab gradient styling as
+  the other 5 tabs.
+
+Feature 2 — Product Quick View modal:
+- Added `quickViewProductId: string | null`, `openQuickView(id)`, and
+  `closeQuickView()` to `src/stores/ui.ts` UIState interface +
+  initial state + setters. No existing fields touched.
+- Created `src/components/views/QuickViewModal.tsx`:
+  * `QuickViewModal` reads `quickViewProductId` + `closeQuickView`
+    from useUIStore, opens a shadcn Dialog (showCloseButton={false}
+    so we can render our own X button top-right with consistent
+    cosmic glass style).
+  * DialogTitle + DialogDescription included (sr-only) for a11y.
+  * Custom `DialogClose` "✕" button top-right (rounded-full, glass,
+    focus ring cyan).
+  * `AnimatePresence` wraps a `QuickViewBody` keyed by product id.
+  * `QuickViewBody` uses `useQuery(["product", id], () =>
+    api.product(id), { enabled: !!id })`. Loading = centered Loader2
+    spinner; error = friendly message.
+  * `ProductPreview` (inner) renders:
+    - Two-column grid (sm:grid-cols-2) inside the DialogContent
+      (max-w-3xl, glass-strong styling, rounded-3xl).
+    - Left column (aspect-square): accent radial glow, 3 orbit rings
+      (animate-spin-slow on outer, plus inset-12 and inset-20
+      static rings) — same hero pattern from HomeView. Animated
+      float on product image (`animate-astro-float`). Badge chip
+      top-left (cyan), "Esgotado" rose chip bottom-center when
+      soldOut.
+    - Right column (p-5/p-6): brand eyebrow, name (2xl bold),
+      amber star rating + review count, price (2xl black) + 10x
+      installments, line-clamp-3 description, compact size chips
+      (with per-size out-of-stock state via sizeStock map —
+      line-through + disabled), quantity selector (Minus/Plus
+      circular buttons, qty display), "Adicionar ao carrinho"
+      btn-cosmic gradient button (Check icon + "Adicionado!" 1.4s
+      feedback on success, opens cart drawer), "Ver detalhes"
+      outline button (Eye icon, navigates to product detail view +
+      closes modal).
+  * Framer-motion entrance (scale 0.96 → 1 + opacity 0 → 1).
+  * Per-size-aware max quantity + soldOut detection (matches
+    ProductDetailView logic) for the quantity stepper and Add button
+    disabled state.
+- Wired `<QuickViewModal />` into `src/app/page.tsx` (import + render
+  alongside the other modals, between CompareDrawer and
+  ShipAssistant).
+- Added a quick-view button to `src/components/views/ProductCard.tsx`:
+  * Added `Eye` to lucide-react imports.
+  * Added `openQuickView = useUIStore((s) => s.openQuickView)` next
+    to the existing `navigate` selector.
+  * Added `handleQuickView(e)` that calls `e.stopPropagation()` +
+    `openQuickView(product.id)` (so clicking it does NOT navigate to
+    the product detail page).
+  * Rendered a glass-chip button (bottom-left of the image area,
+    absolute bottom-2 left-2, h-10) with Eye icon (violet) and
+    "Visualizar" text (hidden on mobile, visible sm+). Appears on
+    card hover (`opacity-0 group-hover:opacity-100`),
+    `aria-label="Visualização rápida de {product.name}"`, hover
+    scale-105.
+
+Verification:
+- `node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json 2>&1
+  | grep -E "AccountView|QuickViewModal|stores/ui|page\.tsx|ProductCard"`
+  → ZERO errors. All remaining tsc errors are pre-existing JSON-Prisma
+  stub friction in `src/app/api/**` (out of scope, untouched).
+- ESLint: pre-existing `scopeManager.addGlobals is not a function`
+  runtime error (ESLint 10.5 + bunx mismatch, same as CRON-8A/9A).
+  Env issue, not code.
+- Dev server (port 3000): clean compile (`✓ Compiled in Nms`), HTTP
+  200 on `/`, `/api/loyalty` returns 401 properly when unauth (per
+  curl test). No errors/warnings in dev.log.
+
+Stage Summary:
+- Modified: `src/stores/ui.ts` (+ quickViewProductId state, +
+  openQuickView/closeQuickView actions).
+- Modified: `src/app/page.tsx` (+ QuickViewModal import, + rendered
+  alongside other modals).
+- Modified: `src/components/views/ProductCard.tsx` (+ Eye import, +
+  openQuickView selector, + handleQuickView handler, + bottom-left
+  glass-chip "Visualizar" button on the image area).
+- Modified: `src/components/views/AccountView.tsx` (+ Gift,
+  TrendingUp, Copy imports; + new LoyaltyTab component with hero
+  card + info banner + 3-tier redemption grid + scrollable history
+  list + empty state; + 6th "Recompensas" TabsTrigger with Star
+  icon; + TabsContent value="recompensas" rendering <LoyaltyTab />).
+- Created: `src/components/views/QuickViewModal.tsx` (NEW — full
+  quick-preview Dialog with orbit-ring image column, info column
+  with size/qty selectors and Add to cart + Ver detalhes actions).
+- No backend files touched. No AdminView/InfoView/CheckoutView/
+  ProductDetailView/HomeView/layout/* touched.
+
+---
+Task ID: CRON-10A
+Agent: full-stack-developer
+Task: Admin product search/filter + admin dashboard charts (revenue + top products)
+
+Work Log:
+- Read worklog.md and AdminView.tsx (3446 lines after edits) to understand the existing OverviewTab (metric cards + by-status charts + recent orders table) and ProductsTable (catalog CRUD with table).
+- Updated imports in AdminView.tsx: added `CartesianGrid` from recharts, `Users`, `Trophy`, `Filter` from lucide-react, and `formatShortDate` from `@/lib/format`.
+- Added `PRODUCT_FILTER_CATEGORIES` constant (Casual, Corrida, Lifestyle, Performance, Skate) matching the actual seed-data category values.
+- OverviewTab — metric cards: changed grid from `lg:grid-cols-4` to `sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5`; updated skeleton count to 5; added a 5th MetricCard "Clientes" using `data.totalCustomers`, `Users` icon, violet accent (#a779ff).
+- OverviewTab — new charts section (placed between metric cards and the existing by-status charts) in `grid gap-4 lg:grid-cols-2`:
+  - Chart 1 "Faturamento últimos 7 dias" (recharts BarChart): cyan→violet linear gradient (`#34e7ff` → `#a779ff`), CartesianGrid, custom Tooltip `content` render showing `label · formatShortDate(date)`, `Faturamento: formatPrice(revenue)`, `Pedidos: orders`; orbit-divider above; 240px height; friendly "Sem vendas nos últimos 7 dias" empty state when all revenues are 0; framer-motion entrance.
+  - Chart 2 "Produtos mais vendados" (custom divs, no recharts): horizontal bar list of `topProducts`, each row = rank badge + product name (left) + formatPrice revenue (right), gradient cyan→violet bar proportional to top revenue, units + % caption; Trophy icon + lime accent badge; "Sem vendas registradas ainda" empty state; framer-motion staggered entrance.
+- ProductsTable — added client-side search & filter state: `searchQuery`, `debouncedSearch` (300ms via useEffect + setTimeout), `categoryFilter`, `brandFilter`; `brandOptions` derived from data via useMemo; `filtered` via useMemo matching name/brand (case-insensitive) + category + brand; `filtersActive` flag + `clearFilters()` helper.
+- ProductsTable — inserted a glass filter panel between the heading row and the table card: rounded-full glass search Input with Search icon ("Buscar por nome ou marca..."), category Select (Todas + 5 categories), brand Select (Todas + derived brands), ghost "Limpar filtros" Button with X icon (visible only when filtersActive), and a "X produtos" count pill with Filter icon (desktop + mobile variants). Existing "Novo produto" button kept in the heading row.
+- ProductsTable — wired the table body to `filtered.map(...)` (was `data.map`) and added a new "Nenhum produto encontrado" empty state (with Limpar filtros CTA) between the "Catálogo vazio" branch and the list branch.
+- Verified: `node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json 2>&1 | grep -E "AdminView"` → ZERO errors. Local eslint on the file → 0 errors, 3 pre-existing warnings (unused eslint-disable directives on the order effect and img elements, all from prior code). Dev server compiles cleanly.
+
+Stage Summary:
+- Modified: src/components/views/AdminView.tsx ONLY (imports, PRODUCT_FILTER_CATEGORIES constant, OverviewTab metric cards + 2 new chart sections, ProductsTable filter state + UI + filtered table body + empty state).
+- No backend / store / lib / page.tsx / other view files touched.
+- Backend `GET /api/admin/metrics` already returns `totalCustomers`, `revenueLast7Days`, `topProducts` — consumed as-is.
+
+---
+Task ID: CRON-10 (main thread)
+Agent: main (Z.ai Code) — 15-min webDevReview cron job (id 214859)
+Task: QA + loyalty program + admin product search/filter + admin dashboard charts + quick view modal + styling polish
+
+## Current project status assessment
+- Project stable from CRON-9 (order export, admin bulk actions, rating distribution, recently viewed enhancement).
+- Dev server healthy on port 3000. HTTP 200.
+- agent-browser QA: all views passing, all features functional.
+- 42 pre-existing TS errors (all JSON-Prisma stub friction, non-runtime).
+- QA finding: admin products tab had NO search/filter functionality (confirmed missing).
+
+## Completed modifications this round
+
+### Backend new features
+1. **Loyalty program** (`src/app/api/loyalty/route.ts` + `src/app/api/loyalty/redeem/route.ts`):
+   - `GET /api/loyalty` — returns points balance, equivalent value in BRL, points per real (1 pt/R$1), redemption rate (1 pt = R$0.05), min redeem (100 pts), and history (from orders).
+   - `POST /api/loyalty/redeem` with `{ points }` — deducts points, creates a fixed-amount coupon (code `STARS{pts}-{timestamp}`), queues a coupon_applied notification.
+   - Orders automatically award 1 point per R$1 spent (hooked into `POST /api/orders`).
+   - Verified: explorador had 500 points → redeemed 100 → got coupon STARS100-8269 (R$5) → 400 points remaining.
+2. **Admin metrics enhancement** (`src/app/api/admin/metrics/route.ts`):
+   - Added `totalCustomers` count.
+   - Added `revenueLast7Days`: 7 daily entries with `{ date, label, revenue, orders }`.
+   - Added `topProducts`: top 5 products by revenue with `{ name, slug, units, revenue }`.
+   - Verified: 2 customers, 7 daily entries, Void Classic (3 units, R$958.5) + Solar Pulse (2 units, R$858).
+
+### Frontend new features (via subagents)
+1. **Admin product search/filter** (subagent CRON-10A):
+   - ProductsTable: glass search input (debounced 300ms) + category Select + brand Select + "Limpar filtros" button + product count.
+   - Filters products client-side by name/brand (case-insensitive) + category + brand.
+   - Empty state: "Nenhum produto encontrado" with clear-filters CTA.
+   - Verified: search input "Buscar por nome ou marca..." + 2 select dropdowns present.
+2. **Admin dashboard charts** (subagent CRON-10A):
+   - 5th metric card "Clientes" (totalCustomers, Users icon, violet accent).
+   - Chart 1: "Faturamento últimos 7 dias" — recharts BarChart with cyan→violet gradient bars, custom tooltip (date, revenue, orders). Empty state when all revenues 0.
+   - Chart 2: "Produtos mais vendados" — custom horizontal bar list with rank badge, name, revenue, gradient bars, units + %. Trophy icon + lime accent.
+   - Both charts in `grid lg:grid-cols-2 gap-6` layout.
+   - Verified: both chart headings present on admin overview tab.
+3. **Loyalty program UI** (subagent CRON-10B):
+   - 6th "Recompensas" tab in AccountView (Star icon).
+   - Hero card: large points balance (text-gradient-animated) + "pontos estelares" + lime value + progress bar to next tier + Sparkles icon.
+   - Redemption grid: 3 tier cards (100pts→R$5, 250pts→R$12,50, 500pts→R$25). Disabled if insufficient points. On redeem: creates coupon → toast → clipboard copy → invalidate.
+   - History list: scrollable, staggered entrance, TrendingUp icons, +N lime chips.
+   - Info banner: "1 ponto para cada R$1 gasto".
+   - Verified: 500 pontos estelares displayed, 3 redemption tiers visible.
+4. **Product quick view modal** (subagent CRON-10B):
+   - New `QuickViewModal.tsx` — Dialog with 2-column layout (image left, info right).
+   - Product image with accent glow + orbit rings, name, brand, rating, price + installments, description (line-clamp-3), size selector, quantity selector, "Adicionar ao carrinho" + "Ver detalhes" buttons.
+   - `openQuickView(id)` / `closeQuickView()` added to UI store.
+   - Quick view button (Eye icon, glass-chip) on ProductCard, bottom-left, hover-reveal.
+   - Wired into page.tsx.
+   - Verified: clicking quick view opens modal with Meteor Air details (image, name, price R$459, sizes 38-44).
+
+### Styling polish
+- Loyalty hero card: violet/cyan glow blobs, floating Sparkles, animated gradient progress bar.
+- Redemption tier cards: cyan/violet/magenta accents per tier.
+- Dashboard charts: cyan→violet gradient bars, lime accents for top products.
+- Quick view modal: glass-strong, rounded-3xl, accent glow + orbit rings.
+- Product card quick view button: violet glass-chip, hover-reveal.
+
+## Verification results
+- TypeScript: 42 errors total (all pre-existing JSON-Prisma stub friction). ZERO errors in any frontend file or new backend file.
+- Dev server: HTTP 200, compiles cleanly, no runtime errors.
+- API tests:
+  - Loyalty (no auth): 401 (proper error).
+  - Redeem (no auth): 401.
+  - Loyalty balance (auth): returns 500 points + history.
+  - Redeem (auth): creates coupon STARS100-8269 (R$5), 400 points remaining.
+  - Admin metrics: returns totalCustomers=2, revenueLast7Days (7 entries), topProducts (2 entries).
+- agent-browser QA:
+  - Admin overview: "Faturamento últimos 7 dias" + "Produtos mais vendados" charts present. "Clientes" metric card present.
+  - Admin products: search input "Buscar por nome ou marca..." + 2 filter selects present.
+  - Account view: 6 tabs (Meus pedidos, Meus dados, Endereços, Notificações, Alertas, Recompensas). Recompensas shows 500 pontos estelares + 3 redemption tiers.
+  - Quick view: clicking Eye button opens modal with full product preview (image, name, price, sizes, add to cart).
+
+## Unresolved issues / risks
+- 42 pre-existing TS errors (all JSON-Prisma stub friction). Non-runtime. Would be eliminated by switching to real Prisma client.
+- Loyalty points stored as JSON string on user record (`loyaltyPoints` field). No dedicated points transaction table — history is computed from orders, not stored. Redeemed points are deducted but there's no "redemption history" (only earned history from orders).
+- Image upload uses base64 Data URLs. Could bloat JSON store for large images.
+- Quick view modal fetches product data on open (slight delay). Could prefetch or cache.
+
+## Priority recommendations for next phase
+1. **Real Prisma/Postgres swap** — db.ts is 1:1 Prisma-shaped; drop-in once prisma installs. Eliminates all 42 TS errors.
+2. **Loyalty redemption history** — store redemption transactions in a dedicated collection so users can see both earned + redeemed history.
+3. **Object storage for images** — replace base64 with S3/Cloudinary upload.
+4. **Performance**: next/image optimization, code-split heavy views.
+5. **Accessibility audit**: ARIA labels, keyboard navigation, screen reader support.
+6. **SEO**: meta tags, structured data, sitemap.
+7. **Email template designer** — richer HTML email templates for notifications.
+8. **Abandoned cart recovery** — notify users who left items in cart for 24h+.

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShoppingCart, Star, Heart, GitCompare } from "lucide-react";
+import { ShoppingCart, Star, Heart, GitCompare, Eye } from "lucide-react";
 import { useState } from "react";
 import type { Product } from "@/lib/types";
 import { useUIStore } from "@/stores/ui";
@@ -28,6 +28,7 @@ export function ProductCard({
   index?: number;
 }) {
   const navigate = useUIStore((s) => s.navigate);
+  const openQuickView = useUIStore((s) => s.openQuickView);
   const add = useCartStore((s) => s.add);
   const toggleWishlist = useWishlistStore((s) => s.toggleProduct);
   const inWishlist = useWishlistStore((s) => s.has(product.id));
@@ -68,6 +69,11 @@ export function ProductCard({
         ? `${product.name} saiu da comparação`
         : `${product.name} adicionado à comparação`,
     );
+  }
+
+  function handleQuickView(e: React.MouseEvent) {
+    e.stopPropagation();
+    openQuickView(product.id);
   }
 
   return (
@@ -164,6 +170,15 @@ export function ProductCard({
           aria-label={`Adicionar ${product.name} ao carrinho`}
         >
           <ShoppingCart className="h-5 w-5" />
+        </button>
+        {/* Quick view (bottom-left) */}
+        <button
+          onClick={handleQuickView}
+          className="glass-chip absolute bottom-2 left-2 flex h-10 items-center gap-1.5 rounded-full border-white/15 px-3 text-xs font-semibold text-white opacity-0 transition-all duration-300 group-hover:opacity-100 hover:scale-105"
+          aria-label={`Visualização rápida de ${product.name}`}
+        >
+          <Eye className="h-4 w-4 text-[var(--neon-violet)]" />
+          <span className="hidden sm:inline">Visualizar</span>
         </button>
       </div>
 

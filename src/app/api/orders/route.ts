@@ -310,6 +310,28 @@ export async function POST(req: NextRequest) {
       // Non-fatal: notification failure should never block order creation.
     }
 
+    // Loyalty: award points to the user (1 point per R$1 spent)
+    if (user) {
+      try {
+        const pointsEarned = Math.floor(total);
+        const u = await db.user.findUnique({ where: { id: user.id } });
+        let currentPoints = 0;
+        try {
+          currentPoints = JSON.parse((u?.loyaltyPoints as string) || "0");
+          if (typeof currentPoints !== "number") currentPoints = 0;
+        } catch {
+          currentPoints = 0;
+        }
+        const newPoints = currentPoints + pointsEarned;
+        await db.user.update({
+          where: { id: user.id },
+          data: { loyaltyPoints: JSON.stringify(newPoints) },
+        });
+      } catch {
+        // Non-fatal: loyalty failure should never block order creation.
+      }
+    }
+
     return ok({ order: serializeOrder(order) }, 201);
   } catch (e) {
     return handleApiError(e);

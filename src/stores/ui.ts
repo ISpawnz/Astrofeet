@@ -11,6 +11,8 @@ interface UIState {
   searchOpen: boolean;
   sizeGuideOpen: boolean;
   naveOpen: boolean;
+  /** Product id (or slug) currently shown in the Quick View modal, or null. */
+  quickViewProductId: string | null;
   navigate: (view: ViewName, params?: ViewParams) => void;
   openAuth: (mode?: "login" | "register") => void;
   closeAuth: () => void;
@@ -19,6 +21,8 @@ interface UIState {
   closeSizeGuide: () => void;
   openNave: () => void;
   closeNave: () => void;
+  openQuickView: (id: string) => void;
+  closeQuickView: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -29,6 +33,7 @@ export const useUIStore = create<UIState>((set) => ({
   searchOpen: false,
   sizeGuideOpen: false,
   naveOpen: false,
+  quickViewProductId: null,
   navigate: (view, params = {}) => {
     set({ view, params });
     if (typeof window !== "undefined") {
@@ -42,4 +47,6 @@ export const useUIStore = create<UIState>((set) => ({
   closeSizeGuide: () => set({ sizeGuideOpen: false }),
   openNave: () => set({ naveOpen: true }),
   closeNave: () => set({ naveOpen: false }),
+  openQuickView: (id) => set({ quickViewProductId: id }),
+  closeQuickView: () => set({ quickViewProductId: null }),
 }));

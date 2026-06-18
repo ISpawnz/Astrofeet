@@ -349,6 +349,28 @@ export const api = {
     return { updated: data.updated, total: data.total };
   },
 
+  // ---------- Loyalty program ----------
+  async getLoyalty(): Promise<{
+    points: number;
+    pointsValue: number;
+    pointsPerReal: number;
+    pointsToBrlRate: number;
+    minRedeemPoints: number;
+    history: { type: "earned"; points: number; description: string; date: string }[];
+  }> {
+    return request("/api/loyalty");
+  },
+  async redeemLoyalty(points: number): Promise<{
+    coupon: { id: string; code: string; type: "fixed"; value: number; description: string };
+    pointsRemaining: number;
+    discount: number;
+  }> {
+    return request("/api/loyalty/redeem", {
+      method: "POST",
+      body: JSON.stringify({ points }),
+    });
+  },
+
   // ---------- Reviews ----------
   async createReview(payload: {
     productId: string;
@@ -370,8 +392,11 @@ export const api = {
     ticket: number;
     totalOrders: number;
     totalProducts: number;
+    totalCustomers: number;
     recent: Order[];
     byStatus: Record<string, number>;
+    revenueLast7Days: { date: string; label: string; revenue: number; orders: number }[];
+    topProducts: { name: string; slug: string; units: number; revenue: number }[];
   }> {
     return request("/api/admin/metrics");
   },

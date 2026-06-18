@@ -16,8 +16,9 @@
       "passwordHash": "scrypt$0f4af6a4a423c0bff419ae07b7675617$6b976126df54b318a0992838fed4f00cde9478a77247b4704a1eb69bb1b8545de6e542076b14cbdaa1e556c82305fa21a1d6b0a50e0ccc7885844bb5b0b2701b",
       "role": "customer",
       "createdAt": "2026-06-18T17:20:46.171Z",
-      "updatedAt": "2026-06-18T18:41:19.056Z",
-      "stockAlerts": "[]"
+      "updatedAt": "2026-06-18T19:07:18.269Z",
+      "stockAlerts": "[]",
+      "loyaltyPoints": "400"
     },
     {
       "id": "72f14f1e-4f4a-4488-9ea6-64819f73a6c0",
@@ -348,6 +349,18 @@
       "expiresAt": null,
       "createdAt": "2026-06-18T17:20:46.171Z",
       "updatedAt": "2026-06-18T17:20:46.171Z"
+    },
+    {
+      "id": "1ab1e499-1afb-4069-abd5-2ceec99cb468",
+      "createdAt": "2026-06-18T19:07:18.269Z",
+      "updatedAt": "2026-06-18T19:07:18.269Z",
+      "code": "STARS100-8269",
+      "type": "fixed",
+      "value": 5,
+      "minSubtotal": 0,
+      "active": true,
+      "description": "Resgate de 100 pontos estelares",
+      "expiresAt": null
     }
   ],
   "addresses": [
@@ -499,6 +512,18 @@
       "body": "Olá, Teste Cron6!\n\nAtualizamos o status do seu pedido AST-748094.\n\nNovo status: Enviado.\n\nSeu sneaker acabou de decolar! Em breve ele estará pousando na sua porta.\n\n— Equipe Astrofeet",
       "orderId": "1aba1e08-3589-436e-ad8b-d42cb3007dc5",
       "sentAt": "2026-06-18T18:47:16.686Z",
+      "status": "sent"
+    },
+    {
+      "id": "85a45e7d-b337-4ff4-a94e-7eb2c00a136a",
+      "createdAt": "2026-06-18T19:07:18.270Z",
+      "updatedAt": "2026-06-18T19:07:18.270Z",
+      "type": "coupon_applied",
+      "to": "explorador@astrofeet.com",
+      "subject": "Cupom STARS100-8269 resgatado · 100 pontos",
+      "body": "Olá, Explorador Astrofeet!\n\nVocê resgatou 100 pontos estelares por um cupom de R$5,00!\n\nUse o código STARS100-8269 no checkout para aplicar o desconto.\n\nPontos restantes: 400\n\n— Equipe Astrofeet",
+      "orderId": null,
+      "sentAt": "2026-06-18T19:07:18.270Z",
       "status": "sent"
     }
   ]

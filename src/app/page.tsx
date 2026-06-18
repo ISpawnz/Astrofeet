@@ -20,6 +20,7 @@ import { WishlistView } from "@/components/views/WishlistView";
 import { TrackOrderView } from "@/components/views/TrackOrderView";
 import { AccountView } from "@/components/views/AccountView";
 import { InfoView } from "@/components/views/InfoView";
+import { QuickViewModal } from "@/components/views/QuickViewModal";
 import { useUIStore } from "@/stores/ui";
 
 export default function Page() {
@@ -48,6 +49,7 @@ export default function Page() {
       <SizeGuideModal />
       <SearchPalette />
       <CompareDrawer />
+      <QuickViewModal />
       <ShipAssistant />
     </div>
   );

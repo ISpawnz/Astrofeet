@@ -10,6 +10,7 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  CartesianGrid,
   PieChart,
   Pie,
   Cell,
@@ -44,6 +45,9 @@ import {
   Upload,
   X,
   Image as ImageIcon,
+  Users,
+  Trophy,
+  Filter,
 } from "lucide-react";
 import { api } from "@/lib/client";
 import { useAuthStore } from "@/stores/auth";
@@ -59,6 +63,7 @@ import type {
 import {
   formatPrice,
   formatDate,
+  formatShortDate,
   orderStatusLabel,
   orderStatusColor,
 } from "@/lib/format";
@@ -159,6 +164,15 @@ const CATEGORIES = [
   "Performance",
   "Skate",
   "Casual",
+];
+
+// Filter options shown in the admin catalog filter (matches seed-data categories)
+const PRODUCT_FILTER_CATEGORIES = [
+  "Casual",
+  "Corrida",
+  "Lifestyle",
+  "Performance",
+  "Skate",
 ];
 
 // ---------------------------------------------------------------------------
@@ -370,9 +384,9 @@ function OverviewTab() {
   return (
     <div className="space-y-6">
       {/* Metric cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         {isLoading || !data ? (
-          Array.from({ length: 4 }).map((_, i) => (
+          Array.from({ length: 5 }).map((_, i) => (
             <MetricCardSkeleton key={i} />
           ))
         ) : (
@@ -405,8 +419,226 @@ function OverviewTab() {
               value={String(data.totalProducts)}
               accent="#ff5cf0"
             />
+            <MetricCard
+              index={4}
+              icon={<Users className="h-5 w-5" />}
+              label="Clientes"
+              value={String(data.totalCustomers)}
+              accent="#a779ff"
+            />
           </>
         )}
+      </div>
+
+      {/* Revenue (last 7 days) + Top products */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.05 }}
+          className="glass relative overflow-hidden rounded-2xl border border-white/10 p-5"
+        >
+          <div
+            className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-25 blur-2xl"
+            style={{ background: "#34e7ff" }}
+          />
+          <div className="relative mb-3 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[var(--neon-cyan)]/15 text-[var(--neon-cyan)]">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold">Faturamento últimos 7 dias</h3>
+              <p className="text-xs text-muted-foreground">
+                Receita diária do catálogo
+              </p>
+            </div>
+          </div>
+          <div className="orbit-divider mb-4" />
+          <div className="relative h-60 w-full">
+            {isLoading || !data ? (
+              <Skeleton className="h-full w-full rounded-xl" />
+            ) : data.revenueLast7Days.every((d) => d.revenue === 0) ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Inbox className="h-8 w-8 opacity-50" />
+                Sem vendas nos últimos 7 dias
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={data.revenueLast7Days}
+                  margin={{ top: 8, right: 8, bottom: 0, left: -8 }}
+                >
+                  <defs>
+                    <linearGradient
+                      id="revGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="0%" stopColor="#34e7ff" />
+                      <stop offset="100%" stopColor="#a779ff" />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,0.06)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: "currentColor", fontSize: 11 }}
+                    className="text-muted-foreground"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tickFormatter={(v: number) =>
+                      v >= 1000
+                        ? `R$ ${(v / 1000).toFixed(0)}k`
+                        : `R$ ${v}`
+                    }
+                    tick={{ fill: "currentColor", fontSize: 10 }}
+                    className="text-muted-foreground"
+                    axisLine={false}
+                    tickLine={false}
+                    width={64}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "rgba(52,231,255,0.08)" }}
+                    content={({ active, payload }) => {
+                      if (!active || !payload || payload.length === 0)
+                        return null;
+                      const row = payload[0]?.payload as
+                        | {
+                            date: string;
+                            label: string;
+                            revenue: number;
+                            orders: number;
+                          }
+                        | undefined;
+                      if (!row) return null;
+                      return (
+                        <div className="rounded-xl border border-white/10 bg-[rgba(20,18,32,0.95)] px-3 py-2 text-xs shadow-xl backdrop-blur">
+                          <p className="font-semibold text-white">
+                            {row.label} · {formatShortDate(row.date)}
+                          </p>
+                          <p className="mt-0.5 text-[var(--neon-cyan)]">
+                            Faturamento:{" "}
+                            <span className="font-semibold">
+                              {formatPrice(row.revenue)}
+                            </span>
+                          </p>
+                          <p className="text-muted-foreground">
+                            Pedidos:{" "}
+                            <span className="font-semibold text-foreground">
+                              {row.orders}
+                            </span>
+                          </p>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Bar
+                    dataKey="revenue"
+                    radius={[6, 6, 0, 0]}
+                    fill="url(#revGradient)"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.12 }}
+          className="glass relative overflow-hidden rounded-2xl border border-white/10 p-5"
+        >
+          <div
+            className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-25 blur-2xl"
+            style={{ background: "#c6ff5a" }}
+          />
+          <div className="relative mb-3 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[var(--neon-lime)]/15 text-[var(--neon-lime)]">
+              <Trophy className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold">Produtos mais vendados</h3>
+              <p className="text-xs text-muted-foreground">
+                Top 5 por receita
+              </p>
+            </div>
+          </div>
+          <div className="orbit-divider mb-4" />
+          <div className="relative">
+            {isLoading || !data ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-9 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : data.topProducts.length === 0 ? (
+              <div className="flex h-60 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Inbox className="h-8 w-8 opacity-50" />
+                Sem vendas registradas ainda
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {data.topProducts.map((p, i) => {
+                  const maxRevenue = data.topProducts[0].revenue || 1;
+                  const pct = Math.max(
+                    8,
+                    Math.round((p.revenue / maxRevenue) * 100),
+                  );
+                  return (
+                    <motion.li
+                      key={p.slug}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{
+                        duration: 0.35,
+                        delay: Math.min(i * 0.07, 0.4),
+                      }}
+                      className="space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] font-bold text-muted-foreground">
+                            {i + 1}
+                          </span>
+                          <span className="line-clamp-1 font-medium">
+                            {p.name}
+                          </span>
+                        </span>
+                        <span className="shrink-0 font-semibold text-[var(--neon-cyan)]">
+                          {formatPrice(p.revenue)}
+                        </span>
+                      </div>
+                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/5">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${pct}%`,
+                            background:
+                              "linear-gradient(90deg, #34e7ff, #a779ff)",
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>
+                          {p.units} unidade{p.units === 1 ? "" : "s"}
+                        </span>
+                        <span>{pct}%</span>
+                      </div>
+                    </motion.li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </motion.div>
       </div>
 
       {/* Charts */}
@@ -1820,6 +2052,51 @@ function ProductsTable() {
     queryFn: () => api.products(),
   });
 
+  // ---- Search + filters (client-side) ----
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [brandFilter, setBrandFilter] = useState<string>("all");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const brandOptions = useMemo(() => {
+    if (!data) return [];
+    const set = new Set<string>();
+    for (const p of data) set.add(p.brand);
+    return Array.from(set).sort();
+  }, [data]);
+
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    const q = debouncedSearch.trim().toLowerCase();
+    return data.filter((p) => {
+      if (q) {
+        const matches =
+          p.name.toLowerCase().includes(q) ||
+          p.brand.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+      if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
+      if (brandFilter !== "all" && p.brand !== brandFilter) return false;
+      return true;
+    });
+  }, [data, debouncedSearch, categoryFilter, brandFilter]);
+
+  const filtersActive =
+    searchQuery.trim() !== "" ||
+    categoryFilter !== "all" ||
+    brandFilter !== "all";
+
+  function clearFilters() {
+    setSearchQuery("");
+    setCategoryFilter("all");
+    setBrandFilter("all");
+  }
+
   function openCreate() {
     setEditing(null);
     setModalOpen(true);
@@ -1873,6 +2150,68 @@ function ProductsTable() {
           <Plus className="h-4 w-4" />
           Novo produto
         </Button>
+      </div>
+
+      {/* Search + filters */}
+      <div className="glass rounded-2xl border border-white/10 p-3 sm:p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative w-full lg:max-w-sm">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por nome ou marca..."
+              className="glass rounded-full border-white/10 bg-white/5 pl-10 pr-4"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="glass h-9 w-[150px] rounded-full border-white/10 bg-white/5 text-sm">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {PRODUCT_FILTER_CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={brandFilter} onValueChange={setBrandFilter}>
+              <SelectTrigger className="glass h-9 w-[160px] rounded-full border-white/10 bg-white/5 text-sm">
+                <SelectValue placeholder="Marca" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {brandOptions.map((b) => (
+                  <SelectItem key={b} value={b}>
+                    {b}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {filtersActive && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-9 shrink-0 rounded-full border border-white/10 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+                Limpar filtros
+              </Button>
+            )}
+            <div className="ml-1 hidden items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-muted-foreground sm:flex">
+              <Filter className="h-3 w-3" />
+              {filtered.length} produto{filtered.length === 1 ? "" : "s"}
+            </div>
+          </div>
+        </div>
+        <div className="mt-2 flex items-center justify-end text-xs text-muted-foreground sm:hidden">
+          {filtered.length} produto{filtered.length === 1 ? "" : "s"}
+        </div>
       </div>
 
       <div className="glass rounded-2xl border border-white/10 p-3 sm:p-4">
@@ -1936,8 +2275,33 @@ function ProductsTable() {
                     </div>
                   </TableCell>
                 </TableRow>
+              ) : filtered.length === 0 ? (
+                <TableRow className="border-white/5">
+                  <TableCell colSpan={7} className="py-12 text-center">
+                    <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
+                      <PackageSearch className="h-10 w-10 opacity-50" />
+                      <div>
+                        <p className="font-medium text-foreground">
+                          Nenhum produto encontrado
+                        </p>
+                        <p className="text-xs">
+                          Ajuste a busca ou os filtros para ver mais resultados.
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={clearFilters}
+                        className="border-white/10 bg-white/5 hover:bg-white/10"
+                      >
+                        <X className="h-4 w-4" />
+                        Limpar filtros
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ) : (
-                data.map((p) => (
+                filtered.map((p) => (
                   <TableRow key={p.id} className="border-white/5">
                     <TableCell>
                       <div className="flex items-center gap-3">
