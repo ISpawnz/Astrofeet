@@ -1,12 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShoppingCart, Star, Heart } from "lucide-react";
+import { ShoppingCart, Star, Heart, GitCompare } from "lucide-react";
 import { useState } from "react";
 import type { Product } from "@/lib/types";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
 import { useWishlistStore } from "@/stores/wishlist";
+import { useCompareStore } from "@/stores/compare";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -30,6 +31,9 @@ export function ProductCard({
   const add = useCartStore((s) => s.add);
   const toggleWishlist = useWishlistStore((s) => s.toggleProduct);
   const inWishlist = useWishlistStore((s) => s.has(product.id));
+  const toggleCompareId = useCompareStore((s) => s.toggle);
+  const inCompare = useCompareStore((s) => s.has(product.id));
+  const compareCount = useCompareStore((s) => s.count());
   const [heartBump, setHeartBump] = useState(false);
 
   function quickAdd(e: React.MouseEvent) {
@@ -52,6 +56,20 @@ export function ProductCard({
     );
   }
 
+  function toggleCompare(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!inCompare && compareCount >= 4) {
+      toast.error("Máximo de 4 produtos para comparar.");
+      return;
+    }
+    toggleCompareId(product.id);
+    toast.success(
+      inCompare
+        ? `${product.name} saiu da comparação`
+        : `${product.name} adicionado à comparação`,
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -60,7 +78,7 @@ export function ProductCard({
       transition={{ duration: 0.5, delay: Math.min(index * 0.05, 0.3) }}
       whileHover={{ y: -6 }}
       onClick={() => navigate("product", { id: product.slug })}
-      className="group relative cursor-pointer overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-sm transition-colors hover:border-white/20 card-hover-glow tilt-card"
+      className="group relative cursor-pointer overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-sm transition-colors hover:border-white/20 card-hover-glow tilt-card card-sheen"
     >
       {/* Accent glow */}
       <div
@@ -100,26 +118,45 @@ export function ProductCard({
             </span>
           )}
         </div>
-        {/* Wishlist heart (top-right, always visible on touch / hover on desktop) */}
-        <button
-          onClick={toggleHeart}
-          className={cn(
-            "absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur transition-all duration-200 hover:scale-110",
-            inWishlist
-              ? "border-[var(--neon-magenta)]/60 bg-[var(--neon-magenta)]/25 text-[var(--neon-magenta)] opacity-100 shadow-[0_0_12px_var(--neon-magenta)]"
-              : "border-white/20 bg-black/50 text-white/90 opacity-100",
-          )}
-          aria-label={
-            inWishlist
-              ? `Remover ${product.name} da lista de desejos`
-              : `Salvar ${product.name} na lista de desejos`
-          }
-          aria-pressed={inWishlist}
-        >
-          <Heart
-            className={cn("h-4 w-4", heartBump && "animate-heartbeat", inWishlist && "fill-current")}
-          />
-        </button>
+        {/* Action buttons (top-right): compare + wishlist, stacked vertically */}
+        <div className="absolute right-2 top-2 flex flex-col gap-1.5">
+          <button
+            onClick={toggleCompare}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur transition-all duration-200 hover:scale-110",
+              inCompare
+                ? "border-[var(--neon-lime)]/60 bg-[var(--neon-lime)]/25 text-[var(--neon-lime)] opacity-100 shadow-[0_0_12px_var(--neon-lime)]"
+                : "border-white/20 bg-black/50 text-white/70 opacity-90 hover:border-[var(--neon-lime)]/40 hover:text-[var(--neon-lime)]",
+            )}
+            aria-label={
+              inCompare
+                ? `Remover ${product.name} da comparação`
+                : `Comparar ${product.name}`
+            }
+            aria-pressed={inCompare}
+          >
+            <GitCompare className={cn("h-4 w-4", inCompare && "fill-current")} />
+          </button>
+          <button
+            onClick={toggleHeart}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur transition-all duration-200 hover:scale-110",
+              inWishlist
+                ? "border-[var(--neon-magenta)]/60 bg-[var(--neon-magenta)]/25 text-[var(--neon-magenta)] opacity-100 shadow-[0_0_12px_var(--neon-magenta)]"
+                : "border-white/20 bg-black/50 text-white/90 opacity-100",
+            )}
+            aria-label={
+              inWishlist
+                ? `Remover ${product.name} da lista de desejos`
+                : `Salvar ${product.name} na lista de desejos`
+            }
+            aria-pressed={inWishlist}
+          >
+            <Heart
+              className={cn("h-4 w-4", heartBump && "animate-heartbeat", inWishlist && "fill-current")}
+            />
+          </button>
+        </div>
         {/* Quick add */}
         <button
           onClick={quickAdd}

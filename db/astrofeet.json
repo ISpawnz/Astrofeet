@@ -16,7 +16,17 @@
       "passwordHash": "scrypt$0f4af6a4a423c0bff419ae07b7675617$6b976126df54b318a0992838fed4f00cde9478a77247b4704a1eb69bb1b8545de6e542076b14cbdaa1e556c82305fa21a1d6b0a50e0ccc7885844bb5b0b2701b",
       "role": "customer",
       "createdAt": "2026-06-18T17:20:46.171Z",
-      "updatedAt": "2026-06-18T17:20:46.171Z"
+      "updatedAt": "2026-06-18T18:22:07.209Z",
+      "stockAlerts": "[]"
+    },
+    {
+      "id": "72f14f1e-4f4a-4488-9ea6-64819f73a6c0",
+      "createdAt": "2026-06-18T18:02:12.277Z",
+      "updatedAt": "2026-06-18T18:02:12.277Z",
+      "name": "Teste Cron6",
+      "email": "cron6@test.com",
+      "passwordHash": "scrypt$181e42d376df38c8466714d2e3adc0f6$c6ee76c7649813abfa9fedf74af2bf970c5024ae221de4a45d1bf8c37c844c9071f08a443b22c5bdaef2d241a9aa171f28ef103b46a10e5481b778de720a7ebf",
+      "role": "customer"
     }
   ],
   "products": [
@@ -27,7 +37,7 @@
       "brand": "Astrofeet Lab",
       "category": "Corrida",
       "price": 279.99,
-      "description": "Leve, limpo e veloz. O Orion Runner foi feito para quem quer um visual de \u00f3rbita baixa sem abrir m\u00e3o do conforto no dia a dia. Cabedal em malha transl\u00facida com acabamento refletivo e entressola responsiva.",
+      "description": "Leve, limpo e veloz. O Orion Runner foi feito para quem quer um visual de órbita baixa sem abrir mão do conforto no dia a dia. Cabedal em malha translúcida com acabamento refletivo e entressola responsiva.",
       "images": "[\"/products/orion-runner.png\"]",
       "sizes": "[38,39,40,41,42,43]",
       "stock": 32,
@@ -47,7 +57,7 @@
       "brand": "Astrofeet Lab",
       "category": "Casual",
       "price": 349.9,
-      "description": "Cabedal premium em couro macio, cano alto e presen\u00e7a de vitrine. O Lunar Drift combina clima noturno com conforto de outro planeta. Palmilha com mem\u00f3ria de impacto e solado com ader\u00eancia lunar.",
+      "description": "Cabedal premium em couro macio, cano alto e presença de vitrine. O Lunar Drift combina clima noturno com conforto de outro planeta. Palmilha com memória de impacto e solado com aderência lunar.",
       "images": "[\"/products/lunar-drift.png\"]",
       "sizes": "[37,38,39,40,41,42]",
       "stock": 18,
@@ -67,7 +77,7 @@
       "brand": "Nebula Wear",
       "category": "Performance",
       "price": 429,
-      "description": "Um sneaker t\u00e9cnico, feito para chamar aten\u00e7\u00e3o sem pesar. Malha respirante, placa de propuls\u00e3o no antepelo e detalhes em neon dourado. Pronto para treinos longos e looks de impacto.",
+      "description": "Um sneaker técnico, feito para chamar atenção sem pesar. Malha respirante, placa de propulsão no antepelo e detalhes em neon dourado. Pronto para treinos longos e looks de impacto.",
       "images": "[\"/products/solar-pulse.png\"]",
       "sizes": "[39,40,41,42,43,44]",
       "stock": 22,
@@ -87,7 +97,7 @@
       "brand": "Nebula Wear",
       "category": "Lifestyle",
       "price": 389,
-      "description": "Silhueta chunky com solado robusto e cabedal em camadas de material espacial. O Nebula Dunk \u00e9 um drop de baixa gravidade para quem vive entre as estrelas e o asfalto.",
+      "description": "Silhueta chunky com solado robusto e cabedal em camadas de material espacial. O Nebula Dunk é um drop de baixa gravidade para quem vive entre as estrelas e o asfalto.",
       "images": "[\"/products/nebula-dunk.png\"]",
       "sizes": "[37,38,39,40,41,42,43]",
       "stock": 21,
@@ -107,7 +117,7 @@
       "brand": "Astrofeet Lab",
       "category": "Skate",
       "price": 319.5,
-      "description": "Cl\u00e1ssico atemporal com contraste escuro para looks noturnos. Camur\u00e7a preta, detalhes em neon magenta e solado vulcanizado de ader\u00eancia absurda. Um void que combina com tudo.",
+      "description": "Clássico atemporal com contraste escuro para looks noturnos. Camurça preta, detalhes em neon magenta e solado vulcanizado de aderência absurda. Um void que combina com tudo.",
       "images": "[\"/products/void-classic.png\"]",
       "sizes": "[36,37,38,39,40,42]",
       "stock": 24,
@@ -118,7 +128,7 @@
       "featured": false,
       "bestSeller": true,
       "createdAt": "2026-06-18T17:20:46.171Z",
-      "updatedAt": "2026-06-18T17:36:34.116Z"
+      "updatedAt": "2026-06-18T18:06:08.952Z"
     },
     {
       "id": "7736d18b-865a-4b40-9720-3473597654c6",
@@ -127,7 +137,7 @@
       "brand": "Nebula Wear",
       "category": "Performance",
       "price": 459,
-      "description": "Solado com c\u00e2mara de ar vis\u00edvel e cabedal em gradiente \u00edgneo. O Meteor Air absorve o impacto e devolve energia a cada passada, como uma chuva de meteoros sob seus p\u00e9s.",
+      "description": "Solado com câmara de ar visível e cabedal em gradiente ígneo. O Meteor Air absorve o impacto e devolve energia a cada passada, como uma chuva de meteoros sob seus pés.",
       "images": "[\"/products/meteor-air.png\"]",
       "sizes": "[38,39,40,41,42,43,44]",
       "stock": 15,
@@ -154,7 +164,7 @@
       "shipping": 29.9,
       "total": 317.45,
       "customer": "{\"name\":\"Explorador Astrofeet\",\"email\":\"explorador@astrofeet.com\",\"phone\":\"11999999999\"}",
-      "address": "{\"cep\":\"01310100\",\"street\":\"Av. Paulista\",\"number\":\"1578\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"S\u00e3o Paulo\",\"state\":\"SP\"}",
+      "address": "{\"cep\":\"01310100\",\"street\":\"Av. Paulista\",\"number\":\"1578\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
       "payment": "{\"method\":\"card\",\"cardLast4\":\"4242\",\"couponCode\":\"GALAXIA10\",\"discount\":31.95}"
     },
     {
@@ -169,7 +179,7 @@
       "shipping": 29.9,
       "total": 317.45,
       "customer": "{\"name\":\"Explorador Astrofeet\",\"email\":\"explorador@astrofeet.com\",\"phone\":\"11999999999\"}",
-      "address": "{\"cep\":\"01310100\",\"street\":\"Av. Paulista\",\"number\":\"1578\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"S\u00e3o Paulo\",\"state\":\"SP\"}",
+      "address": "{\"cep\":\"01310100\",\"street\":\"Av. Paulista\",\"number\":\"1578\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
       "payment": "{\"method\":\"card\",\"cardLast4\":\"4242\",\"couponCode\":\"GALAXIA10\",\"discount\":31.95}"
     },
     {
@@ -184,8 +194,38 @@
       "shipping": 29.9,
       "total": 317.45,
       "customer": "{\"name\":\"Explorador Astrofeet\",\"email\":\"explorador@astrofeet.com\",\"phone\":\"11999999999\"}",
-      "address": "{\"cep\":\"01310100\",\"street\":\"Av. Paulista\",\"number\":\"1578\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"S\u00e3o Paulo\",\"state\":\"SP\"}",
+      "address": "{\"cep\":\"01310100\",\"street\":\"Av. Paulista\",\"number\":\"1578\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
       "payment": "{\"method\":\"card\",\"cardLast4\":\"4242\",\"couponCode\":\"GALAXIA10\",\"discount\":31.95}"
+    },
+    {
+      "id": "1aba1e08-3589-436e-ad8b-d42cb3007dc5",
+      "createdAt": "2026-06-18T18:02:28.094Z",
+      "updatedAt": "2026-06-18T18:02:28.094Z",
+      "code": "AST-748094",
+      "userId": "72f14f1e-4f4a-4488-9ea6-64819f73a6c0",
+      "status": "paid",
+      "items": "[{\"productId\":\"e04353b5-e916-411c-b2db-b9558ab62780\",\"slug\":\"solar-pulse\",\"name\":\"Solar Pulse\",\"quantity\":1,\"size\":40,\"unitPrice\":429,\"subtotal\":429}]",
+      "subtotal": 429,
+      "shipping": 0,
+      "total": 386.1,
+      "customer": "{\"name\":\"Teste Cron6\",\"email\":\"cron6@test.com\",\"phone\":\"11999999999\"}",
+      "address": "{\"cep\":\"01310100\",\"street\":\"Av. Paulista\",\"number\":\"100\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
+      "payment": "{\"method\":\"pix\",\"couponCode\":\"GALAXIA10\",\"discount\":42.9}"
+    },
+    {
+      "id": "99f0d4bc-8896-41d8-bcb0-b742bc07c906",
+      "createdAt": "2026-06-18T18:02:38.033Z",
+      "updatedAt": "2026-06-18T18:02:38.033Z",
+      "code": "AST-758033",
+      "userId": "72f14f1e-4f4a-4488-9ea6-64819f73a6c0",
+      "status": "paid",
+      "items": "[{\"productId\":\"e04353b5-e916-411c-b2db-b9558ab62780\",\"slug\":\"solar-pulse\",\"name\":\"Solar Pulse\",\"quantity\":1,\"size\":40,\"unitPrice\":429,\"subtotal\":429}]",
+      "subtotal": 429,
+      "shipping": 0,
+      "total": 386.1,
+      "customer": "{\"name\":\"Teste Cron6\",\"email\":\"cron6@test.com\",\"phone\":\"11999999999\"}",
+      "address": "{\"cep\":\"01310100\",\"street\":\"Av. Paulista\",\"number\":\"100\",\"complement\":\"\",\"district\":\"Bela Vista\",\"city\":\"São Paulo\",\"state\":\"SP\"}",
+      "payment": "{\"method\":\"pix\",\"couponCode\":\"GALAXIA10\",\"discount\":42.9}"
     }
   ],
   "reviews": [
@@ -195,7 +235,7 @@
       "userId": null,
       "authorName": "Lucas M.",
       "rating": 5,
-      "comment": "Confort\u00e1vel demais, parece que t\u00f4 flutuando. Visual de outro n\u00edvel.",
+      "comment": "Confortável demais, parece que tô flutuando. Visual de outro nível.",
       "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
@@ -204,7 +244,7 @@
       "userId": null,
       "authorName": "Bianca R.",
       "rating": 4,
-      "comment": "Lindo, s\u00f3 achei meio justo no peito do p\u00e9. Recomendo pegar meia numera\u00e7\u00e3o acima.",
+      "comment": "Lindo, só achei meio justo no peito do pé. Recomendo pegar meia numeração acima.",
       "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
@@ -213,7 +253,7 @@
       "userId": null,
       "authorName": "Pedro H.",
       "rating": 5,
-      "comment": "Couro macio e acabamento impec\u00e1vel. Vale cada real.",
+      "comment": "Couro macio e acabamento impecável. Vale cada real.",
       "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
@@ -229,7 +269,7 @@
       "id": "bb40daff-90af-4c3d-8b62-d1742e81d44d",
       "productId": "e04353b5-e916-411c-b2db-b9558ab62780",
       "userId": null,
-      "authorName": "J\u00falia S.",
+      "authorName": "Júlia S.",
       "rating": 5,
       "comment": "Corro meia maratona com ele, leveza absurda.",
       "createdAt": "2026-06-18T17:20:46.171Z"
@@ -240,7 +280,7 @@
       "userId": null,
       "authorName": "Rafael T.",
       "rating": 5,
-      "comment": "Melhor t\u00eanis de performance que j\u00e1 tive.",
+      "comment": "Melhor tênis de performance que já tive.",
       "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
@@ -249,7 +289,7 @@
       "userId": null,
       "authorName": "Marcos L.",
       "rating": 4,
-      "comment": "Cl\u00e1ssico que faltava no meu arm\u00e1rio. Ader\u00eancia boa de skate.",
+      "comment": "Clássico que faltava no meu armário. Aderência boa de skate.",
       "createdAt": "2026-06-18T17:20:46.171Z"
     },
     {
@@ -258,8 +298,18 @@
       "userId": null,
       "authorName": "Camila V.",
       "rating": 5,
-      "comment": "O c\u00e2mara de ar \u00e9 sensacional, parece trampolim.",
+      "comment": "O câmara de ar é sensacional, parece trampolim.",
       "createdAt": "2026-06-18T17:20:46.171Z"
+    },
+    {
+      "id": "5eed2d17-c5db-4d99-b698-9759ca00af5b",
+      "createdAt": "2026-06-18T18:06:08.951Z",
+      "updatedAt": "2026-06-18T18:06:08.951Z",
+      "productId": "a618ef1d-ac1e-47ba-9781-1f07ec26ba1c",
+      "userId": "fd7c1b0f-8a88-4454-a053-0fb2840bad05",
+      "authorName": "Explorador Astrofeet",
+      "rating": 5,
+      "comment": "Sneaker incrível! Confortável e com visual de outro planeta. Recomendo demais!"
     }
   ],
   "coupons": [
@@ -270,7 +320,7 @@
       "value": 10,
       "minSubtotal": 0,
       "active": true,
-      "description": "10% off em tudo. Bem-vindo \u00e0 gal\u00e1xia!",
+      "description": "10% off em tudo. Bem-vindo à galáxia!",
       "expiresAt": null,
       "createdAt": "2026-06-18T17:20:46.171Z",
       "updatedAt": "2026-06-18T17:20:46.171Z"
@@ -313,7 +363,7 @@
       "number": "1578",
       "complement": "Apto 92",
       "district": "Bela Vista",
-      "city": "S\u00e3o Paulo",
+      "city": "São Paulo",
       "state": "SP",
       "isDefault": false
     }
@@ -325,8 +375,8 @@
       "updatedAt": "2026-06-18T17:36:18.391Z",
       "type": "order_created",
       "to": "explorador@astrofeet.com",
-      "subject": "Pedido AST-178390 confirmado \u00b7 Astrofeet",
-      "body": "Ol\u00e1, Explorador Astrofeet!\n\nRecebemos seu pedido AST-178390 e j\u00e1 estamos preparando sua caixa estelar.\n\nITENS DO PEDIDO:\n  \u2022 Void Classic \u2014 tam. 40 \u00d7 1 \u2014 R$319,50\n\nSubtotal: R$319,50\nDesconto (GALAXIA10): -R$31,95\nFrete: R$29,90\nTotal: R$317,45\n\nEntrega: Av. Paulista, 1578 \u2014 S\u00e3o Paulo/SP\nPagamento: cart\u00e3o final 4242\n\nObrigado por explorar a gal\u00e1xia com a Astrofeet. \ud83d\ude80\n\u2014 Equipe Astrofeet",
+      "subject": "Pedido AST-178390 confirmado · Astrofeet",
+      "body": "Olá, Explorador Astrofeet!\n\nRecebemos seu pedido AST-178390 e já estamos preparando sua caixa estelar.\n\nITENS DO PEDIDO:\n  • Void Classic — tam. 40 × 1 — R$319,50\n\nSubtotal: R$319,50\nDesconto (GALAXIA10): -R$31,95\nFrete: R$29,90\nTotal: R$317,45\n\nEntrega: Av. Paulista, 1578 — São Paulo/SP\nPagamento: cartão final 4242\n\nObrigado por explorar a galáxia com a Astrofeet. 🚀\n— Equipe Astrofeet",
       "orderId": "80038878-85fe-4ebd-8cd7-41a0cdf58c3f",
       "sentAt": "2026-06-18T17:36:18.391Z",
       "status": "sent"
@@ -337,8 +387,8 @@
       "updatedAt": "2026-06-18T17:36:26.363Z",
       "type": "order_created",
       "to": "explorador@astrofeet.com",
-      "subject": "Pedido AST-186362 confirmado \u00b7 Astrofeet",
-      "body": "Ol\u00e1, Explorador Astrofeet!\n\nRecebemos seu pedido AST-186362 e j\u00e1 estamos preparando sua caixa estelar.\n\nITENS DO PEDIDO:\n  \u2022 Void Classic \u2014 tam. 40 \u00d7 1 \u2014 R$319,50\n\nSubtotal: R$319,50\nDesconto (GALAXIA10): -R$31,95\nFrete: R$29,90\nTotal: R$317,45\n\nEntrega: Av. Paulista, 1578 \u2014 S\u00e3o Paulo/SP\nPagamento: cart\u00e3o final 4242\n\nObrigado por explorar a gal\u00e1xia com a Astrofeet. \ud83d\ude80\n\u2014 Equipe Astrofeet",
+      "subject": "Pedido AST-186362 confirmado · Astrofeet",
+      "body": "Olá, Explorador Astrofeet!\n\nRecebemos seu pedido AST-186362 e já estamos preparando sua caixa estelar.\n\nITENS DO PEDIDO:\n  • Void Classic — tam. 40 × 1 — R$319,50\n\nSubtotal: R$319,50\nDesconto (GALAXIA10): -R$31,95\nFrete: R$29,90\nTotal: R$317,45\n\nEntrega: Av. Paulista, 1578 — São Paulo/SP\nPagamento: cartão final 4242\n\nObrigado por explorar a galáxia com a Astrofeet. 🚀\n— Equipe Astrofeet",
       "orderId": "dd839786-5f29-4467-a2b8-c204d3208bbd",
       "sentAt": "2026-06-18T17:36:26.363Z",
       "status": "sent"
@@ -349,10 +399,70 @@
       "updatedAt": "2026-06-18T17:36:34.116Z",
       "type": "order_created",
       "to": "explorador@astrofeet.com",
-      "subject": "Pedido AST-194115 confirmado \u00b7 Astrofeet",
-      "body": "Ol\u00e1, Explorador Astrofeet!\n\nRecebemos seu pedido AST-194115 e j\u00e1 estamos preparando sua caixa estelar.\n\nITENS DO PEDIDO:\n  \u2022 Void Classic \u2014 tam. 40 \u00d7 1 \u2014 R$319,50\n\nSubtotal: R$319,50\nDesconto (GALAXIA10): -R$31,95\nFrete: R$29,90\nTotal: R$317,45\n\nEntrega: Av. Paulista, 1578 \u2014 S\u00e3o Paulo/SP\nPagamento: cart\u00e3o final 4242\n\nObrigado por explorar a gal\u00e1xia com a Astrofeet. \ud83d\ude80\n\u2014 Equipe Astrofeet",
+      "subject": "Pedido AST-194115 confirmado · Astrofeet",
+      "body": "Olá, Explorador Astrofeet!\n\nRecebemos seu pedido AST-194115 e já estamos preparando sua caixa estelar.\n\nITENS DO PEDIDO:\n  • Void Classic — tam. 40 × 1 — R$319,50\n\nSubtotal: R$319,50\nDesconto (GALAXIA10): -R$31,95\nFrete: R$29,90\nTotal: R$317,45\n\nEntrega: Av. Paulista, 1578 — São Paulo/SP\nPagamento: cartão final 4242\n\nObrigado por explorar a galáxia com a Astrofeet. 🚀\n— Equipe Astrofeet",
       "orderId": "d23eea94-c47f-48a5-996e-35eb1ade68d8",
       "sentAt": "2026-06-18T17:36:34.116Z",
+      "status": "sent"
+    },
+    {
+      "id": "a8d8ac1f-b5d3-4787-9a0c-29dc2112eb46",
+      "createdAt": "2026-06-18T18:02:12.280Z",
+      "updatedAt": "2026-06-18T18:02:12.280Z",
+      "type": "welcome",
+      "to": "cron6@test.com",
+      "subject": "Bem-vindo à Astrofeet, Teste Cron6! 🚀",
+      "body": "Olá, Teste Cron6!\n\nBem-vindo à Astrofeet — sua nova navegação por sneakers de outro planeta!\n\nAqui você encontra drops exclusivos, frete grátis acima de R$300 e 30 dias para trocar ou devolver.\n\nFique de olhos abertos: novidades chegam o tempo todo. Use o cupom GALAXIA10 para 10% off na sua primeira compra!\n\nBoa exploração,\n— Equipe Astrofeet",
+      "orderId": null,
+      "sentAt": "2026-06-18T18:02:12.280Z",
+      "status": "sent"
+    },
+    {
+      "id": "c10cac24-864a-4fb5-afcd-ca9bf247eb07",
+      "createdAt": "2026-06-18T18:02:28.098Z",
+      "updatedAt": "2026-06-18T18:02:28.098Z",
+      "type": "order_created",
+      "to": "cron6@test.com",
+      "subject": "Pedido AST-748094 confirmado · Astrofeet",
+      "body": "Olá, Teste Cron6!\n\nRecebemos seu pedido AST-748094 e já estamos preparando sua caixa estelar.\n\nITENS DO PEDIDO:\n  • Solar Pulse — tam. 40 × 1 — R$429,00\n\nSubtotal: R$429,00\nDesconto (GALAXIA10): -R$42,90\nFrete: Grátis\nTotal: R$386,10\n\nEntrega: Av. Paulista, 100 — São Paulo/SP\nPagamento: pix\n\nObrigado por explorar a galáxia com a Astrofeet. 🚀\n— Equipe Astrofeet",
+      "orderId": "1aba1e08-3589-436e-ad8b-d42cb3007dc5",
+      "sentAt": "2026-06-18T18:02:28.098Z",
+      "status": "sent"
+    },
+    {
+      "id": "5378176e-58b5-43de-91cf-683a27f193e8",
+      "createdAt": "2026-06-18T18:02:28.098Z",
+      "updatedAt": "2026-06-18T18:02:28.098Z",
+      "type": "coupon_applied",
+      "to": "cron6@test.com",
+      "subject": "Cupom GALAXIA10 aplicado · Pedido AST-748094",
+      "body": "Olá, Teste Cron6!\n\nO cupom GALAXIA10 foi aplicado com sucesso ao seu pedido AST-748094.\n\nDesconto: 10% off → R$42,90\n\nObrigado por explorar a galáxia com a Astrofeet! 🚀\n— Equipe Astrofeet",
+      "orderId": "1aba1e08-3589-436e-ad8b-d42cb3007dc5",
+      "sentAt": "2026-06-18T18:02:28.098Z",
+      "status": "sent"
+    },
+    {
+      "id": "6588a9c8-793e-4ef6-83a0-df0c9aa287d1",
+      "createdAt": "2026-06-18T18:02:38.034Z",
+      "updatedAt": "2026-06-18T18:02:38.034Z",
+      "type": "order_created",
+      "to": "cron6@test.com",
+      "subject": "Pedido AST-758033 confirmado · Astrofeet",
+      "body": "Olá, Teste Cron6!\n\nRecebemos seu pedido AST-758033 e já estamos preparando sua caixa estelar.\n\nITENS DO PEDIDO:\n  • Solar Pulse — tam. 40 × 1 — R$429,00\n\nSubtotal: R$429,00\nDesconto (GALAXIA10): -R$42,90\nFrete: Grátis\nTotal: R$386,10\n\nEntrega: Av. Paulista, 100 — São Paulo/SP\nPagamento: pix\n\nObrigado por explorar a galáxia com a Astrofeet. 🚀\n— Equipe Astrofeet",
+      "orderId": "99f0d4bc-8896-41d8-bcb0-b742bc07c906",
+      "sentAt": "2026-06-18T18:02:38.034Z",
+      "status": "sent"
+    },
+    {
+      "id": "749f2569-5cda-46d9-be28-9ba2f314bc65",
+      "createdAt": "2026-06-18T18:02:38.034Z",
+      "updatedAt": "2026-06-18T18:02:38.034Z",
+      "type": "coupon_applied",
+      "to": "cron6@test.com",
+      "subject": "Cupom GALAXIA10 aplicado · Pedido AST-758033",
+      "body": "Olá, Teste Cron6!\n\nO cupom GALAXIA10 foi aplicado com sucesso ao seu pedido AST-758033.\n\nDesconto: 10% off → R$42,90\n\nObrigado por explorar a galáxia com a Astrofeet! 🚀\n— Equipe Astrofeet",
+      "orderId": "99f0d4bc-8896-41d8-bcb0-b742bc07c906",
+      "sentAt": "2026-06-18T18:02:38.034Z",
       "status": "sent"
     }
   ]

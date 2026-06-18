@@ -41,26 +41,26 @@ const LINK_COLUMNS = [
       { label: "Drops", action: "products" as const, params: {} },
       { label: "Novidades", action: "products" as const, params: { sort: "newest" } },
       { label: "Mais vendidos", action: "products" as const, params: { bestSeller: "true" } },
-      { label: "Guia de medidas", action: null, params: {} },
+      { label: "Guia de medidas", action: "size-guide" as const, params: {} },
     ],
   },
   {
     title: "Ajuda",
     links: [
       { label: "Rastrear pedido", action: "track-order" as const, params: {} },
-      { label: "Trocas e devoluções", action: null, params: {} },
-      { label: "Fale com a Nave", action: null, params: {} },
+      { label: "Trocas e devoluções", action: "nave" as const, params: {} },
+      { label: "Fale com a Nave", action: "nave" as const, params: {} },
     ],
   },
   {
     title: "Sobre",
     links: [
-      { label: "Quem somos", action: null, params: {} },
-      { label: "Sustentabilidade", action: null, params: {} },
-      { label: "Contato", action: null, params: {} },
+      { label: "Quem somos", action: "nave" as const, params: {} },
+      { label: "Sustentabilidade", action: "nave" as const, params: {} },
+      { label: "Contato", action: "nave" as const, params: {} },
     ],
   },
-];
+] as const;
 
 // ---------------------------------------------------------------------------
 // Footer
@@ -68,6 +68,8 @@ const LINK_COLUMNS = [
 
 export function Footer() {
   const navigate = useUIStore((s) => s.navigate);
+  const openSizeGuide = useUIStore((s) => s.openSizeGuide);
+  const openNave = useUIStore((s) => s.openNave);
   const [email, setEmail] = useState("");
 
   function handleNewsletter(e: React.FormEvent) {
@@ -75,6 +77,16 @@ export function Footer() {
     if (!email.trim()) return;
     toast.success("Você entrou na órbita! Fique de olho nos drops. 🚀");
     setEmail("");
+  }
+
+  function handleLinkClick(action: string, params: Record<string, string>) {
+    if (action === "size-guide") {
+      openSizeGuide();
+    } else if (action === "nave") {
+      openNave();
+    } else {
+      navigate(action as Parameters<typeof navigate>[0], params);
+    }
   }
 
   return (
@@ -171,18 +183,12 @@ export function Footer() {
               <ul className="space-y-2.5">
                 {col.links.map((link) => (
                   <li key={link.label}>
-                    {link.action ? (
-                      <button
-                        onClick={() => navigate(link.action, link.params)}
-                        className="text-sm text-muted-foreground text-glow-hover transition-colors hover:text-foreground"
-                      >
-                        {link.label}
-                      </button>
-                    ) : (
-                      <span className="text-sm text-muted-foreground text-glow-hover transition-colors hover:text-foreground cursor-default">
-                        {link.label}
-                      </span>
-                    )}
+                    <button
+                      onClick={() => handleLinkClick(link.action, { ...link.params })}
+                      className="text-sm text-muted-foreground text-glow-hover transition-colors hover:text-foreground"
+                    >
+                      {link.label}
+                    </button>
                   </li>
                 ))}
               </ul>

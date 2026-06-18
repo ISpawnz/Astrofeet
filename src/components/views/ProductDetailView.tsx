@@ -20,6 +20,8 @@ import {
   Loader2,
   X,
   Pencil,
+  Bell,
+  BellOff,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -105,6 +107,265 @@ function TrustRow() {
         </div>
       ))}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Stock helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * A product counts as "out of stock" when every size has 0 units
+ * (per `sizeStock`) or, when `sizeStock` is absent, when the global
+ * `stock` field is 0.
+ */
+function isProductOutOfStock(product: Product): boolean {
+  const sizeStock = product.sizeStock;
+  if (sizeStock && Object.keys(sizeStock).length > 0) {
+    return Object.values(sizeStock).every((v) => v <= 0);
+  }
+  return product.stock <= 0;
+}
+
+/**
+ * Glass banner shown in the Info panel when a product is fully sold out.
+ * Offers a one-tap subscription to the back-in-stock alert.
+ */
+function StockAlertBanner({ product }: { product: Product }) {
+  const user = useAuthStore((s) => s.user);
+  const openAuth = useUIStore((s) => s.openAuth);
+  const queryClient = useQueryClient();
+
+  const { data: subscribedIds } = useQuery({
+    queryKey: ["stock-alerts"],
+    queryFn: () => api.listStockAlerts(),
+    enabled: !!user,
+  });
+
+  const isSubscribed = (subscribedIds ?? []).includes(product.id);
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [unsubscribing, setUnsubscribing] = useState(false);
+
+  // Prefill email from auth user when logged in.
+  useEffect(() => {
+    if (user?.email) setEmail(user.email);
+  }, [user?.email]);
+
+  async function handleSubscribe(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user) {
+      openAuth("login");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await api.subscribeStockAlert(product.id);
+      await queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+      toast.success("Você será avisado quando este sneaker voltar ao estoque!");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível ativar o alerta agora.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleUnsubscribe() {
+    setUnsubscribing(true);
+    try {
+      await api.unsubscribeStockAlert(product.id);
+      await queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+      toast.success("Inscrição cancelada.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível cancelar a inscrição.",
+      );
+    } finally {
+      setUnsubscribing(false);
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="glass relative overflow-hidden rounded-2xl border border-amber-500/30 p-4"
+    >
+      {/* Amber/violet accent glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-30 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(circle, var(--neon-violet), transparent 70%)",
+        }}
+      />
+
+      <div className="relative flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 ring-1 ring-inset ring-amber-500/30">
+          <Bell className="h-5 w-5 text-amber-400" />
+        </div>
+
+        <div className="min-w-0 flex-1 space-y-3">
+          <div>
+            <p className="text-sm font-bold text-rose-400">Produto esgotado</p>
+            <p className="text-xs text-muted-foreground">
+              Avise-me quando voltar ao estoque
+            </p>
+          </div>
+
+          {isSubscribed ? (
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--neon-lime)]/40 bg-[var(--neon-lime)]/15 px-3 py-1 text-xs font-bold text-[var(--neon-lime)]">
+                <Check className="h-3.5 w-3.5" />
+                Inscrito
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleUnsubscribe}
+                disabled={unsubscribing}
+                className="h-8 gap-1.5 rounded-full border-white/10 px-3 text-xs font-medium text-muted-foreground hover:bg-white/5 hover:text-foreground"
+              >
+                {unsubscribing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <BellOff className="h-3.5 w-3.5" />
+                )}
+                Cancelar inscrição
+              </Button>
+            </div>
+          ) : !user ? (
+            <div className="flex flex-wrap items-center gap-2.5">
+              <p className="text-xs text-muted-foreground">
+                Faça login para ser avisado.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => openAuth("login")}
+                className="h-8 gap-1.5 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-3 text-xs font-bold text-black hover:opacity-90"
+              >
+                Entrar
+              </Button>
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSubscribe}
+              className="flex flex-col gap-2 sm:flex-row sm:items-center"
+            >
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                aria-label="Seu e-mail"
+                className="h-9 rounded-full border-white/10 bg-white/[0.03] text-sm"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={submitting}
+                className="h-9 shrink-0 gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-[var(--neon-violet)] px-5 text-sm font-bold text-black hover:opacity-90"
+              >
+                {submitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Bell className="h-4 w-4" />
+                )}
+                Avise-me
+              </Button>
+            </form>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/**
+ * Tiny inline hint shown under the size selector when the *selected* size
+ * has 1-2 units left. Offers a quick subscribe link so shoppers can be
+ * notified if it sells out before they checkout.
+ */
+function LowStockHint({
+  product,
+  count,
+}: {
+  product: Product;
+  count: number;
+}) {
+  const user = useAuthStore((s) => s.user);
+  const openAuth = useUIStore((s) => s.openAuth);
+  const queryClient = useQueryClient();
+
+  const { data: subscribedIds } = useQuery({
+    queryKey: ["stock-alerts"],
+    queryFn: () => api.listStockAlerts(),
+    enabled: !!user,
+  });
+
+  const isSubscribed = (subscribedIds ?? []).includes(product.id);
+  const [busy, setBusy] = useState(false);
+
+  async function handleSubscribe() {
+    if (!user) {
+      openAuth("login");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.subscribeStockAlert(product.id);
+      await queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+      toast.success("Você será avisado se este sneaker esgotar antes!");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível ativar o alerta agora.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (isSubscribed) {
+    return (
+      <p className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--neon-lime)]">
+        <Check className="h-3.5 w-3.5" />
+        Alerta ativo para este sneaker.
+      </p>
+    );
+  }
+
+  return (
+    <p className="inline-flex flex-wrap items-center gap-1.5 text-xs text-amber-300">
+      <span>
+        Estoque baixo neste tamanho — apenas {count}{" "}
+        unidade{count === 1 ? "" : "s"}.
+      </span>
+      <button
+        type="button"
+        onClick={handleSubscribe}
+        disabled={busy}
+        className="inline-flex items-center gap-1 font-semibold underline-offset-2 transition hover:underline disabled:opacity-50"
+      >
+        {busy ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Bell className="h-3 w-3" />
+        )}
+        Avise-me se esgotar antes.
+      </button>
+    </p>
   );
 }
 
@@ -259,6 +520,7 @@ function Info({
   const installment = product.price / 10;
   const freeShipping = product.price >= FREE_SHIPPING_THRESHOLD;
   const reviewCount = reviews.length;
+  const soldOut = isProductOutOfStock(product);
 
   // Reset qty if it exceeds the newly-selected size's stock.
   useEffect(() => {
@@ -445,19 +707,13 @@ function Info({
             );
           })}
         </div>
-        {product.stock === 0 && (
-          <p className="text-xs font-medium text-rose-400">
-            Este modelo está temporariamente esgotado.
-          </p>
-        )}
+        {isProductOutOfStock(product) && <StockAlertBanner product={product} />}
         {size !== null && (() => {
           const sizeStockMap = product.sizeStock ?? {};
           const perSize = sizeStockMap[String(size)];
           const eff = perSize !== undefined ? perSize : product.stock;
           return eff <= 2 && eff > 0 ? (
-            <p className="text-xs font-medium text-amber-300">
-              Apenas {eff} unidade{eff === 1 ? "" : "s"} neste tamanho. Corra!
-            </p>
+            <LowStockHint product={product} count={eff} />
           ) : null;
         })()}
       </div>
@@ -506,7 +762,7 @@ function Info({
       <div className="grid gap-2.5 sm:grid-cols-[1fr_auto]">
         <Button
           onClick={handleAdd}
-          disabled={product.stock === 0}
+          disabled={soldOut}
           size="lg"
           className="h-12 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] text-base font-bold text-black transition hover:opacity-90 disabled:opacity-40"
         >
@@ -515,7 +771,7 @@ function Info({
         </Button>
         <Button
           onClick={handleBuyNow}
-          disabled={product.stock === 0}
+          disabled={soldOut}
           size="lg"
           variant="outline"
           className="h-12 rounded-full border-white/20 bg-white/[0.03] px-6 text-base font-bold text-white backdrop-blur hover:border-white/40 hover:bg-white/[0.08] disabled:opacity-40"

@@ -62,7 +62,7 @@ export function HomeView() {
             <h1 className="mt-5 text-balance text-5xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
               Sneakers com
               <br />
-              <span className="text-gradient-neon animate-astro-pulse">
+              <span className="text-gradient-animated">
                 visual de outro
               </span>
               <br />

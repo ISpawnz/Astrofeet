@@ -19,12 +19,17 @@ export async function GET(req: NextRequest) {
     const size = url.searchParams.get("size");
     const featured = url.searchParams.get("featured");
     const bestSeller = url.searchParams.get("bestSeller");
+    const ids = url.searchParams.get("ids");
 
     const where: Record<string, unknown> = {};
     if (category && category !== "Todos") where.category = category;
     if (brand && brand !== "Todas") where.brand = brand;
     if (featured === "true") where.featured = true;
     if (bestSeller === "true") where.bestSeller = true;
+    if (ids) {
+      const idArr = ids.split(",").map((s) => s.trim()).filter(Boolean);
+      where.id = { in: idArr };
+    }
     if (min || max) {
       where.price = {};
       if (min) (where.price as { gte?: number }).gte = Number(min);

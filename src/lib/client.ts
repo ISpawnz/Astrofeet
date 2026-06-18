@@ -84,6 +84,7 @@ export const api = {
     size?: number;
     featured?: boolean;
     bestSeller?: boolean;
+    ids?: string;
   }): Promise<Product[]> {
     const qs = new URLSearchParams();
     if (params) {
@@ -302,6 +303,23 @@ export const api = {
       `/api/notifications?${qs.toString()}`,
     );
     return data.notifications;
+  },
+
+  // ---------- Stock alerts ----------
+  async listStockAlerts(): Promise<string[]> {
+    const data = await request<{ productIds: string[] }>("/api/stock-alerts");
+    return data.productIds;
+  },
+  async subscribeStockAlert(productId: string): Promise<void> {
+    await request<{ ok: true }>("/api/stock-alerts", {
+      method: "POST",
+      body: JSON.stringify({ productId }),
+    });
+  },
+  async unsubscribeStockAlert(productId: string): Promise<void> {
+    await request<{ ok: true }>(`/api/stock-alerts?productId=${encodeURIComponent(productId)}`, {
+      method: "DELETE",
+    });
   },
 
   // ---------- Reviews ----------

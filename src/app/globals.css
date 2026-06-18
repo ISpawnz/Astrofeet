@@ -644,3 +644,133 @@
   }
 }
 
+/* ---------- CRON-7 styling polish ---------- */
+
+/* Neon badge — for "NOVO", "DROP LIMITADO", etc. */
+.neon-badge {
+  position: relative;
+  overflow: hidden;
+}
+.neon-badge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, currentColor 30%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: neon-badge-shine 3s ease-in-out infinite;
+}
+@keyframes neon-badge-shine {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}
+
+/* Floating label — for section eyebrows */
+.floating-label {
+  animation: astro-float 4s ease-in-out infinite;
+}
+
+/* Card sheen — diagonal light sweep on hover */
+.card-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.card-sheen::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -75%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    color-mix(in oklab, var(--neon-cyan) 8%, transparent),
+    transparent
+  );
+  transform: rotate(25deg);
+  transition: left 0.7s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+.card-sheen:hover::after {
+  left: 125%;
+}
+
+/* Glow ring — pulsing ring around active elements */
+@keyframes astro-glow-ring {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--neon-cyan) 40%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--neon-cyan) 0%, transparent); }
+}
+.glow-ring {
+  animation: astro-glow-ring 2s ease-out infinite;
+}
+
+/* Text gradient shift — animated gradient text */
+@keyframes astro-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.text-gradient-animated {
+  background: linear-gradient(
+    90deg,
+    var(--neon-cyan),
+    var(--neon-violet),
+    var(--neon-magenta),
+    var(--neon-cyan)
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: astro-gradient-shift 4s ease infinite;
+}
+
+/* Star rating — filled star with glow */
+.star-filled {
+  color: #fbbf24;
+  filter: drop-shadow(0 0 4px color-mix(in oklab, #fbbf24 50%, transparent));
+}
+
+/* Tab indicator — active tab glow */
+.tab-active-glow {
+  position: relative;
+}
+.tab-active-glow[data-state="active"] {
+  text-shadow: 0 0 12px color-mix(in oklab, var(--neon-cyan) 50%, transparent);
+}
+
+/* Drawer slide-in improvement */
+@keyframes astro-drawer-in {
+  from { transform: translateX(100%); opacity: 0.5; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-drawer-in {
+  animation: astro-drawer-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Hover lift — generic */
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.25s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+}
+
+/* Image zoom container */
+.zoom-container {
+  overflow: hidden;
+}
+.zoom-container img {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.zoom-container:hover img {
+  transform: scale(1.08);
+}
+
+

@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
 import { useAuthStore } from "@/stores/auth";
-import { ShoppingCart, Search, User, Menu, X, LayoutDashboard, LogOut, Heart, Rocket, Package, UserCircle } from "lucide-react";
+import { ShoppingCart, Search, User, Menu, X, LayoutDashboard, LogOut, Heart, Rocket, Package, UserCircle, GitCompare } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useWishlistStore } from "@/stores/wishlist";
+import { useCompareStore } from "@/stores/compare";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,6 +31,8 @@ export function Header() {
   const cartCount = useCartStore((s) => s.count());
   const openCart = useCartStore((s) => s.open);
   const wishlistCount = useWishlistStore((s) => s.count());
+  const compareCount = useCompareStore((s) => s.count());
+  const toggleComparePanel = useCompareStore((s) => s.togglePanel);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -66,7 +69,7 @@ export function Header() {
                 <circle cx="20" cy="20" r="4" fill="url(#logoG)" />
               </svg>
             </span>
-            <span className="animate-astro-pulse text-2xl font-black tracking-tight text-gradient-neon">
+            <span className="text-gradient-animated text-2xl font-black tracking-tight">
               ASTROFEET
             </span>
           </button>
@@ -95,6 +98,22 @@ export function Header() {
               title="Buscar (Ctrl K)"
             >
               <Search className="h-5 w-5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative rounded-full text-foreground/80 hover:text-foreground"
+              onClick={toggleComparePanel}
+              aria-label="Comparar produtos"
+              title="Comparar produtos"
+            >
+              <GitCompare className="h-5 w-5" />
+              {mounted && compareCount > 0 && (
+                <span className="animate-pop-in absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--neon-lime)] px-1 text-[10px] font-bold text-black shadow-[0_0_12px_var(--neon-lime)]">
+                  {compareCount}
+                </span>
+              )}
             </Button>
 
             <Button
@@ -247,6 +266,22 @@ export function Header() {
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-foreground/80 hover:bg-white/5"
             >
               <Search className="h-4 w-4" /> Buscar
+            </button>
+            <button
+              onClick={() => {
+                toggleComparePanel();
+                setMobileOpen(false);
+              }}
+              className="flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium text-foreground/80 hover:bg-white/5"
+            >
+              <span className="flex items-center gap-2">
+                <GitCompare className="h-4 w-4" /> Comparar
+              </span>
+              {compareCount > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--neon-lime)] px-1 text-[10px] font-bold text-black">
+                  {compareCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => {

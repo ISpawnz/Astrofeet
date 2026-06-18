@@ -1,0 +1,2002 @@
+     1→"use client";
+     2→
+     3→import { useState, useEffect } from "react";
+     4→import { useQuery, useQueryClient } from "@tanstack/react-query";
+     5→import { motion, AnimatePresence } from "framer-motion";
+     6→import {
+     7→  User,
+     8→  LogOut,
+     9→  Package,
+    10→  Rocket,
+    11→  ChevronDown,
+    12→  ChevronRight,
+    13→  Heart,
+    14→  ShoppingBag,
+    15→  Mail,
+    16→  ShieldCheck,
+    17→  CreditCard,
+    18→  QrCode,
+    19→  Barcode,
+    20→  MapPin,
+    21→  CalendarDays,
+    22→  Compass,
+    23→  LifeBuoy,
+    24→  Sparkles,
+    25→  AlertCircle,
+    26→  Wallet,
+    27→  Hash,
+    28→  Layers,
+    29→  Clock,
+    30→  KeyRound,
+    31→  Home,
+    32→  Pencil,
+    33→  Check,
+    34→  X,
+    35→  Loader2,
+    36→  Star,
+    37→  Trash2,
+    38→  Eye,
+    39→  EyeOff,
+    40→  Lock,
+    41→  Plus,
+    42→  Bell,
+    43→  RefreshCw,
+    44→  Truck,
+    45→  Ticket,
+    46→} from "lucide-react";
+    47→import { useAuthStore } from "@/stores/auth";
+    48→import { useUIStore } from "@/stores/ui";
+    49→import { useWishlistStore } from "@/stores/wishlist";
+    50→import { useCartStore } from "@/stores/cart";
+    51→import { api } from "@/lib/client";
+    52→import {
+    53→  formatPrice,
+    54→  formatDate,
+    55→  orderStatusLabel,
+    56→  orderStatusColor,
+    57→  maskCEP,
+    58→} from "@/lib/format";
+    59→import { cn } from "@/lib/utils";
+    60→import { toast } from "sonner";
+    61→import type { Order, PublicUser, Address, Notification, NotificationType } from "@/lib/types";
+    62→import { Button } from "@/components/ui/button";
+    63→import { Badge } from "@/components/ui/badge";
+    64→import { Skeleton } from "@/components/ui/skeleton";
+    65→import { Separator } from "@/components/ui/separator";
+    66→import { Input } from "@/components/ui/input";
+    67→import { Label } from "@/components/ui/label";
+    68→import { Switch } from "@/components/ui/switch";
+    69→import {
+    70→  Tabs,
+    71→  TabsContent,
+    72→  TabsList,
+    73→  TabsTrigger,
+    74→} from "@/components/ui/tabs";
+    75→import {
+    76→  Collapsible,
+    77→  CollapsibleTrigger,
+    78→  CollapsibleContent,
+    79→} from "@/components/ui/collapsible";
+    80→import {
+    81→  Dialog,
+    82→  DialogContent,
+    83→  DialogDescription,
+    84→  DialogFooter,
+    85→  DialogHeader,
+    86→  DialogTitle,
+    87→} from "@/components/ui/dialog";
+    88→import {
+    89→  AlertDialog,
+    90→  AlertDialogAction,
+    91→  AlertDialogCancel,
+    92→  AlertDialogContent,
+    93→  AlertDialogDescription,
+    94→  AlertDialogFooter,
+    95→  AlertDialogHeader,
+    96→  AlertDialogTitle,
+    97→} from "@/components/ui/alert-dialog";
+    98→
+    99→// ---------- Helpers ----------
+   100→
+   101→type PaymentInfo = Order["payment"] & {
+   102→  couponCode?: string;
+   103→  discount?: number;
+   104→};
+   105→
+   106→function paymentMethodInfo(method: string): {
+   107→  label: string;
+   108→  icon: React.ReactNode;
+   109→} {
+   110→  switch (method) {
+   111→    case "card":
+   112→      return { label: "Cartão de crédito", icon: <CreditCard className="h-4 w-4" /> };
+   113→    case "pix":
+   114→      return { label: "Pix", icon: <QrCode className="h-4 w-4" /> };
+   115→    case "boleto":
+   116→      return { label: "Boleto", icon: <Barcode className="h-4 w-4" /> };
+   117→    default:
+   118→      return { label: method || "Pagamento", icon: <CreditCard className="h-4 w-4" /> };
+   119→  }
+   120→}
+   121→
+   122→function getInitial(name: string | undefined): string {
+   123→  if (!name) return "✦";
+   124→  const trimmed = name.trim();
+   125→  if (!trimmed) return "✦";
+   126→  return trimmed[0]!.toUpperCase();
+   127→}
+   128→
+   129→function itemsSummary(order: Order): string {
+   130→  const items = order.items;
+   131→  if (items.length === 0) return "Sem itens";
+   132→  const firstTwo = items.slice(0, 2).map((i) => `${i.name} (Tam ${i.size})`);
+   133→  const more = items.length - 2;
+   134→  const base = firstTwo.join(", ");
+   135→  if (more > 0) return `${base} +${more} mais`;
+   136→  return base;
+   137→}
+   138→
+   139→function itemCount(order: Order): number {
+   140→  return order.items.reduce((n, i) => n + i.quantity, 0);
+   141→}
+   142→
+   143→function isCancelled(status: string): boolean {
+   144→  return status === "cancelled";
+   145→}
+   146→
+   147→// ---------- Hydration skeleton ----------
+   148→
+   149→function HydrationSkeleton() {
+   150→  return (
+   151→    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+   152→      <div className="glass-strong mb-6 rounded-3xl p-6 sm:p-8">
+   153→        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+   154→          <div className="flex items-center gap-4">
+   155→            <Skeleton className="h-16 w-16 rounded-full bg-white/5" />
+   156→            <div className="space-y-2">
+   157→              <Skeleton className="h-6 w-40 rounded bg-white/5" />
+   158→              <Skeleton className="h-4 w-56 rounded bg-white/5" />
+   159→            </div>
+   160→          </div>
+   161→          <div className="flex gap-3">
+   162→            <Skeleton className="h-9 w-24 rounded-full bg-white/5" />
+   163→            <Skeleton className="h-9 w-24 rounded-full bg-white/5" />
+   164→          </div>
+   165→        </div>
+   166→        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+   167→          <Skeleton className="h-20 rounded-2xl bg-white/5" />
+   168→          <Skeleton className="h-20 rounded-2xl bg-white/5" />
+   169→          <Skeleton className="h-20 rounded-2xl bg-white/5" />
+   170→        </div>
+   171→      </div>
+   172→      <div className="space-y-3">
+   173→        {Array.from({ length: 3 }).map((_, i) => (
+   174→          <Skeleton key={i} className="h-32 w-full rounded-3xl bg-white/5" />
+   175→        ))}
+   176→      </div>
+   177→    </div>
+   178→  );
+   179→}
+   180→
+   181→// ---------- Auth guard ----------
+   182→
+   183→function NotSignedIn() {
+   184→  const openAuth = useUIStore((s) => s.openAuth);
+   185→  const navigate = useUIStore((s) => s.navigate);
+   186→  return (
+   187→    <section className="mx-auto flex min-h-[68vh] max-w-3xl flex-col items-center justify-center px-4 py-16 text-center">
+   188→      <motion.div
+   189→        initial={{ opacity: 0, y: 20 }}
+   190→        animate={{ opacity: 1, y: 0 }}
+   191→        transition={{ duration: 0.5 }}
+   192→        className="glass flex w-full flex-col items-center gap-6 rounded-3xl p-10 sm:p-14"
+   193→      >
+   194→        <div className="relative flex h-28 w-28 items-center justify-center">
+   195→          <div className="absolute inset-0 rounded-full bg-[var(--neon-violet)]/15 blur-3xl" />
+   196→          <div className="absolute inset-0 animate-spin-slow rounded-full border-2 border-dashed border-[var(--neon-cyan)]/30" />
+   197→          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5">
+   198→            <User className="h-10 w-10 text-[var(--neon-cyan)]" />
+   199→          </div>
+   200→        </div>
+   201→        <div className="space-y-2">
+   202→          <h1 className="text-2xl font-bold sm:text-3xl">
+   203→            Você ainda não entrou na órbita
+   204→          </h1>
+   205→          <p className="mx-auto max-w-md text-sm text-muted-foreground">
+   206→            Entre na sua conta para acompanhar seus pedidos, ver seu histórico de
+   207→            compras e acessar sua lista de desejos a qualquer momento.
+   208→          </p>
+   209→        </div>
+   210→        <div className="flex flex-col gap-3 sm:flex-row">
+   211→          <Button
+   212→            onClick={() => openAuth("login")}
+   213→            className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black hover:opacity-90"
+   214→          >
+   215→            Entrar / Criar conta
+   216→          </Button>
+   217→          <Button
+   218→            onClick={() => navigate("home")}
+   219→            variant="outline"
+   220→            className="rounded-full border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold backdrop-blur transition hover:bg-white/10"
+   221→          >
+   222→            Voltar ao início
+   223→          </Button>
+   224→        </div>
+   225→      </motion.div>
+   226→    </section>
+   227→  );
+   228→}
+   229→
+   230→// ---------- Header ----------
+   231→
+   232→function StatCard({
+   233→  icon,
+   234→  label,
+   235→  value,
+   236→  accent,
+   237→}: {
+   238→  icon: React.ReactNode;
+   239→  label: string;
+   240→  value: string;
+   241→  accent: string;
+   242→}) {
+   243→  return (
+   244→    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+   245→      <div
+   246→        className="absolute -right-4 -top-4 h-16 w-16 rounded-full opacity-25 blur-2xl"
+   247→        style={{ background: accent }}
+   248→        aria-hidden
+   249→      />
+   250→      <div className="flex items-center gap-2 text-muted-foreground">
+   251→        <span
+   252→          className="flex h-7 w-7 items-center justify-center rounded-full"
+   253→          style={{ background: `${accent}22`, color: accent }}
+   254→        >
+   255→          {icon}
+   256→        </span>
+   257→        <p className="text-[11px] font-medium uppercase tracking-wider">
+   258→          {label}
+   259→        </p>
+   260→      </div>
+   261→      <p className="mt-2 text-xl font-black tracking-tight sm:text-2xl">
+   262→        {value}
+   263→      </p>
+   264→    </div>
+   265→  );
+   266→}
+   267→
+   268→function AccountHeader({
+   269→  user,
+   270→  orders,
+   271→}: {
+   272→  user: PublicUser;
+   273→  orders: Order[] | undefined;
+   274→}) {
+   275→  const navigate = useUIStore((s) => s.navigate);
+   276→  const logout = useAuthStore((s) => s.logout);
+   277→  const cartCount = useCartStore((s) => s.count());
+   278→  const wishlistCount = useWishlistStore((s) => s.count());
+   279→  const [leaving, setLeaving] = useState(false);
+   280→
+   281→  const totalOrders = orders?.length ?? 0;
+   282→  const totalInvested =
+   283→    orders?.reduce((sum, o) => sum + (o.total || 0), 0) ?? 0;
+   284→
+   285→  const roleLabel = user.role === "admin" ? "Comando" : "Explorador";
+   286→  const roleAccent =
+   287→    user.role === "admin" ? "var(--neon-magenta)" : "var(--neon-cyan)";
+   288→
+   289→  async function handleLogout() {
+   290→    setLeaving(true);
+   291→    try {
+   292→      await api.logout();
+   293→    } catch {
+   294→      // ignore network errors — we still clear locally
+   295→    }
+   296→    logout();
+   297→    toast.success("Você saiu da órbita. Até a próxima! 🚀");
+   298→    setLeaving(false);
+   299→    navigate("home");
+   300→  }
+   301→
+   302→  return (
+   303→    <motion.div
+   304→      initial={{ opacity: 0, y: 16 }}
+   305→      animate={{ opacity: 1, y: 0 }}
+   306→      transition={{ duration: 0.5 }}
+   307→      className="glass-strong rounded-3xl p-6 sm:p-8"
+   308→    >
+   309→      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+   310→        <div className="flex items-center gap-4 sm:gap-5">
+   311→          <div className="relative flex h-16 w-16 shrink-0 items-center justify-center sm:h-20 sm:w-20">
+   312→            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[var(--neon-cyan)] to-[var(--neon-violet)] opacity-40 blur-xl" />
+   313→            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[var(--neon-cyan)] to-[var(--neon-violet)] text-2xl font-black text-black sm:h-20 sm:w-20 sm:text-3xl">
+   314→              {getInitial(user.name)}
+   315→            </div>
+   316→          </div>
+   317→          <div className="min-w-0 space-y-1">
+   318→            <div className="flex flex-wrap items-center gap-2">
+   319→              <h1 className="truncate text-xl font-black tracking-tight sm:text-2xl">
+   320→                {user.name}
+   321→              </h1>
+   322→              <Badge
+   323→                variant="outline"
+   324→                className="rounded-full border-white/15 px-2.5 py-0.5 text-[11px] font-semibold"
+   325→                style={{ color: roleAccent, borderColor: `${roleAccent}55` }}
+   326→              >
+   327→                <Sparkles className="mr-1 h-3 w-3" />
+   328→                {roleLabel}
+   329→              </Badge>
+   330→            </div>
+   331→            <p className="flex items-center gap-1.5 truncate text-sm text-muted-foreground">
+   332→              <Mail className="h-3.5 w-3.5 shrink-0" />
+   333→              <span className="truncate">{user.email}</span>
+   334→            </p>
+   335→          </div>
+   336→        </div>
+   337→
+   338→        <div className="flex flex-wrap items-center gap-2">
+   339→          <Button
+   340→            onClick={() => navigate("wishlist")}
+   341→            variant="outline"
+   342→            className="rounded-full border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+   343→          >
+   344→            <Heart className="h-4 w-4 text-[var(--neon-magenta)]" />
+   345→            Ver lista de desejos
+   346→            {wishlistCount > 0 && (
+   347→              <span className="ml-1 rounded-full bg-[var(--neon-magenta)] px-1.5 text-[10px] font-bold text-black">
+   348→                {wishlistCount}
+   349→              </span>
+   350→            )}
+   351→          </Button>
+   352→          <Button
+   353→            onClick={handleLogout}
+   354→            disabled={leaving}
+   355→            variant="ghost"
+   356→            className="rounded-full px-4 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
+   357→          >
+   358→            <LogOut className="h-4 w-4" />
+   359→            {leaving ? "Saindo..." : "Sair"}
+   360→          </Button>
+   361→        </div>
+   362→      </div>
+   363→
+   364→      <Separator className="my-6 bg-white/10" />
+   365→
+   366→      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+   367→        <StatCard
+   368→          icon={<Package className="h-4 w-4" />}
+   369→          label="Total de pedidos"
+   370→          value={orders ? String(totalOrders) : "—"}
+   371→          accent="var(--neon-cyan)"
+   372→        />
+   373→        <StatCard
+   374→          icon={<Wallet className="h-4 w-4" />}
+   375→          label="Total investido"
+   376→          value={orders ? formatPrice(totalInvested) : "—"}
+   377→          accent="var(--neon-violet)"
+   378→        />
+   379→        <StatCard
+   380→          icon={<ShoppingBag className="h-4 w-4" />}
+   381→          label="No carrinho"
+   382→          value={String(cartCount)}
+   383→          accent="var(--neon-lime)"
+   384→        />
+   385→      </div>
+   386→    </motion.div>
+   387→  );
+   388→}
+   389→
+   390→// ---------- Order card ----------
+   391→
+   392→function OrderCard({ order, index }: { order: Order; index: number }) {
+   393→  const navigate = useUIStore((s) => s.navigate);
+   394→  const [open, setOpen] = useState(false);
+   395→
+   396→  const pay = paymentMethodInfo(order.payment.method);
+   397→  const payment = order.payment as PaymentInfo;
+   398→  const couponCode = payment.couponCode;
+   399→  const discount = payment.discount ?? 0;
+   400→  const cancelled = isCancelled(order.status);
+   401→  const items = order.items;
+   402→  const total = itemCount(order);
+   403→
+   404→  return (
+   405→    <motion.div
+   406→      initial={{ opacity: 0, y: 16 }}
+   407→      whileInView={{ opacity: 1, y: 0 }}
+   408→      viewport={{ once: true, margin: "-40px" }}
+   409→      transition={{ duration: 0.45, delay: Math.min(index * 0.06, 0.4) }}
+   410→      className={cn(
+   411→        "glass overflow-hidden rounded-3xl transition",
+   412→        cancelled && "opacity-90",
+   413→      )}
+   414→    >
+   415→      {/* Top row */}
+   416→      <div className="p-5 sm:p-6">
+   417→        <div className="flex flex-wrap items-start justify-between gap-3">
+   418→          <div className="flex items-center gap-3">
+   419→            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+   420→              <Package className="h-5 w-5 text-[var(--neon-cyan)]" />
+   421→            </div>
+   422→            <div>
+   423→              <p className="font-mono text-sm font-black tracking-wider text-[var(--neon-cyan)] neon-text sm:text-base">
+   424→                {order.code}
+   425→              </p>
+   426→              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+   427→                <CalendarDays className="h-3.5 w-3.5" />
+   428→                {formatDate(order.createdAt)}
+   429→              </p>
+   430→            </div>
+   431→          </div>
+   432→          <Badge
+   433→            variant="outline"
+   434→            className={cn(
+   435→              "h-8 gap-1.5 rounded-full px-3 text-xs font-semibold",
+   436→              orderStatusColor(order.status),
+   437→            )}
+   438→          >
+   439→            {orderStatusLabel(order.status)}
+   440→          </Badge>
+   441→        </div>
+   442→
+   443→        {/* Items summary */}
+   444→        <div className="mt-4 rounded-2xl border border-white/5 bg-white/[0.03] p-3.5">
+   445→          <p className="line-clamp-2 text-sm text-foreground/90">
+   446→            {itemsSummary(order)}
+   447→          </p>
+   448→          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+   449→            <span className="flex items-center gap-1">
+   450→              <Layers className="h-3.5 w-3.5" />
+   451→              {total} {total === 1 ? "item" : "itens"}
+   452→            </span>
+   453→            <span className="flex items-center gap-1">
+   454→              {pay.icon}
+   455→              {pay.label}
+   456→              {order.payment.method === "card" && order.payment.cardLast4 && (
+   457→                <span className="font-mono text-foreground/70">
+   458→                  · final {order.payment.cardLast4}
+   459→                </span>
+   460→              )}
+   461→            </span>
+   462→            {couponCode && discount > 0 && (
+   463→              <span className="flex items-center gap-1 font-semibold text-emerald-300">
+   464→                <Sparkles className="h-3.5 w-3.5" />
+   465→                Cupom {couponCode} · -{formatPrice(discount)}
+   466→              </span>
+   467→            )}
+   468→          </div>
+   469→        </div>
+   470→
+   471→        {/* Footer actions */}
+   472→        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+   473→          <div>
+   474→            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+   475→              Total
+   476→            </p>
+   477→            <p
+   478→              className={cn(
+   479→                "text-lg font-black tracking-tight sm:text-xl",
+   480→                cancelled
+   481→                  ? "text-muted-foreground line-through"
+   482→                  : "text-gradient-neon",
+   483→              )}
+   484→            >
+   485→              {formatPrice(order.total)}
+   486→            </p>
+   487→          </div>
+   488→          <div className="flex flex-wrap items-center gap-2">
+   489→            <Button
+   490→              onClick={() =>
+   491→                navigate("track-order", { code: order.code })
+   492→              }
+   493→              className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-4 py-2 text-xs font-bold text-black hover:opacity-90"
+   494→            >
+   495→              <Rocket className="h-4 w-4" />
+   496→              Rastrear
+   497→            </Button>
+   498→            <Collapsible open={open} onOpenChange={setOpen}>
+   499→              <CollapsibleTrigger asChild>
+   500→                <Button
+   501→                  variant="outline"
+   502→                  className="rounded-full border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+   503→                >
+   504→                  {open ? (
+   505→                    <>
+   506→                      Ocultar detalhes
+   507→                      <ChevronDown className="h-4 w-4" />
+   508→                    </>
+   509→                  ) : (
+   510→                    <>
+   511→                      Ver detalhes
+   512→                      <ChevronRight className="h-4 w-4" />
+   513→                    </>
+   514→                  )}
+   515→                </Button>
+   516→              </CollapsibleTrigger>
+   517→            </Collapsible>
+   518→          </div>
+   519→        </div>
+   520→      </div>
+   521→
+   522→      {/* Expanded details */}
+   523→      <Collapsible open={open} onOpenChange={setOpen}>
+   524→        <CollapsibleContent className="CollapsibleContent">
+   525→          <AnimatePresence>
+   526→            {open && (
+   527→              <motion.div
+   528→                key="details"
+   529→                initial={{ height: 0, opacity: 0 }}
+   530→                animate={{ height: "auto", opacity: 1 }}
+   531→                exit={{ height: 0, opacity: 0 }}
+   532→                transition={{ duration: 0.3, ease: "easeInOut" }}
+   533→                className="overflow-hidden border-t border-white/10"
+   534→              >
+   535→                <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
+   536→                  {/* Items list */}
+   537→                  <div className="space-y-3">
+   538→                    <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+   539→                      <Package className="h-4 w-4 text-[var(--neon-cyan)]" />
+   540→                      Itens do pedido
+   541→                    </h3>
+   542→                    <ul className="space-y-2.5">
+   543→                      {items.map((item, i) => (
+   544→                        <li
+   545→                          key={`${item.productId}-${item.size}-${i}`}
+   546→                          className="flex items-start gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3"
+   547→                        >
+   548→                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/5">
+   549→                            <Package className="h-5 w-5 text-muted-foreground" />
+   550→                          </div>
+   551→                          <div className="flex flex-1 flex-col">
+   552→                            <p className="line-clamp-1 text-sm font-semibold">
+   553→                              {item.name}
+   554→                            </p>
+   555→                            <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+   556→                              <span className="flex items-center gap-1">
+   557→                                <Hash className="h-3 w-3" />
+   558→                                Tam. {item.size}
+   559→                              </span>
+   560→                              <span className="flex items-center gap-1">
+   561→                                <Layers className="h-3 w-3" />
+   562→                                Qtd. {item.quantity}
+   563→                              </span>
+   564→                              <span>{formatPrice(item.unitPrice)} / un.</span>
+   565→                            </p>
+   566→                          </div>
+   567→                          <p className="self-center text-sm font-bold">
+   568→                            {formatPrice(item.subtotal)}
+   569→                          </p>
+   570→                        </li>
+   571→                      ))}
+   572→                    </ul>
+   573→
+   574→                    <div className="mt-2 space-y-1.5 rounded-2xl border border-white/5 bg-white/[0.02] p-3 text-sm">
+   575→                      <div className="flex justify-between text-muted-foreground">
+   576→                        <span>Subtotal</span>
+   577→                        <span className="font-medium text-foreground">
+   578→                          {formatPrice(order.subtotal)}
+   579→                        </span>
+   580→                      </div>
+   581→                      {discount > 0 && (
+   582→                        <div className="flex justify-between text-emerald-300">
+   583→                          <span>Desconto</span>
+   584→                          <span className="font-medium">
+   585→                            -{formatPrice(discount)}
+   586→                          </span>
+   587→                        </div>
+   588→                      )}
+   589→                      <div className="flex justify-between text-muted-foreground">
+   590→                        <span>Frete</span>
+   591→                        <span className="font-medium text-foreground">
+   592→                          {order.shipping === 0
+   593→                            ? "Grátis"
+   594→                            : formatPrice(order.shipping)}
+   595→                        </span>
+   596→                      </div>
+   597→                      <Separator className="my-1 bg-white/10" />
+   598→                      <div className="flex justify-between text-base font-bold">
+   599→                        <span>Total</span>
+   600→                        <span className="text-gradient-neon">
+   601→                          {formatPrice(order.total)}
+   602→                        </span>
+   603→                      </div>
+   604→                    </div>
+   605→                  </div>
+   606→
+   607→                  {/* Side: address + payment */}
+   608→                  <div className="space-y-4">
+   609→                    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+   610→                      <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+   611→                        <MapPin className="h-4 w-4 text-[var(--neon-magenta)]" />
+   612→                        Endereço de entrega
+   613→                      </h3>
+   614→                      <div className="mt-2 space-y-0.5 text-sm text-foreground/90">
+   615→                        <p className="font-semibold">{order.customer.name}</p>
+   616→                        <p className="text-muted-foreground">
+   617→                          {order.address.street}, {order.address.number}
+   618→                          {order.address.complement
+   619→                            ? ` — ${order.address.complement}`
+   620→                            : ""}
+   621→                        </p>
+   622→                        <p className="text-muted-foreground">
+   623→                          {order.address.district}
+   624→                        </p>
+   625→                        <p className="text-muted-foreground">
+   626→                          {order.address.city} · {order.address.state}
+   627→                        </p>
+   628→                        <p className="text-muted-foreground">
+   629→                          CEP {order.address.cep}
+   630→                        </p>
+   631→                      </div>
+   632→                    </div>
+   633→
+   634→                    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+   635→                      <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+   636→                        {pay.icon}
+   637→                        Pagamento
+   638→                      </h3>
+   639→                      <div className="mt-2 space-y-1 text-sm">
+   640→                        <p className="font-semibold text-foreground/90">
+   641→                          {pay.label}
+   642→                          {order.payment.method === "card" &&
+   643→                            order.payment.cardLast4 && (
+   644→                              <span className="ml-1 font-mono text-muted-foreground">
+   645→                                · final {order.payment.cardLast4}
+   646→                              </span>
+   647→                            )}
+   648→                        </p>
+   649→                        <p className="text-muted-foreground">
+   650→                          Status: {orderStatusLabel(order.status)}
+   651→                        </p>
+   652→                        {couponCode && discount > 0 && (
+   653→                          <p className="flex items-center gap-1 text-emerald-300">
+   654→                            <Sparkles className="h-3.5 w-3.5" />
+   655→                            Cupom {couponCode} aplicado ·{" "}
+   656→                            {formatPrice(discount)} de desconto
+   657→                          </p>
+   658→                        )}
+   659→                      </div>
+   660→                    </div>
+   661→                  </div>
+   662→                </div>
+   663→              </motion.div>
+   664→            )}
+   665→          </AnimatePresence>
+   666→        </CollapsibleContent>
+   667→      </Collapsible>
+   668→    </motion.div>
+   669→  );
+   670→}
+   671→
+   672→// ---------- Orders tab ----------
+   673→
+   674→function OrdersTab({ orders, isLoading }: { orders: Order[] | undefined; isLoading: boolean }) {
+   675→  const navigate = useUIStore((s) => s.navigate);
+   676→
+   677→  if (isLoading) {
+   678→    return (
+   679→      <div className="space-y-4">
+   680→        {Array.from({ length: 3 }).map((_, i) => (
+   681→          <Skeleton key={i} className="h-44 w-full rounded-3xl bg-white/5" />
+   682→        ))}
+   683→      </div>
+   684→    );
+   685→  }
+   686→
+   687→  if (!orders || orders.length === 0) {
+   688→    return (
+   689→      <motion.div
+   690→        initial={{ opacity: 0, y: 16 }}
+   691→        animate={{ opacity: 1, y: 0 }}
+   692→        transition={{ duration: 0.5 }}
+   693→        className="glass mx-auto flex max-w-xl flex-col items-center gap-5 rounded-3xl p-10 text-center sm:p-14"
+   694→      >
+   695→        <div className="relative flex h-28 w-28 items-center justify-center">
+   696→          <div className="absolute inset-0 rounded-full bg-[var(--neon-cyan)]/15 blur-3xl" />
+   697→          <div className="absolute inset-0 animate-spin-slow rounded-full border-2 border-dashed border-[var(--neon-cyan)]/30" />
+   698→          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5">
+   699→            <Package className="h-10 w-10 text-[var(--neon-cyan)]" />
+   700→          </div>
+   701→        </div>
+   702→        <div className="space-y-2">
+   703→          <h2 className="text-2xl font-bold sm:text-3xl">
+   704→            Você ainda não fez nenhum pedido
+   705→          </h2>
+   706→          <p className="mx-auto max-w-sm text-sm text-muted-foreground">
+   707→            Quando você finalizar sua primeira compra, ela aparece aqui com
+   708→            todos os detalhes para acompanhar a entrega.
+   709→          </p>
+   710→        </div>
+   711→        <Button
+   712→          onClick={() => navigate("products")}
+   713→          className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black hover:opacity-90"
+   714→        >
+   715→          <Compass className="h-4 w-4" />
+   716→          Explorar drops
+   717→        </Button>
+   718→      </motion.div>
+   719→    );
+   720→  }
+   721→
+   722→  // Most recent first
+   723→  const sorted = [...orders].sort(
+   724→    (a, b) =>
+   725→      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+   726→  );
+   727→
+   728→  return (
+   729→    <div className="space-y-4">
+   730→      <div className="flex items-center justify-between">
+   731→        <p className="text-sm text-muted-foreground">
+   732→          {sorted.length} {sorted.length === 1 ? "pedido" : "pedidos"} no total
+   733→        </p>
+   734→      </div>
+   735→      {sorted.map((order, i) => (
+   736→        <OrderCard key={order.id} order={order} index={i} />
+   737→      ))}
+   738→    </div>
+   739→  );
+   740→}
+   741→
+   742→// ---------- Profile tab ----------
+   743→
+   744→function ProfileRow({
+   745→  icon,
+   746→  label,
+   747→  value,
+   748→  accent,
+   749→}: {
+   750→  icon: React.ReactNode;
+   751→  label: string;
+   752→  value: React.ReactNode;
+   753→  accent: string;
+   754→}) {
+   755→  return (
+   756→    <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3.5">
+   757→      <span
+   758→        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+   759→        style={{ background: `${accent}22`, color: accent }}
+   760→      >
+   761→        {icon}
+   762→      </span>
+   763→      <div className="min-w-0 flex-1">
+   764→        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+   765→          {label}
+   766→        </p>
+   767→        <p className="truncate text-sm font-semibold text-foreground/90">
+   768→          {value}
+   769→        </p>
+   770→      </div>
+   771→    </div>
+   772→  );
+   773→}
+   774→
+   775→function ProfileTab({ user }: { user: PublicUser }) {
+   776→  const navigate = useUIStore((s) => s.navigate);
+   777→  const setUser = useAuthStore((s) => s.setUser);
+   778→  const roleLabel = user.role === "admin" ? "Comando" : "Explorador";
+   779→  const roleAccent =
+   780→    user.role === "admin" ? "var(--neon-magenta)" : "var(--neon-cyan)";
+   781→
+   782→  // Editable name state
+   783→  const [editingName, setEditingName] = useState(false);
+   784→  const [nameValue, setNameValue] = useState(user.name);
+   785→  const [savingName, setSavingName] = useState(false);
+   786→
+   787→  // Password change state
+   788→  const [currentPassword, setCurrentPassword] = useState("");
+   789→  const [newPassword, setNewPassword] = useState("");
+   790→  const [confirmPassword, setConfirmPassword] = useState("");
+   791→  const [savingPassword, setSavingPassword] = useState(false);
+   792→  const [showCurrent, setShowCurrent] = useState(false);
+   793→  const [showNew, setShowNew] = useState(false);
+   794→  const [showConfirm, setShowConfirm] = useState(false);
+   795→
+   796→  useEffect(() => {
+   797→    setNameValue(user.name);
+   798→  }, [user.name]);
+   799→
+   800→  async function saveName() {
+   801→    const trimmed = nameValue.trim();
+   802→    if (trimmed.length < 2) {
+   803→      toast.error("Nome precisa ter ao menos 2 caracteres.");
+   804→      return;
+   805→    }
+   806→    if (trimmed === user.name) {
+   807→      setEditingName(false);
+   808→      return;
+   809→    }
+   810→    setSavingName(true);
+   811→    try {
+   812→      const updated = await api.updateProfile(trimmed);
+   813→      setUser(updated);
+   814→      toast.success("Nome atualizado com sucesso!");
+   815→      setEditingName(false);
+   816→    } catch (err) {
+   817→      toast.error(
+   818→        err instanceof Error ? err.message : "Não foi possível salvar.",
+   819→      );
+   820→    } finally {
+   821→      setSavingName(false);
+   822→    }
+   823→  }
+   824→
+   825→  function resetPasswordFields() {
+   826→    setCurrentPassword("");
+   827→    setNewPassword("");
+   828→    setConfirmPassword("");
+   829→  }
+   830→
+   831→  async function handleChangePassword() {
+   832→    if (!currentPassword) {
+   833→      toast.error("Informe sua senha atual.");
+   834→      return;
+   835→    }
+   836→    if (newPassword.length < 6) {
+   837→      toast.error("A nova senha precisa ter ao menos 6 caracteres.");
+   838→      return;
+   839→    }
+   840→    if (newPassword === currentPassword) {
+   841→      toast.error("A nova senha precisa ser diferente da atual.");
+   842→      return;
+   843→    }
+   844→    if (newPassword !== confirmPassword) {
+   845→      toast.error("As senhas não coincidem.");
+   846→      return;
+   847→    }
+   848→    setSavingPassword(true);
+   849→    try {
+   850→      await api.changePassword(currentPassword, newPassword);
+   851→      toast.success("Senha atualizada com sucesso.");
+   852→      resetPasswordFields();
+   853→    } catch (err) {
+   854→      toast.error(
+   855→        err instanceof Error
+   856→          ? err.message
+   857→          : "Não foi possível atualizar a senha agora.",
+   858→      );
+   859→    } finally {
+   860→      setSavingPassword(false);
+   861→    }
+   862→  }
+   863→
+   864→  return (
+   865→    <div className="space-y-5">
+   866→      {/* Read-only profile */}
+   867→      <motion.div
+   868→        initial={{ opacity: 0, y: 16 }}
+   869→        animate={{ opacity: 1, y: 0 }}
+   870→        transition={{ duration: 0.45 }}
+   871→        className="glass rounded-3xl p-6"
+   872→      >
+   873→        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+   874→          <User className="h-4 w-4 text-[var(--neon-cyan)]" />
+   875→          Meus dados
+   876→        </h2>
+   877→        <div className="mt-4 space-y-2.5">
+   878→          {/* Editable name row */}
+   879→          <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3">
+   880→            <span
+   881→              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+   882→              style={{ background: "color-mix(in oklab, var(--neon-cyan) 12%, transparent)" }}
+   883→            >
+   884→              <User className="h-4 w-4 text-[var(--neon-cyan)]" />
+   885→            </span>
+   886→            <div className="flex-1">
+   887→              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+   888→                Nome
+   889→              </p>
+   890→              {editingName ? (
+   891→                <div className="mt-1 flex items-center gap-2">
+   892→                  <input
+   893→                    autoFocus
+   894→                    value={nameValue}
+   895→                    onChange={(e) => setNameValue(e.target.value)}
+   896→                    onKeyDown={(e) => {
+   897→                      if (e.key === "Enter") saveName();
+   898→                      if (e.key === "Escape") {
+   899→                        setEditingName(false);
+   900→                        setNameValue(user.name);
+   901→                      }
+   902→                    }}
+   903→                    className="h-9 flex-1 rounded-lg border border-[var(--neon-cyan)] bg-white/5 px-3 text-sm font-medium outline-none"
+   904→                    placeholder="Seu nome"
+   905→                  />
+   906→                  <button
+   907→                    onClick={saveName}
+   908→                    disabled={savingName}
+   909→                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--neon-cyan)] text-black transition hover:opacity-90 disabled:opacity-40"
+   910→                    aria-label="Salvar nome"
+   911→                  >
+   912→                    {savingName ? (
+   913→                      <Loader2 className="h-4 w-4 animate-spin" />
+   914→                    ) : (
+   915→                      <Check className="h-4 w-4" />
+   916→                    )}
+   917→                  </button>
+   918→                  <button
+   919→                    onClick={() => {
+   920→                      setEditingName(false);
+   921→                      setNameValue(user.name);
+   922→                    }}
+   923→                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-foreground transition hover:text-foreground"
+   924→                    aria-label="Cancelar"
+   925→                  >
+   926→                    <X className="h-4 w-4" />
+   927→                  </button>
+   928→                </div>
+   929→              ) : (
+   930→                <div className="mt-0.5 flex items-center justify-between gap-2">
+   931→                  <p className="text-sm font-medium">{user.name}</p>
+   932→                  <button
+   933→                    onClick={() => setEditingName(true)}
+   934→                    className="flex items-center gap-1 text-xs text-[var(--neon-cyan)] transition hover:underline"
+   935→                  >
+   936→                    <Pencil className="h-3 w-3" />
+   937→                    Editar
+   938→                  </button>
+   939→                </div>
+   940→              )}
+   941→            </div>
+   942→          </div>
+   943→          <ProfileRow
+   944→            icon={<Mail className="h-4 w-4" />}
+   945→            label="E-mail"
+   946→            value={user.email}
+   947→            accent="var(--neon-violet)"
+   948→          />
+   949→          <ProfileRow
+   950→            icon={<KeyRound className="h-4 w-4" />}
+   951→            label="Tipo de conta"
+   952→            value={
+   953→              <span style={{ color: roleAccent }} className="font-semibold">
+   954→                {roleLabel}
+   955→              </span>
+   956→            }
+   957→            accent={roleAccent}
+   958→          />
+   959→          <ProfileRow
+   960→            icon={<Clock className="h-4 w-4" />}
+   961→            label="Membro desde"
+   962→            value="Explorador desde 2026"
+   963→            accent="var(--neon-lime)"
+   964→          />
+   965→        </div>
+   966→
+   967→        <div className="mt-5 flex items-start gap-2 rounded-2xl border border-white/5 bg-white/[0.02] p-3.5">
+   968→          <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-[var(--neon-lime)]" />
+   969→          <p className="text-xs text-muted-foreground">
+   970→            Para trocar seu e-mail, fale com a Nave no canto inferior.
+   971→          </p>
+   972→        </div>
+   973→      </motion.div>
+   974→
+   975→      <Separator className="bg-white/10" />
+   976→
+   977→      {/* Segurança / trocar senha */}
+   978→      <motion.div
+   979→        initial={{ opacity: 0, y: 16 }}
+   980→        animate={{ opacity: 1, y: 0 }}
+   981→        transition={{ duration: 0.45, delay: 0.1 }}
+   982→        className="glass rounded-3xl p-6"
+   983→      >
+   984→        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+   985→          <Lock className="h-4 w-4 text-[var(--neon-lime)]" />
+   986→          Segurança
+   987→        </h2>
+   988→        <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+   989→          Mantenha sua conta protegida com uma senha forte.
+   990→        </p>
+   991→        <div className="mt-4 max-w-md space-y-3">
+   992→          <PasswordInputRow
+   993→            id="pw-current"
+   994→            label="Senha atual"
+   995→            value={currentPassword}
+   996→            onChange={setCurrentPassword}
+   997→            show={showCurrent}
+   998→            onToggle={() => setShowCurrent((v) => !v)}
+   999→          />
+  1000→          <PasswordInputRow
+  1001→            id="pw-new"
+  1002→            label="Nova senha"
+  1003→            value={newPassword}
+  1004→            onChange={setNewPassword}
+  1005→            show={showNew}
+  1006→            onToggle={() => setShowNew((v) => !v)}
+  1007→            hint="Ao menos 6 caracteres."
+  1008→          />
+  1009→          <PasswordInputRow
+  1010→            id="pw-confirm"
+  1011→            label="Confirmar nova senha"
+  1012→            value={confirmPassword}
+  1013→            onChange={setConfirmPassword}
+  1014→            show={showConfirm}
+  1015→            onToggle={() => setShowConfirm((v) => !v)}
+  1016→          />
+  1017→          <div className="flex justify-end pt-1">
+  1018→            <Button
+  1019→              onClick={handleChangePassword}
+  1020→              disabled={savingPassword}
+  1021→              className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 py-2.5 text-sm font-bold text-black hover:opacity-90 disabled:opacity-70"
+  1022→            >
+  1023→              {savingPassword ? (
+  1024→                <Loader2 className="h-4 w-4 animate-spin" />
+  1025→              ) : (
+  1026→                <Lock className="h-4 w-4" />
+  1027→              )}
+  1028→              Salvar senha
+  1029→            </Button>
+  1030→          </div>
+  1031→        </div>
+  1032→      </motion.div>
+  1033→    </div>
+  1034→  );
+  1035→}
+  1036→
+  1037→// ---------- Password input helper ----------
+  1038→
+  1039→function PasswordInputRow({
+  1040→  id,
+  1041→  label,
+  1042→  value,
+  1043→  onChange,
+  1044→  show,
+  1045→  onToggle,
+  1046→  hint,
+  1047→}: {
+  1048→  id: string;
+  1049→  label: string;
+  1050→  value: string;
+  1051→  onChange: (v: string) => void;
+  1052→  show: boolean;
+  1053→  onToggle: () => void;
+  1054→  hint?: string;
+  1055→}) {
+  1056→  return (
+  1057→    <div>
+  1058→      <Label htmlFor={id} className="mb-1.5 block text-sm">
+  1059→        {label}
+  1060→      </Label>
+  1061→      <div className="relative">
+  1062→        <Input
+  1063→          id={id}
+  1064→          type={show ? "text" : "password"}
+  1065→          value={value}
+  1066→          onChange={(e) => onChange(e.target.value)}
+  1067→          className="h-11 rounded-xl border-white/10 bg-white/5 pr-11 text-sm outline-none transition-colors focus:border-[var(--neon-cyan)] focus-visible:ring-0 focus-visible:ring-offset-0"
+  1068→          autoComplete="current-password"
+  1069→        />
+  1070→        <button
+  1071→          type="button"
+  1072→          onClick={onToggle}
+  1073→          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+  1074→          aria-label={show ? `Ocultar ${label.toLowerCase()}` : `Mostrar ${label.toLowerCase()}`}
+  1075→        >
+  1076→          {show ? (
+  1077→            <EyeOff className="h-4 w-4" />
+  1078→          ) : (
+  1079→            <Eye className="h-4 w-4" />
+  1080→          )}
+  1081→        </button>
+  1082→      </div>
+  1083→      {hint && (
+  1084→        <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>
+  1085→      )}
+  1086→    </div>
+  1087→  );
+  1088→}
+  1089→
+  1090→// ---------- Addresses tab ----------
+  1091→
+  1092→interface AddressFormState {
+  1093→  label: string;
+  1094→  recipient: string;
+  1095→  cep: string;
+  1096→  street: string;
+  1097→  number: string;
+  1098→  complement: string;
+  1099→  district: string;
+  1100→  city: string;
+  1101→  state: string;
+  1102→  isDefault: boolean;
+  1103→}
+  1104→
+  1105→const emptyAddressForm: AddressFormState = {
+  1106→  label: "",
+  1107→  recipient: "",
+  1108→  cep: "",
+  1109→  street: "",
+  1110→  number: "",
+  1111→  complement: "",
+  1112→  district: "",
+  1113→  city: "",
+  1114→  state: "",
+  1115→  isDefault: false,
+  1116→};
+  1117→
+  1118→function formFromAddress(addr: Address): AddressFormState {
+  1119→  return {
+  1120→    label: addr.label ?? "",
+  1121→    recipient: addr.recipient ?? "",
+  1122→    cep: addr.cep ?? "",
+  1123→    street: addr.street ?? "",
+  1124→    number: addr.number ?? "",
+  1125→    complement: addr.complement ?? "",
+  1126→    district: addr.district ?? "",
+  1127→    city: addr.city ?? "",
+  1128→    state: addr.state ?? "",
+  1129→    isDefault: !!addr.isDefault,
+  1130→  };
+  1131→}
+  1132→
+  1133→const addrInputClass =
+  1134→  "h-11 rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[var(--neon-cyan)] focus-visible:ring-0 focus-visible:ring-offset-0";
+  1135→
+  1136→function AddressFormModal({
+  1137→  open,
+  1138→  onOpenChange,
+  1139→  address,
+  1140→}: {
+  1141→  open: boolean;
+  1142→  onOpenChange: (open: boolean) => void;
+  1143→  address: Address | null;
+  1144→}) {
+  1145→  const queryClient = useQueryClient();
+  1146→  const [form, setForm] = useState<AddressFormState>(emptyAddressForm);
+  1147→  const [saving, setSaving] = useState(false);
+  1148→
+  1149→  useEffect(() => {
+  1150→    if (open) {
+  1151→      setForm(address ? formFromAddress(address) : emptyAddressForm);
+  1152→    }
+  1153→  }, [open, address]);
+  1154→
+  1155→  function update<K extends keyof AddressFormState>(
+  1156→    key: K,
+  1157→    value: AddressFormState[K],
+  1158→  ) {
+  1159→    setForm((f) => ({ ...f, [key]: value }));
+  1160→  }
+  1161→
+  1162→  function validate(): string | null {
+  1163→    if (!form.label.trim()) return "Informe um apelido para o endereço.";
+  1164→    if (!form.recipient.trim()) return "Informe quem recebe no endereço.";
+  1165→    if (form.cep.replace(/\D/g, "").length !== 8)
+  1166→      return "CEP inválido (8 dígitos).";
+  1167→    if (!form.street.trim()) return "Informe a rua.";
+  1168→    if (!form.number.trim()) return "Informe o número.";
+  1169→    if (!form.city.trim()) return "Informe a cidade.";
+  1170→    if (form.state.trim().length !== 2) return "UF precisa ter 2 letras.";
+  1171→    return null;
+  1172→  }
+  1173→
+  1174→  async function handleSubmit(e: React.FormEvent) {
+  1175→    e.preventDefault();
+  1176→    const err = validate();
+  1177→    if (err) {
+  1178→      toast.error(err);
+  1179→      return;
+  1180→    }
+  1181→    setSaving(true);
+  1182→    try {
+  1183→      const body = {
+  1184→        label: form.label.trim(),
+  1185→        recipient: form.recipient.trim(),
+  1186→        cep: form.cep.replace(/\D/g, ""),
+  1187→        street: form.street.trim(),
+  1188→        number: form.number.trim(),
+  1189→        complement: form.complement.trim() || undefined,
+  1190→        district: form.district.trim() || undefined,
+  1191→        city: form.city.trim(),
+  1192→        state: form.state.trim().toUpperCase(),
+  1193→        isDefault: form.isDefault,
+  1194→      };
+  1195→      if (address) {
+  1196→        await api.updateAddress(address.id, body);
+  1197→        toast.success("Endereço atualizado com sucesso!");
+  1198→      } else {
+  1199→        await api.createAddress(body);
+  1200→        toast.success("Endereço salvo com sucesso!");
+  1201→      }
+  1202→      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+  1203→      onOpenChange(false);
+  1204→    } catch (err) {
+  1205→      toast.error(
+  1206→        err instanceof Error
+  1207→          ? err.message
+  1208→          : "Não foi possível salvar o endereço agora.",
+  1209→      );
+  1210→    } finally {
+  1211→      setSaving(false);
+  1212→    }
+  1213→  }
+  1214→
+  1215→  const isEdit = !!address;
+  1216→
+  1217→  return (
+  1218→    <Dialog open={open} onOpenChange={onOpenChange}>
+  1219→      <DialogContent className="max-w-2xl rounded-3xl border-white/10 bg-[var(--card)] p-0">
+  1220→        <div className="max-h-[88vh] overflow-y-auto p-6">
+  1221→          <DialogHeader>
+  1222→            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+  1223→              <MapPin className="h-5 w-5 text-[var(--neon-magenta)]" />
+  1224→              {isEdit ? "Editar endereço" : "Novo endereço"}
+  1225→            </DialogTitle>
+  1226→            <DialogDescription className="text-xs text-muted-foreground">
+  1227→              {isEdit
+  1228→                ? "Atualize os dados do endereço salvo."
+  1229→                : "Preencha os dados do endereço de entrega."}
+  1230→            </DialogDescription>
+  1231→          </DialogHeader>
+  1232→
+  1233→          <form
+  1234→            onSubmit={handleSubmit}
+  1235→            className="mt-4 grid gap-4 sm:grid-cols-6"
+  1236→          >
+  1237→            <div className="sm:col-span-3">
+  1238→              <Label htmlFor="addr-label" className="mb-1.5 block text-sm">
+  1239→                Apelido
+  1240→              </Label>
+  1241→              <Input
+  1242→                id="addr-label"
+  1243→                value={form.label}
+  1244→                onChange={(e) => update("label", e.target.value)}
+  1245→                placeholder="Casa, Trabalho..."
+  1246→                className={addrInputClass}
+  1247→                maxLength={40}
+  1248→              />
+  1249→            </div>
+  1250→            <div className="sm:col-span-3">
+  1251→              <Label
+  1252→                htmlFor="addr-recipient"
+  1253→                className="mb-1.5 block text-sm"
+  1254→              >
+  1255→                Quem recebe
+  1256→              </Label>
+  1257→              <Input
+  1258→                id="addr-recipient"
+  1259→                value={form.recipient}
+  1260→                onChange={(e) => update("recipient", e.target.value)}
+  1261→                placeholder="Nome de quem recebe"
+  1262→                className={addrInputClass}
+  1263→                maxLength={80}
+  1264→              />
+  1265→            </div>
+  1266→            <div className="sm:col-span-2">
+  1267→              <Label htmlFor="addr-cep" className="mb-1.5 block text-sm">
+  1268→                CEP
+  1269→              </Label>
+  1270→              <Input
+  1271→                id="addr-cep"
+  1272→                value={form.cep}
+  1273→                onChange={(e) => update("cep", maskCEP(e.target.value))}
+  1274→                placeholder="00000-000"
+  1275→                className={addrInputClass}
+  1276→                inputMode="numeric"
+  1277→              />
+  1278→            </div>
+  1279→            <div className="sm:col-span-4">
+  1280→              <Label htmlFor="addr-street" className="mb-1.5 block text-sm">
+  1281→                Rua
+  1282→              </Label>
+  1283→              <Input
+  1284→                id="addr-street"
+  1285→                value={form.street}
+  1286→                onChange={(e) => update("street", e.target.value)}
+  1287→                placeholder="Av. Via Láctea"
+  1288→                className={addrInputClass}
+  1289→              />
+  1290→            </div>
+  1291→            <div className="sm:col-span-2">
+  1292→              <Label htmlFor="addr-number" className="mb-1.5 block text-sm">
+  1293→                Número
+  1294→              </Label>
+  1295→              <Input
+  1296→                id="addr-number"
+  1297→                value={form.number}
+  1298→                onChange={(e) => update("number", e.target.value)}
+  1299→                placeholder="42"
+  1300→                className={addrInputClass}
+  1301→                inputMode="numeric"
+  1302→              />
+  1303→            </div>
+  1304→            <div className="sm:col-span-4">
+  1305→              <Label
+  1306→                htmlFor="addr-complement"
+  1307→                className="mb-1.5 block text-sm"
+  1308→              >
+  1309→                Complemento{" "}
+  1310→                <span className="text-muted-foreground">(opcional)</span>
+  1311→              </Label>
+  1312→              <Input
+  1313→                id="addr-complement"
+  1314→                value={form.complement}
+  1315→                onChange={(e) => update("complement", e.target.value)}
+  1316→                placeholder="Apto, bloco..."
+  1317→                className={addrInputClass}
+  1318→              />
+  1319→            </div>
+  1320→            <div className="sm:col-span-3">
+  1321→              <Label htmlFor="addr-district" className="mb-1.5 block text-sm">
+  1322→                Bairro{" "}
+  1323→                <span className="text-muted-foreground">(opcional)</span>
+  1324→              </Label>
+  1325→              <Input
+  1326→                id="addr-district"
+  1327→                value={form.district}
+  1328→                onChange={(e) => update("district", e.target.value)}
+  1329→                placeholder="Galáxia"
+  1330→                className={addrInputClass}
+  1331→              />
+  1332→            </div>
+  1333→            <div className="sm:col-span-2">
+  1334→              <Label htmlFor="addr-city" className="mb-1.5 block text-sm">
+  1335→                Cidade
+  1336→              </Label>
+  1337→              <Input
+  1338→                id="addr-city"
+  1339→                value={form.city}
+  1340→                onChange={(e) => update("city", e.target.value)}
+  1341→                placeholder="São Paulo"
+  1342→                className={addrInputClass}
+  1343→              />
+  1344→            </div>
+  1345→            <div className="sm:col-span-1">
+  1346→              <Label htmlFor="addr-state" className="mb-1.5 block text-sm">
+  1347→                UF
+  1348→              </Label>
+  1349→              <Input
+  1350→                id="addr-state"
+  1351→                value={form.state}
+  1352→                onChange={(e) =>
+  1353→                  update(
+  1354→                    "state",
+  1355→                    e.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase(),
+  1356→                  )
+  1357→                }
+  1358→                placeholder="SP"
+  1359→                maxLength={2}
+  1360→                className={addrInputClass}
+  1361→              />
+  1362→            </div>
+  1363→            <div className="sm:col-span-6 flex items-center justify-between gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3.5">
+  1364→              <div>
+  1365→                <p className="text-sm font-semibold">Salvar como padrão</p>
+  1366→                <p className="text-[11px] text-muted-foreground">
+  1367→                  Endereços padrão aparecem primeiro na hora de finalizar a
+  1368→                  compra.
+  1369→                </p>
+  1370→              </div>
+  1371→              <Switch
+  1372→                checked={form.isDefault}
+  1373→                onCheckedChange={(v) => update("isDefault", v)}
+  1374→              />
+  1375→            </div>
+  1376→
+  1377→            <DialogFooter className="sm:col-span-6 mt-2 gap-2">
+  1378→              <Button
+  1379→                type="button"
+  1380→                variant="outline"
+  1381→                onClick={() => onOpenChange(false)}
+  1382→                className="rounded-full border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-white/10"
+  1383→              >
+  1384→                Cancelar
+  1385→              </Button>
+  1386→              <Button
+  1387→                type="submit"
+  1388→                disabled={saving}
+  1389→                className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 py-2.5 text-sm font-bold text-black hover:opacity-90 disabled:opacity-70"
+  1390→              >
+  1391→                {saving ? (
+  1392→                  <Loader2 className="h-4 w-4 animate-spin" />
+  1393→                ) : (
+  1394→                  <Check className="h-4 w-4" />
+  1395→                )}
+  1396→                {isEdit ? "Salvar alterações" : "Salvar endereço"}
+  1397→              </Button>
+  1398→            </DialogFooter>
+  1399→          </form>
+  1400→        </div>
+  1401→      </DialogContent>
+  1402→    </Dialog>
+  1403→  );
+  1404→}
+  1405→
+  1406→function AddressCard({
+  1407→  address,
+  1408→  index,
+  1409→  onEdit,
+  1410→  onSetDefault,
+  1411→  onAskDelete,
+  1412→}: {
+  1413→  address: Address;
+  1414→  index: number;
+  1415→  onEdit: () => void;
+  1416→  onSetDefault: () => void;
+  1417→  onAskDelete: () => void;
+  1418→}) {
+  1419→  const parts: string[] = [`${address.street}, ${address.number}`];
+  1420→  if (address.complement) parts.push(address.complement);
+  1421→  if (address.district) parts.push(address.district);
+  1422→  parts.push(`${address.city} · ${address.state}`);
+  1423→  parts.push(`CEP ${address.cep}`);
+  1424→
+  1425→  return (
+  1426→    <motion.div
+  1427→      initial={{ opacity: 0, y: 16 }}
+  1428→      whileInView={{ opacity: 1, y: 0 }}
+  1429→      viewport={{ once: true, margin: "-40px" }}
+  1430→      transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.4) }}
+  1431→      className="glass relative overflow-hidden rounded-3xl p-5"
+  1432→    >
+  1433→      <div
+  1434→        className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-30 blur-2xl"
+  1435→        style={{ background: "var(--neon-magenta)" }}
+  1436→        aria-hidden
+  1437→      />
+  1438→
+  1439→      <div className="relative flex items-start justify-between gap-3">
+  1440→        <div className="flex items-center gap-2">
+  1441→          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--neon-magenta)]/15 text-[var(--neon-magenta)]">
+  1442→            <MapPin className="h-4 w-4" />
+  1443→          </span>
+  1444→          <div>
+  1445→            <h3 className="text-base font-bold leading-tight">
+  1446→              {address.label}
+  1447→            </h3>
+  1448→            <p className="text-xs text-muted-foreground">
+  1449→              {address.recipient}
+  1450→            </p>
+  1451→          </div>
+  1452→        </div>
+  1453→        {address.isDefault && (
+  1454→          <Badge
+  1455→            variant="outline"
+  1456→            className="rounded-full border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300"
+  1457→          >
+  1458→            <Star className="mr-1 h-3 w-3" />
+  1459→            Padrão
+  1460→          </Badge>
+  1461→        )}
+  1462→      </div>
+  1463→
+  1464→      <div className="relative mt-3 space-y-0.5 text-sm text-foreground/85">
+  1465→        {parts.map((p, i) => (
+  1466→          <p
+  1467→            key={i}
+  1468→            className={
+  1469→              i === parts.length - 1
+  1470→                ? "font-mono text-xs text-muted-foreground"
+  1471→                : ""
+  1472→            }
+  1473→          >
+  1474→            {p}
+  1475→          </p>
+  1476→        ))}
+  1477→      </div>
+  1478→
+  1479→      <div className="relative mt-4 flex flex-wrap items-center gap-2">
+  1480→        <Button
+  1481→          onClick={onEdit}
+  1482→          variant="outline"
+  1483→          className="rounded-full border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+  1484→        >
+  1485→          <Pencil className="h-3.5 w-3.5" />
+  1486→          Editar
+  1487→        </Button>
+  1488→        {!address.isDefault && (
+  1489→          <Button
+  1490→            onClick={onSetDefault}
+  1491→            variant="outline"
+  1492→            className="rounded-full border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+  1493→          >
+  1494→            <Star className="h-3.5 w-3.5 text-[var(--neon-lime)]" />
+  1495→            Tornar padrão
+  1496→          </Button>
+  1497→        )}
+  1498→        <Button
+  1499→          onClick={onAskDelete}
+  1500→          variant="ghost"
+  1501→          className="ml-auto rounded-full px-3.5 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
+  1502→        >
+  1503→          <Trash2 className="h-3.5 w-3.5" />
+  1504→          Excluir
+  1505→        </Button>
+  1506→      </div>
+  1507→    </motion.div>
+  1508→  );
+  1509→}
+  1510→
+  1511→function AddressesTab() {
+  1512→  const user = useAuthStore((s) => s.user);
+  1513→  const hydrated = useAuthStore((s) => s.hydrated);
+  1514→  const queryClient = useQueryClient();
+  1515→  const { data: addresses, isLoading } = useQuery({
+  1516→    queryKey: ["addresses"],
+  1517→    queryFn: () => api.listAddresses(),
+  1518→    enabled: hydrated && !!user,
+  1519→  });
+  1520→
+  1521→  const [modalOpen, setModalOpen] = useState(false);
+  1522→  const [editing, setEditing] = useState<Address | null>(null);
+  1523→  const [deletingId, setDeletingId] = useState<string | null>(null);
+  1524→
+  1525→  function openCreate() {
+  1526→    setEditing(null);
+  1527→    setModalOpen(true);
+  1528→  }
+  1529→  function openEdit(addr: Address) {
+  1530→    setEditing(addr);
+  1531→    setModalOpen(true);
+  1532→  }
+  1533→
+  1534→  async function handleSetDefault(addr: Address) {
+  1535→    try {
+  1536→      await api.updateAddress(addr.id, { isDefault: true });
+  1537→      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+  1538→      toast.success(`"${addr.label}" é agora seu endereço padrão.`);
+  1539→    } catch (err) {
+  1540→      toast.error(
+  1541→        err instanceof Error ? err.message : "Não foi possível atualizar.",
+  1542→      );
+  1543→    }
+  1544→  }
+  1545→
+  1546→  async function handleDelete(id: string) {
+  1547→    try {
+  1548→      await api.deleteAddress(id);
+  1549→      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+  1550→      toast.success("Endereço removido.");
+  1551→    } catch (err) {
+  1552→      toast.error(
+  1553→        err instanceof Error ? err.message : "Não foi possível remover.",
+  1554→      );
+  1555→    } finally {
+  1556→      setDeletingId(null);
+  1557→    }
+  1558→  }
+  1559→
+  1560→  if (isLoading) {
+  1561→    return (
+  1562→      <div className="grid gap-4 sm:grid-cols-2">
+  1563→        {Array.from({ length: 3 }).map((_, i) => (
+  1564→          <Skeleton key={i} className="h-48 rounded-3xl bg-white/5" />
+  1565→        ))}
+  1566→      </div>
+  1567→    );
+  1568→  }
+  1569→
+  1570→  const list = addresses ?? [];
+  1571→
+  1572→  return (
+  1573→    <div className="space-y-5">
+  1574→      <motion.div
+  1575→        initial={{ opacity: 0, y: 16 }}
+  1576→        animate={{ opacity: 1, y: 0 }}
+  1577→        transition={{ duration: 0.45 }}
+  1578→        className="glass flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+  1579→      >
+  1580→        <div className="space-y-1">
+  1581→          <h2 className="flex items-center gap-2 text-lg font-bold sm:text-xl">
+  1582→            <MapPin className="h-5 w-5 text-[var(--neon-magenta)]" />
+  1583→            Meus endereços
+  1584→          </h2>
+  1585→          <p className="text-xs text-muted-foreground sm:text-sm">
+  1586→            Mantenha seus endereços de entrega salvos para finalizar mais
+  1587→            rápido.
+  1588→          </p>
+  1589→        </div>
+  1590→        <Button
+  1591→          onClick={openCreate}
+  1592→          className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 py-2.5 text-sm font-bold text-black hover:opacity-90"
+  1593→        >
+  1594→          <Plus className="h-4 w-4" />
+  1595→          Novo endereço
+  1596→        </Button>
+  1597→      </motion.div>
+  1598→
+  1599→      {list.length === 0 ? (
+  1600→        <motion.div
+  1601→          initial={{ opacity: 0, y: 16 }}
+  1602→          animate={{ opacity: 1, y: 0 }}
+  1603→          transition={{ duration: 0.5 }}
+  1604→          className="glass mx-auto flex max-w-xl flex-col items-center gap-5 rounded-3xl p-10 text-center sm:p-14"
+  1605→        >
+  1606→          <div className="relative flex h-24 w-24 items-center justify-center">
+  1607→            <div className="absolute inset-0 rounded-full bg-[var(--neon-magenta)]/15 blur-3xl" />
+  1608→            <div className="absolute inset-0 animate-spin-slow rounded-full border-2 border-dashed border-[var(--neon-magenta)]/30" />
+  1609→            <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5">
+  1610→              <MapPin className="h-8 w-8 text-[var(--neon-magenta)]" />
+  1611→            </div>
+  1612→          </div>
+  1613→          <div className="space-y-2">
+  1614→            <h3 className="text-xl font-bold sm:text-2xl">
+  1615→              Você ainda não tem endereços salvos
+  1616→            </h3>
+  1617→            <p className="mx-auto max-w-sm text-sm text-muted-foreground">
+  1618→              Salve seus endereços de entrega favoritos para finalizar suas
+  1619→              compras em poucos cliques.
+  1620→            </p>
+  1621→          </div>
+  1622→          <Button
+  1623→            onClick={openCreate}
+  1624→            className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black hover:opacity-90"
+  1625→          >
+  1626→            <Plus className="h-4 w-4" />
+  1627→            Adicionar endereço
+  1628→          </Button>
+  1629→        </motion.div>
+  1630→      ) : (
+  1631→        <div className="grid gap-4 sm:grid-cols-2">
+  1632→          {list.map((addr, i) => (
+  1633→            <AddressCard
+  1634→              key={addr.id}
+  1635→              address={addr}
+  1636→              index={i}
+  1637→              onEdit={() => openEdit(addr)}
+  1638→              onSetDefault={() => handleSetDefault(addr)}
+  1639→              onAskDelete={() => setDeletingId(addr.id)}
+  1640→            />
+  1641→          ))}
+  1642→        </div>
+  1643→      )}
+  1644→
+  1645→      <AddressFormModal
+  1646→        open={modalOpen}
+  1647→        onOpenChange={setModalOpen}
+  1648→        address={editing}
+  1649→      />
+  1650→
+  1651→      <AlertDialog
+  1652→        open={!!deletingId}
+  1653→        onOpenChange={(o) => !o && setDeletingId(null)}
+  1654→      >
+  1655→        <AlertDialogContent className="rounded-3xl border-white/10 bg-[var(--card)]">
+  1656→          <AlertDialogHeader>
+  1657→            <AlertDialogTitle className="flex items-center gap-2">
+  1658→              <Trash2 className="h-5 w-5 text-rose-400" />
+  1659→              Remover endereço?
+  1660→            </AlertDialogTitle>
+  1661→            <AlertDialogDescription className="text-sm text-muted-foreground">
+  1662→              Esta ação não pode ser desfeita. O endereço será removido da sua
+  1663→              lista, mas seus pedidos anteriores continuam salvos.
+  1664→            </AlertDialogDescription>
+  1665→          </AlertDialogHeader>
+  1666→          <AlertDialogFooter className="gap-2">
+  1667→            <AlertDialogCancel className="rounded-full border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-white/10">
+  1668→              Cancelar
+  1669→            </AlertDialogCancel>
+  1670→            <AlertDialogAction
+  1671→              onClick={() => deletingId && handleDelete(deletingId)}
+  1672→              className="rounded-full bg-rose-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-600"
+  1673→            >
+  1674→              <Trash2 className="h-4 w-4" />
+  1675→              Remover
+  1676→            </AlertDialogAction>
+  1677→          </AlertDialogFooter>
+  1678→        </AlertDialogContent>
+  1679→      </AlertDialog>
+  1680→    </div>
+  1681→  );
+  1682→}
+  1683→
+  1684→// ---------- Help footer ----------
+  1685→
+  1686→function HelpFooter() {
+  1687→  const navigate = useUIStore((s) => s.navigate);
+  1688→  return (
+  1689→    <motion.div
+  1690→      initial={{ opacity: 0, y: 16 }}
+  1691→      whileInView={{ opacity: 1, y: 0 }}
+  1692→      viewport={{ once: true, margin: "-40px" }}
+  1693→      transition={{ duration: 0.5 }}
+  1694→      className="glass mt-6 flex flex-col gap-4 rounded-3xl p-6 sm:flex-row sm:items-center sm:justify-between"
+  1695→    >
+  1696→      <div className="flex items-center gap-3">
+  1697→        <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+  1698→          <ShieldCheck className="h-6 w-6 text-[var(--neon-lime)]" />
+  1699→        </div>
+  1700→        <div>
+  1701→          <p className="text-sm font-bold">Precisa de ajuda?</p>
+  1702→          <p className="text-xs text-muted-foreground">
+  1703→            A Nave está pronta para tirar suas dúvidas sobre pedidos, pagamentos
+  1704→            e entregas.
+  1705→          </p>
+  1706→        </div>
+  1707→      </div>
+  1708→      <div className="flex flex-wrap gap-2">
+  1709→        <Button
+  1710→          onClick={() =>
+  1711→            toast("A Nave está no canto inferior direito, pronta para ajudar 🚀")
+  1712→          }
+  1713→          variant="outline"
+  1714→          className="rounded-full border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+  1715→        >
+  1716→          <LifeBuoy className="h-4 w-4" />
+  1717→          Falar com a Nave
+  1718→        </Button>
+  1719→        <Button
+  1720→          onClick={() => navigate("track-order")}
+  1721→          className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-4 py-2 text-xs font-bold text-black hover:opacity-90"
+  1722→        >
+  1723→          <Rocket className="h-4 w-4" />
+  1724→          Rastrear um pedido
+  1725→        </Button>
+  1726→      </div>
+  1727→    </motion.div>
+  1728→  );
+  1729→}
+  1730→
+  1731→// ---------- Notifications tab ----------
+  1732→
+  1733→const NOTIFICATION_ICON: Record<NotificationType, { icon: typeof Package; color: string }> = {
+  1734→  order_created: { icon: Package, color: "var(--neon-cyan)" },
+  1735→  order_status: { icon: Truck, color: "var(--neon-lime)" },
+  1736→  coupon_applied: { icon: Ticket, color: "var(--neon-magenta)" },
+  1737→  welcome: { icon: Sparkles, color: "var(--neon-violet)" },
+  1738→};
+  1739→
+  1740→const STATUS_BADGE: Record<string, { label: string; className: string }> = {
+  1741→  sent: {
+  1742→    label: "Enviado",
+  1743→    className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  1744→  },
+  1745→  queued: {
+  1746→    label: "Na fila",
+  1747→    className: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  1748→  },
+  1749→  failed: {
+  1750→    label: "Falhou",
+  1751→    className: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+  1752→  },
+  1753→};
+  1754→
+  1755→function NotificationsTab() {
+  1756→  const user = useAuthStore((s) => s.user);
+  1757→  const hydrated = useAuthStore((s) => s.hydrated);
+  1758→  const queryClient = useQueryClient();
+  1759→
+  1760→  const { data, isLoading } = useQuery({
+  1761→    queryKey: ["my-notifications"],
+  1762→    queryFn: () => api.listNotifications(30),
+  1763→    enabled: hydrated && !!user,
+  1764→  });
+  1765→
+  1766→  const notifications = data ?? [];
+  1767→  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  1768→
+  1769→  function toggleExpand(id: string) {
+  1770→    setExpanded((prev) => {
+  1771→      const next = new Set(prev);
+  1772→      if (next.has(id)) next.delete(id);
+  1773→      else next.add(id);
+  1774→      return next;
+  1775→    });
+  1776→  }
+  1777→
+  1778→  return (
+  1779→    <div className="space-y-6">
+  1780→      {/* Header */}
+  1781→      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  1782→        <div>
+  1783→          <h2 className="text-xl font-bold sm:text-2xl">Minhas notificações</h2>
+  1784→          <p className="text-sm text-muted-foreground">
+  1785→            Acompanhe os e-mails que enviamos para você.
+  1786→          </p>
+  1787→        </div>
+  1788→        <Button
+  1789→          variant="outline"
+  1790→          size="sm"
+  1791→          onClick={() => queryClient.invalidateQueries({ queryKey: ["my-notifications"] })}
+  1792→          className="gap-2 rounded-full border-white/10 hover:bg-white/5"
+  1793→        >
+  1794→          <RefreshCw className="h-3.5 w-3.5" />
+  1795→          Atualizar
+  1796→        </Button>
+  1797→      </div>
+  1798→
+  1799→      {/* Loading */}
+  1800→      {isLoading && (
+  1801→        <div className="space-y-3">
+  1802→          {Array.from({ length: 3 }).map((_, i) => (
+  1803→            <div
+  1804→              key={i}
+  1805→              className="glass-strong rounded-2xl border border-white/10 p-4"
+  1806→            >
+  1807→              <div className="flex items-start gap-3">
+  1808→                <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
+  1809→                <div className="flex-1 space-y-2">
+  1810→                  <Skeleton className="h-4 w-3/4" />
+  1811→                  <Skeleton className="h-3 w-1/3" />
+  1812→                </div>
+  1813→              </div>
+  1814→            </div>
+  1815→          ))}
+  1816→        </div>
+  1817→      )}
+  1818→
+  1819→      {/* Empty */}
+  1820→      {!isLoading && notifications.length === 0 && (
+  1821→        <motion.div
+  1822→          initial={{ opacity: 0, y: 10 }}
+  1823→          animate={{ opacity: 1, y: 0 }}
+  1824→          className="glass-strong rounded-3xl border border-dashed border-white/10 p-8 text-center"
+  1825→        >
+  1826→          <Bell className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+  1827→          <p className="text-lg font-semibold">Você ainda não recebeu nenhuma notificação.</p>
+  1828→          <p className="mt-1 text-sm text-muted-foreground">
+  1829→            Quando você fizer um pedido ou usar um cupom, os e-mails aparecerão aqui.
+  1830→          </p>
+  1831→        </motion.div>
+  1832→      )}
+  1833→
+  1834→      {/* List */}
+  1835→      {!isLoading && notifications.length > 0 && (
+  1836→        <div className="max-h-[28rem] overflow-y-auto pr-1 custom-scrollbar">
+  1837→          <ul className="space-y-3">
+  1838→            {notifications.map((n, index) => {
+  1839→              const cfg = NOTIFICATION_ICON[n.type] ?? NOTIFICATION_ICON.welcome;
+  1840→              const Icon = cfg.icon;
+  1841→              const badge = STATUS_BADGE[n.status] ?? STATUS_BADGE.queued;
+  1842→              const isOpen = expanded.has(n.id);
+  1843→
+  1844→              return (
+  1845→                <motion.li
+  1846→                  key={n.id}
+  1847→                  initial={{ opacity: 0, y: 12 }}
+  1848→                  animate={{ opacity: 1, y: 0 }}
+  1849→                  transition={{ duration: 0.3, delay: index * 0.04 }}
+  1850→                >
+  1851→                  <Collapsible
+  1852→                    open={isOpen}
+  1853→                    onOpenChange={() => toggleExpand(n.id)}
+  1854→                    className="glass-strong cursor-pointer rounded-2xl border border-white/10 transition-colors hover:border-white/20"
+  1855→                  >
+  1856→                    <CollapsibleTrigger asChild>
+  1857→                      <div className="flex items-start gap-3 p-4">
+  1858→                        <div
+  1859→                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+  1860→                          style={{ background: `${cfg.color}18` }}
+  1861→                        >
+  1862→                          <Icon
+  1863→                            className="h-5 w-5"
+  1864→                            style={{ color: cfg.color }}
+  1865→                          />
+  1866→                        </div>
+  1867→                        <div className="min-w-0 flex-1">
+  1868→                          <p className="font-medium leading-tight">
+  1869→                            {n.subject}
+  1870→                          </p>
+  1871→                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+  1872→                            <span className="inline-flex items-center gap-1">
+  1873→                              <Clock className="h-3 w-3" />
+  1874→                              {formatDate(n.sentAt)}
+  1875→                            </span>
+  1876→                            <Badge
+  1877→                              variant="outline"
+  1878→                              className={cn("text-[10px] px-1.5 py-0", badge.className)}
+  1879→                            >
+  1880→                              {badge.label}
+  1881→                            </Badge>
+  1882→                          </div>
+  1883→                        </div>
+  1884→                        <ChevronDown
+  1885→                          className={cn(
+  1886→                            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+  1887→                            isOpen && "rotate-180",
+  1888→                          )}
+  1889→                        />
+  1890→                      </div>
+  1891→                    </CollapsibleTrigger>
+  1892→                    <CollapsibleContent>
+  1893→                      <div className="border-t border-white/5 px-4 pb-4 pt-3">
+  1894→                        <pre className="whitespace-pre-wrap break-words rounded-xl bg-black/20 p-3 font-mono text-sm leading-relaxed text-muted-foreground">
+  1895→                          {n.body}
+  1896→                        </pre>
+  1897→                      </div>
+  1898→                    </CollapsibleContent>
+  1899→                  </Collapsible>
+  1900→                </motion.li>
+  1901→              );
+  1902→            })}
+  1903→          </ul>
+  1904→        </div>
+  1905→      )}
+  1906→
+  1907→      {/* Footer counter */}
+  1908→      {!isLoading && notifications.length > 0 && (
+  1909→        <p className="text-center text-xs text-muted-foreground">
+  1910→          Mostrando {notifications.length} notificações
+  1911→        </p>
+  1912→      )}
+  1913→    </div>
+  1914→  );
+  1915→}
+  1916→
+  1917→// ---------- Main ----------
+  1918→
+  1919→export function AccountView() {
+  1920→  const user = useAuthStore((s) => s.user);
+  1921→  const hydrated = useAuthStore((s) => s.hydrated);
+  1922→
+  1923→  const { data: orders, isLoading } = useQuery({
+  1924→    queryKey: ["orders", "mine"],
+  1925→    queryFn: () => api.listOrders(),
+  1926→    enabled: hydrated && !!user,
+  1927→  });
+  1928→
+  1929→  if (!hydrated) {
+  1930→    return <HydrationSkeleton />;
+  1931→  }
+  1932→
+  1933→  if (!user) {
+  1934→    return <NotSignedIn />;
+  1935→  }
+  1936→
+  1937→  return (
+  1938→    <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-12">
+  1939→      <div className="mb-6 flex items-center gap-2 text-xs text-muted-foreground">
+  1940→        <button
+  1941→          onClick={() => useUIStore.getState().navigate("home")}
+  1942→          className="inline-flex items-center gap-1 transition hover:text-foreground"
+  1943→        >
+  1944→          <Home className="h-3.5 w-3.5" />
+  1945→          Início
+  1946→        </button>
+  1947→        <ChevronRight className="h-3.5 w-3.5" />
+  1948→        <span className="font-medium text-foreground">Minha conta</span>
+  1949→      </div>
+  1950→
+  1951→      <AccountHeader user={user} orders={orders} />
+  1952→
+  1953→      <Tabs defaultValue="orders" className="mt-8">
+  1954→        <TabsList className="glass h-auto gap-1 rounded-full border border-white/10 p-1">
+  1955→          <TabsTrigger
+  1956→            value="orders"
+  1957→            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+  1958→          >
+  1959→            <Package className="h-4 w-4" />
+  1960→            Meus pedidos
+  1961→          </TabsTrigger>
+  1962→          <TabsTrigger
+  1963→            value="profile"
+  1964→            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+  1965→          >
+  1966→            <User className="h-4 w-4" />
+  1967→            Meus dados
+  1968→          </TabsTrigger>
+  1969→          <TabsTrigger
+  1970→            value="enderecos"
+  1971→            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+  1972→          >
+  1973→            <MapPin className="h-4 w-4" />
+  1974→            Endereços
+  1975→          </TabsTrigger>
+  1976→          <TabsTrigger
+  1977→            value="notificacoes"
+  1978→            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+  1979→          >
+  1980→            <Bell className="h-4 w-4" />
+  1981→            Notificações
+  1982→          </TabsTrigger>
+  1983→        </TabsList>
+  1984→        <TabsContent value="orders" className="mt-6">
+  1985→          <OrdersTab orders={orders} isLoading={isLoading} />
+  1986→        </TabsContent>
+  1987→        <TabsContent value="profile" className="mt-6">
+  1988→          <ProfileTab user={user} />
+  1989→        </TabsContent>
+  1990→        <TabsContent value="enderecos" className="mt-6">
+  1991→          <AddressesTab />
+  1992→        </TabsContent>
+  1993→        <TabsContent value="notificacoes" className="mt-6">
+  1994→          <NotificationsTab />
+  1995→        </TabsContent>
+  1996→      </Tabs>
+  1997→
+  1998→      <HelpFooter />
+  1999→    </section>
+  2000→  );
+
+[showing lines 1-2000 of 2004; use offset=2001 with limit to continue reading]

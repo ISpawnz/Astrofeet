@@ -10,12 +10,15 @@ interface UIState {
   authMode: "login" | "register";
   searchOpen: boolean;
   sizeGuideOpen: boolean;
+  naveOpen: boolean;
   navigate: (view: ViewName, params?: ViewParams) => void;
   openAuth: (mode?: "login" | "register") => void;
   closeAuth: () => void;
   setSearchOpen: (v: boolean) => void;
   openSizeGuide: () => void;
   closeSizeGuide: () => void;
+  openNave: () => void;
+  closeNave: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -25,6 +28,7 @@ export const useUIStore = create<UIState>((set) => ({
   authMode: "login",
   searchOpen: false,
   sizeGuideOpen: false,
+  naveOpen: false,
   navigate: (view, params = {}) => {
     set({ view, params });
     if (typeof window !== "undefined") {
@@ -36,4 +40,6 @@ export const useUIStore = create<UIState>((set) => ({
   setSearchOpen: (v) => set({ searchOpen: v }),
   openSizeGuide: () => set({ sizeGuideOpen: true }),
   closeSizeGuide: () => set({ sizeGuideOpen: false }),
+  openNave: () => set({ naveOpen: true }),
+  closeNave: () => set({ naveOpen: false }),
 }));

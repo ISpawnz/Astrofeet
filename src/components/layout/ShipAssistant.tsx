@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Rocket, X, Send, Sparkles } from "lucide-react";
 import { api } from "@/lib/client";
 import { cn } from "@/lib/utils";
+import { useUIStore } from "@/stores/ui";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -22,7 +23,11 @@ const WELCOME: Msg = {
 };
 
 export function ShipAssistant() {
-  const [open, setOpen] = useState(false);
+  const naveOpen = useUIStore((s) => s.naveOpen);
+  const openNave = useUIStore((s) => s.openNave);
+  const closeNave = useUIStore((s) => s.closeNave);
+  const open = naveOpen;
+  const setOpen = (v: boolean) => (v ? openNave() : closeNave());
   const [messages, setMessages] = useState<Msg[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -64,7 +69,7 @@ export function ShipAssistant() {
     <>
       {/* Floating ship button */}
       <motion.button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(!open)}
         className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full"
         aria-label="Abrir assistente"
         animate={{ y: [0, -8, 0] }}

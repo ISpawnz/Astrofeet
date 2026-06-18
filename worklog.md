@@ -1513,3 +1513,227 @@ Task: QA + bug fixes + new features (customer notifications, welcome email, coup
 5. **Performance**: next/image optimization, code-split heavy views.
 6. **Accessibility audit**: add ARIA labels, keyboard navigation, screen reader support.
 7. **SEO**: meta tags, structured data, sitemap.
+
+---
+Task ID: CRON-7A
+Agent: full-stack-developer
+Task: Product comparison feature (compare button on cards + CompareDrawer + compare table view)
+
+Work Log:
+- Read worklog.md to understand prior agent work (CRON-6 entries, established architecture: SPA views, glass theme, lime accent for compare, persisted zustand stores).
+- Read existing files: ProductCard.tsx, CartDrawer.tsx (for Sheet pattern), compare.ts store, client.ts (api.products supports `ids` param), types.ts (Product shape), format.ts (formatPrice), sheet.tsx (Sheet primitive adds default X close button at top-4 right-4 — need pr-8 on title to avoid overlap with count badge), Header.tsx, page.tsx, globals.css (confirmed glass / glass-strong / skeleton-cosmic / neon-lime var classes exist).
+- Part 1 — ProductCard.tsx:
+  - Imported `GitCompare` from lucide-react and `useCompareStore` from `@/stores/compare`.
+  - Added 3 new selectors: `toggleCompareId = useCompareStore((s) => s.toggle)`, `inCompare = useCompareStore((s) => s.has(product.id))`, `compareCount = useCompareStore((s) => s.count())`.
+  - Added `toggleCompare(e)` handler: stopPropagation, blocks add when `!inCompare && compareCount >= 4` with toast.error "Máximo de 4 produtos para comparar.", otherwise calls toggle + toast.success with add/remove pt-BR message.
+  - Restructured top-right action area: replaced single wishlist button with a vertical `flex flex-col gap-1.5` container holding the compare button (top) and wishlist heart button (below) — both w-9 h-9 rounded-full glass-chip style.
+  - Compare button active state: `border-[var(--neon-lime)]/60 bg-[var(--neon-lime)]/25 text-[var(--neon-lime)] shadow-[0_0_12px_var(--neon-lime)]` + `fill-current` icon.
+  - Compare button inactive state: muted `text-white/70 opacity-90` + hover reveals lime tint.
+  - aria-label toggles between "Comparar {name}" / "Remover {name} da comparação"; aria-pressed set.
+- Part 2 — CompareDrawer.tsx (NEW, ~330 lines):
+  - Sheet-based slide-over from right, width `sm:max-w-2xl` (wider than CartDrawer to fit comparison table), `bg-[#0a0e1f]/95 backdrop-blur-xl` for glass-strong look.
+  - `useQuery(["compare-products", ids.join(",")], () => api.products({ ids: ids.join(",") }), { enabled: ids.length > 0, staleTime: 30s })`.
+  - Products reordered client-side to match store `ids` order (stable as users add/remove).
+  - Header: GitCompare icon (lime) + "Comparar produtos" title + `{ids.length}/4` lime count badge + subtitle. SheetTitle has `pr-8` to clear the Sheet's built-in X close button.
+  - Body uses `overflow-x-auto` for horizontal scrolling when many products.
+  - Sticky left labels column (w-28) with all 8 attribute labels (Imagem, Nome, Marca, Categoria, Preço, Avaliação, Tamanhos, Em estoque) + a header row "Atributo" matching the remove-button row height.
+  - Each product column: remove button row (h-7) at top, then 8 attribute value cells using the SAME `cellClass` as labels column for vertical alignment.
+  - Image cell: h-20 with accent-color inset glow; product image object-contain.
+  - Price cell: lime bold formatPrice + 10x installment line.
+  - Rating cell: amber star + `rating.toFixed(1)` + reviewCount in parens if present.
+  - Tamanhos cell: comma-separated sizes.
+  - Stock cell: emerald "Em estoque" pill or rose "Esgotado" pill with PackageX icon.
+  - Bonus: when products.length < 4, shows a dashed "Adicionar outro" slot column that navigates to products view.
+  - Empty state (ids.length === 0): centered GitCompare icon + "Adicione produtos para comparar" + "Explorar produtos" CTA.
+  - Loading state (isLoading or isFetching with no products yet): CompareSkeleton with N skeleton columns.
+  - Footer (hidden when empty): "Limpar tudo" (rose on hover) + "Explorar produtos" (lime→cyan gradient) buttons in a sm:flex-row layout.
+  - framer-motion AnimatePresence for empty/loading/table transitions; layout animation on product columns for smooth add/remove.
+- Part 3 — page.tsx + Header.tsx:
+  - page.tsx: imported CompareDrawer from `@/components/views/CompareDrawer` and rendered alongside CartDrawer/AuthModal/SizeGuideModal/SearchPalette/ShipAssistant.
+  - Header.tsx: imported `GitCompare` icon and `useCompareStore`; added `compareCount` and `toggleComparePanel` selectors.
+  - Inserted compare button (GitCompare) in the actions area BEFORE the wishlist heart button. Shows animate-pop-in lime count badge when `compareCount > 0` (gated on `mounted` to avoid SSR hydration mismatch).
+  - Also added a "Comparar" entry with count badge to the mobile menu (between Buscar and Lista de desejos) for mobile discoverability.
+- Verification:
+  - TypeScript: `tsc --noEmit` shows ZERO errors in ProductCard.tsx, CompareDrawer.tsx, page.tsx, Header.tsx (full project has 39 pre-existing JSON-Prisma stub errors in API routes, unrelated to this task).
+  - Dev server: HTTP 200, compiles cleanly (`✓ Compiled` lines, no errors), no runtime errors in dev.log.
+  - ESLint: skipped (eslint binary unavailable in sandbox — `bunx eslint` failed with `scopeManager.addGlobals is not a function` due to version mismatch, environment issue unrelated to code).
+
+Stage Summary:
+- Files modified: src/components/views/ProductCard.tsx (compare button + handler), src/components/layout/Header.tsx (compare button in actions + mobile menu), src/app/page.tsx (CompareDrawer mount)
+- Files created: src/components/views/CompareDrawer.tsx (NEW, ~330 lines)
+- Files NOT touched (per instructions): AccountView.tsx, AdminView.tsx, CheckoutView.tsx, ProductDetailView.tsx, all backend files, src/stores/compare.ts, src/stores/ui.ts
+- Key decisions:
+  - Lime accent (#c6ff5a) used consistently for the compare feature (cards active state, header badge, drawer header, footer CTA gradient start) to distinguish from cyan cart and magenta wishlist.
+  - Compare button stacked vertically above heart button (instead of side-by-side) to fit comfortably in the square card image top-right corner without overlapping badges (which stay top-left).
+  - Drawer widened to `sm:max-w-2xl` (vs CartDrawer's `sm:max-w-md`) to accommodate the comparison table without too much horizontal scrolling.
+  - Sticky labels column (w-28) keeps attribute names visible while user scrolls product columns horizontally.
+  - Cell heights (`cellClass`) shared between labels column and product columns to guarantee vertical alignment — single source of truth in ROWS array.
+  - "Adicionar outro" dashed slot column appears when products.length < 4 — encourages adding more products to compare (discoverability).
+  - Toast confirms add/remove actions in pt-BR; max-4 limit enforced with toast.error before calling store toggle (store's toggle silently no-ops on overflow).
+
+---
+Task ID: CRON-7B
+Agent: full-stack-developer
+Task: Stock alert subscription UI in ProductDetailView + AccountView stock alerts tab
+
+Work Log:
+- Read worklog.md, ProductDetailView.tsx, AccountView.tsx, client.ts, types.ts,
+  format.ts, ui store, auth store; verified backend `/api/products?ids=...`
+  supports comma-separated id filter and `/api/stock-alerts` GET/POST/DELETE
+  contracts.
+- ProductDetailView: added `Bell`, `BellOff` to lucide-react imports.
+- Added `isProductOutOfStock(product)` helper that treats a product as sold out
+  when every entry in `sizeStock` is <=0 (or, when `sizeStock` is absent, when
+  global `stock` is 0).
+- Added `StockAlertBanner` glass sub-component: amber/violet radial glow,
+  Bell icon, rose "Produto esgotado" title + "Avise-me quando voltar ao
+  estoque" subtitle. Three states driven by `useQuery(["stock-alerts"])`:
+  (a) subscribed → lime "Inscrito" pill + "Cancelar inscrição" outline button
+      (BellOff icon, calls `api.unsubscribeStockAlert` + invalidate +
+      toast "Inscrição cancelada.");
+  (b) not logged in → "Faça login para ser avisado." + gradient "Entrar"
+      button that opens the auth modal via `openAuth("login")`;
+  (c) logged in & not subscribed → email Input (prefilled from
+      `user.email` via useEffect) + amber→violet "Avise-me" button calling
+      `api.subscribeStockAlert` + invalidate + toast "Você será avisado
+      quando este sneaker voltar ao estoque!". Loader2 spinner while pending.
+- Added `LowStockHint` inline sub-component: shown under the size selector
+  when the selected size has 1-2 units left. Amber "Estoque baixo neste
+  tamanho — apenas N unidades." + small Bell-link "Avise-me se esgotar
+  antes." that subscribes in one tap (or opens auth modal when logged out).
+  Swaps to lime "Alerta ativo para este sneaker." with a Check icon once
+  subscribed.
+- Wired both sub-components into the `Info` panel: the old "Este modelo está
+  temporariamente esgotado." message is now `<StockAlertBanner>` (gated on
+  `isProductOutOfStock`), and the old "Apenas X unidades neste tamanho.
+  Corra!" line is now `<LowStockHint>` (gated on selected size ≤2 units).
+- Updated CTA buttons (`Adicionar ao carrinho` / `Comprar agora`) to use the
+  new `soldOut` flag (= `isProductOutOfStock(product)`) so they correctly
+  disable when sizeStock says everything is 0 even if global stock >0.
+- AccountView: added `BellOff` to lucide-react imports and `Product` to the
+  type import block (needed by the new tab).
+- Added `StockAlertsTab` sub-component before the main `AccountView`:
+  - Header "Meus alertas de estoque" + subtitle.
+  - `useQuery(["stock-alerts"], api.listStockAlerts)` for subscribed IDs +
+    `useQuery(["alert-products", ids.join(",")], () =>
+    api.products({ ids: ids.join(",") }), { enabled: ids.length > 0 })`
+    for full product data.
+  - Loading state: 3 skeleton cards in the same `grid sm:grid-cols-2 gap-4`
+    layout.
+  - Empty state: glass-strong dashed panel with a Bell icon in a rounded
+    square, "Você não tem alertas ativos." + the spec hint copy + an
+    "Explorar drops" gradient button → `navigate("products")`.
+  - Grid: each card has a 16x16 image button (clickable to product detail),
+    brand uppercase + name (also clickable, hover → neon-cyan), an emerald
+    "Em estoque" or rose "Esgotado" Badge, and action buttons:
+    in-stock → "Ver produto" gradient + "Remover alerta" outline;
+    out-of-stock → "Remover alerta" outline only.
+    "Remover alerta" calls `api.unsubscribeStockAlert` + invalidate +
+    toast "Alerta removido." with per-card Loader2 spinner.
+    framer-motion staggered entrance (delay = index * 0.06).
+  - Footer counter: "N alerta(s) ativo(s)".
+- Wired the 5th tab into `TabsList` (BellOff icon, value="alertas") after
+  "Notificações", and added the corresponding `<TabsContent value="alertas">`
+  rendering `<StockAlertsTab />`.
+- Verified: `tsc --noEmit -p tsconfig.json` shows ZERO errors in
+  ProductDetailView.tsx / AccountView.tsx (remaining TS errors are all
+  pre-existing backend JSON-Prisma stub friction and examples/skills folders).
+- Dev server compiles cleanly (GET / 200, no errors in dev.log).
+
+Stage Summary:
+- Modified: src/components/views/ProductDetailView.tsx
+  (+ Bell/BellOff imports, + isProductOutOfStock helper,
+   + StockAlertBanner sub-component, + LowStockHint sub-component,
+   wired into Info panel, CTA disabled flag switched to `soldOut`.)
+- Modified: src/components/views/AccountView.tsx
+  (+ BellOff import, + Product type import, + StockAlertsTab sub-component,
+   + 5th "Alertas" TabsTrigger, + TabsContent value="alertas".)
+- Backend untouched (used the provided `/api/stock-alerts` + existing
+  `/api/products?ids=` filter).
+- No tests written (per project policy).
+
+---
+Task ID: CRON-7 (main thread)
+Agent: main (Z.ai Code) — 15-min webDevReview cron job (id 214859)
+Task: QA + wire footer links + product comparison feature + stock alerts + styling polish
+
+## Current project status assessment
+- Project stable from CRON-6 (customer notifications, welcome email, coupon notifications, related products, review submission, gallery enhancement, footer redesign).
+- Dev server healthy on port 3000. HTTP 200.
+- agent-browser QA: all views passing, no critical bugs found.
+- Identified: footer links "Guia de medidas", "Fale com a Nave", "Quem somos", etc. were static text, not wired to actions.
+
+## Completed modifications this round
+
+### Bug fixes / improvements
+1. **Footer links wired**: All footer links are now clickable buttons. "Guia de medidas" → opens SizeGuideModal. "Fale com a Nave" / "Trocas e devoluções" / "Quem somos" / "Sustentabilidade" / "Contato" → opens ShipAssistant chat. "Rastrear pedido" → navigate to track-order view. "Drops" / "Novidades" / "Mais vendidos" → navigate to products with appropriate params.
+2. **ShipAssistant state lifted to UI store**: Added `naveOpen` / `openNave` / `closeNave` to `useUIStore`. ShipAssistant now reads from the store instead of local `useState`, allowing the footer (and any component) to open the chat panel programmatically.
+
+### Backend new features
+1. **Batch product fetch**: `GET /api/products?ids=id1,id2,id3` — fetch multiple products by comma-separated IDs. Used by the comparison feature. Verified: batch fetch of 3 IDs returns 3 products.
+2. **Stock alerts API** (`src/app/api/stock-alerts/route.ts`):
+   - `GET` — list the authenticated user's subscribed product IDs (stored as JSON array on user record).
+   - `POST { productId }` — subscribe to a product's stock alert.
+   - `DELETE ?productId=...` — unsubscribe.
+   - Verified: subscribe → IDs array includes the product; unsubscribe → array empty.
+
+### Frontend new features (via subagents)
+1. **Product comparison feature** (subagent CRON-7A):
+   - `src/stores/compare.ts` — persisted zustand store (max 4 products, auto-opens panel on add).
+   - **ProductCard**: compare toggle button (GitCompare icon, lime accent) next to wishlist heart. Active state with lime glow. Toast when max reached.
+   - **CompareDrawer** (NEW): slide-over panel from right with a horizontal scrollable comparison table. 8 attribute rows (Imagem, Nome, Marca, Categoria, Preço, Avaliação, Tamanhos, Em estoque). Remove button per product. "Limpar tudo" + "Explorar produtos" footer. Empty state + loading skeleton + "Adicionar outro" dashed slot.
+   - **Header**: compare button (GitCompare icon) with lime count badge, before wishlist button. Also added to mobile menu.
+   - **page.tsx**: CompareDrawer rendered alongside CartDrawer.
+   - Verified: clicking compare on Lunar Drift opens drawer with full attribute table.
+2. **Stock alert subscription UI** (subagent CRON-7B):
+   - **ProductDetailView**: `StockAlertBanner` for out-of-stock products (Bell icon, email input pre-filled, subscribe/unsubscribe flow, 3 states: not-logged-in, form, subscribed). `LowStockHint` for sizes with ≤2 units ("Estoque baixo neste tamanho — apenas N unidade(s)." + "Avise-me se esgotar antes" bell link).
+   - **AccountView**: 5th "Alertas" tab (BellOff icon) with `StockAlertsTab` — grid of subscribed product cards with stock status badges + "Ver produto" / "Remover alerta" buttons. Empty state + loading skeleton.
+   - Verified: Meteor Air size 38 (1 unit) shows low-stock hint with "Avise-me" button. AccountView Alertas tab shows empty state.
+
+### Styling polish (CRON-7)
+Added 10 new CSS utilities to `src/app/globals.css`:
+- **`.neon-badge`**: shimmering sweep effect for badges (NOVO, DROP LIMITADO).
+- **`.floating-label`**: gentle float animation for section eyebrows.
+- **`.card-sheen`**: diagonal light sweep on hover (applied to ProductCard).
+- **`.glow-ring`**: pulsing ring around active elements.
+- **`.text-gradient-animated`**: animated gradient text (cyan→violet→magenta, 4s loop). Applied to hero title "visual de outro" and ASTROFEET logo.
+- **`.star-filled`**: amber filled star with glow for ratings.
+- **`.tab-active-glow`**: active tab text shadow glow.
+- **`.animate-drawer-in`**: improved drawer slide-in animation.
+- **`.hover-lift`**: generic hover lift transition.
+- **`.zoom-container`**: image zoom on hover container.
+
+Applied new classes to:
+- ProductCard: `card-sheen` for diagonal light sweep on hover.
+- HomeView hero title: `text-gradient-animated` for animated gradient.
+- Header ASTROFEET logo: `text-gradient-animated` (replaced static `text-gradient-neon animate-astro-pulse`).
+
+## Verification results
+- TypeScript: 39 errors total (all pre-existing JSON-Prisma stub friction). ZERO errors in any frontend file or new backend file.
+- Dev server: HTTP 200, compiles cleanly, no runtime errors.
+- agent-browser QA:
+  - Home view: compare buttons on all product cards, compare button in header with count badge.
+  - Compare drawer: opens on click, shows attribute table (Imagem/Nome/Marca/Categoria/Preço/Avaliação/Tamanhos/Em estoque), remove/clear/explore buttons.
+  - Footer links: "Fale com a Nave" opens ShipAssistant, "Guia de medidas" opens SizeGuideModal, "Rastrear pedido" navigates to track-order.
+  - Product detail: low-stock hint on Meteor Air size 38 ("Estoque baixo neste tamanho — apenas 1 unidade. Avise-me se esgotar antes.").
+  - Account view: 5 tabs (Meus pedidos, Meus dados, Endereços, Notificações, Alertas). Alertas tab shows empty state.
+- API tests:
+  - Batch fetch: `?ids=id1,id2,id3` returns 3 products.
+  - Stock alerts: subscribe → IDs array includes product; unsubscribe → array empty.
+  - Case-insensitive search: "solar" → 1, "VOID" → 1.
+  - Unauthenticated stock alerts: 401 (proper error).
+
+## Unresolved issues / risks
+- 39 pre-existing TS errors (all JSON-Prisma stub friction). Non-runtime.
+- Stock alerts store subscriptions on the user record as a JSON array (`stockAlerts` field). When a product comes back in stock, there's no automatic notification queued yet (would need a background job or a stock-update hook that checks subscriptions and queues notifications). Currently the AccountView "Alertas" tab shows the current stock status so users can see when a product is back.
+- Compare feature stores product IDs in localStorage. If products are deleted from the DB, the compare drawer will show fewer products than IDs (handled gracefully by the `ids` query filter).
+- Footer "Sobre" links (Quem somos, Sustentabilidade, Contato) open the Nave chat as a fallback since there are no dedicated info pages. Could add static info pages later.
+
+## Priority recommendations for next phase
+1. **Stock alert notification automation** — when admin updates a product's stock from 0 to >0, check subscriptions and queue "produto voltou ao estoque" notifications.
+2. **Real Prisma/Postgres swap** — db.ts is 1:1 Prisma-shaped; drop-in once prisma installs. Eliminates all 39 TS errors.
+3. **Product image upload** in admin (file input + base64 or object storage).
+4. **Info pages** — dedicated "Quem somos", "Sustentabilidade", "Contato", "Trocas e devoluções" views (currently route to Nave chat).
+5. **Performance**: next/image optimization, code-split heavy views.
+6. **Accessibility audit**: ARIA labels, keyboard navigation, screen reader support.
+7. **SEO**: meta tags, structured data, sitemap.

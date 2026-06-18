@@ -40,6 +40,7 @@ import {
   Lock,
   Plus,
   Bell,
+  BellOff,
   RefreshCw,
   Truck,
   Ticket,
@@ -58,7 +59,7 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Order, PublicUser, Address, Notification, NotificationType } from "@/lib/types";
+import type { Order, PublicUser, Address, Notification, NotificationType, Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -1914,6 +1915,198 @@ function NotificationsTab() {
   );
 }
 
+// ---------- Stock alerts tab ----------
+
+function StockAlertsTab() {
+  const navigate = useUIStore((s) => s.navigate);
+  const queryClient = useQueryClient();
+
+  // Subscribed product IDs for the signed-in user.
+  const { data: subscribedIds, isLoading: alertsLoading } = useQuery({
+    queryKey: ["stock-alerts"],
+    queryFn: () => api.listStockAlerts(),
+  });
+
+  const ids = subscribedIds ?? [];
+  const joinedIds = ids.join(",");
+
+  // Fetch the full product data for every subscribed ID at once.
+  const { data: products, isLoading: productsLoading } = useQuery({
+    queryKey: ["alert-products", joinedIds],
+    queryFn: () => api.products({ ids: joinedIds }),
+    enabled: ids.length > 0,
+  });
+
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const isLoading = alertsLoading || (ids.length > 0 && productsLoading);
+
+  async function handleRemove(productId: string) {
+    setRemovingId(productId);
+    try {
+      await api.unsubscribeStockAlert(productId);
+      await queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+      toast.success("Alerta removido.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível remover o alerta.",
+      );
+    } finally {
+      setRemovingId(null);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-xl font-bold sm:text-2xl">Meus alertas de estoque</h2>
+        <p className="text-sm text-muted-foreground">
+          Produtos que você quer ser avisado quando voltarem ao estoque.
+        </p>
+      </div>
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="glass-strong rounded-2xl border border-white/10 p-4"
+            >
+              <div className="flex items-start gap-3">
+                <Skeleton className="h-16 w-16 shrink-0 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-5 w-24 rounded-full" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty */}
+      {!isLoading && ids.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-strong rounded-3xl border border-dashed border-white/10 p-8 text-center"
+        >
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04]">
+            <Bell className="h-7 w-7 text-muted-foreground" />
+          </div>
+          <p className="text-lg font-semibold">Você não tem alertas ativos.</p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+            Quando um produto esgotado que você marcou voltar ao estoque, ele
+            aparece aqui.
+          </p>
+          <Button
+            type="button"
+            onClick={() => navigate("products")}
+            className="mt-5 gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 font-bold text-black hover:opacity-90"
+          >
+            Explorar drops
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Grid */}
+      {!isLoading && ids.length > 0 && products && products.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {products.map((p: Product, index: number) => {
+            const inStock = p.stock > 0;
+            return (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.06 }}
+                className="glass-strong flex items-start gap-3 rounded-2xl border border-white/10 p-4"
+              >
+                <button
+                  type="button"
+                  onClick={() => navigate("product", { id: p.slug })}
+                  className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-1 transition hover:border-white/30"
+                  aria-label={`Ver ${p.name}`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.images[0]}
+                    alt={p.name}
+                    className="h-full w-full object-contain"
+                  />
+                </button>
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {p.brand}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate("product", { id: p.slug })}
+                      className="line-clamp-1 text-left text-sm font-semibold leading-tight transition hover:text-[var(--neon-cyan)]"
+                    >
+                      {p.name}
+                    </button>
+                  </div>
+
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "px-1.5 py-0 text-[10px] font-semibold",
+                      inStock
+                        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                        : "bg-rose-500/15 text-rose-400 border-rose-500/30",
+                    )}
+                  >
+                    {inStock ? "Em estoque" : "Esgotado"}
+                  </Badge>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {inStock && (
+                      <Button
+                        size="sm"
+                        onClick={() => navigate("product", { id: p.slug })}
+                        className="h-8 gap-1.5 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-3 text-xs font-bold text-black hover:opacity-90"
+                      >
+                        Ver produto
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRemove(p.id)}
+                      disabled={removingId === p.id}
+                      className="h-8 gap-1.5 rounded-full border-white/10 px-3 text-xs font-medium text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                    >
+                      {removingId === p.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <BellOff className="h-3.5 w-3.5" />
+                      )}
+                      Remover alerta
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Footer counter */}
+      {!isLoading && ids.length > 0 && (
+        <p className="text-center text-xs text-muted-foreground">
+          {ids.length} {ids.length === 1 ? "alerta ativo" : "alertas ativos"}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ---------- Main ----------
 
 export function AccountView() {
@@ -1980,6 +2173,13 @@ export function AccountView() {
             <Bell className="h-4 w-4" />
             Notificações
           </TabsTrigger>
+          <TabsTrigger
+            value="alertas"
+            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+          >
+            <BellOff className="h-4 w-4" />
+            Alertas
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="orders" className="mt-6">
           <OrdersTab orders={orders} isLoading={isLoading} />
@@ -1992,6 +2192,9 @@ export function AccountView() {
         </TabsContent>
         <TabsContent value="notificacoes" className="mt-6">
           <NotificationsTab />
+        </TabsContent>
+        <TabsContent value="alertas" className="mt-6">
+          <StockAlertsTab />
         </TabsContent>
       </Tabs>
 

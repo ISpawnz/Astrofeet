@@ -9,6 +9,7 @@ import { CartDrawer } from "@/components/views/CartDrawer";
 import { AuthModal } from "@/components/views/AuthModal";
 import { SizeGuideModal } from "@/components/views/SizeGuideModal";
 import { SearchPalette } from "@/components/views/SearchPalette";
+import { CompareDrawer } from "@/components/views/CompareDrawer";
 import { HomeView } from "@/components/views/HomeView";
 import { ProductsView } from "@/components/views/ProductsView";
 import { ProductDetailView } from "@/components/views/ProductDetailView";
@@ -44,6 +45,7 @@ export default function Page() {
       <AuthModal />
       <SizeGuideModal />
       <SearchPalette />
+      <CompareDrawer />
       <ShipAssistant />
     </div>
   );
