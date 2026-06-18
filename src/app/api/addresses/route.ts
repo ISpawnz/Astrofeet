@@ -75,6 +75,9 @@ export async function POST(req: NextRequest) {
         // first address becomes default automatically
       }
     }
+    // Auto-default: if this is the user's first address, always mark it as default.
+    const addressCount = await db.address.count({ where: { userId: user.id } });
+    const effectiveDefault = isDefault || addressCount === 0;
 
     const created = await db.address.create({
       data: {
@@ -88,7 +91,7 @@ export async function POST(req: NextRequest) {
         district,
         city,
         state,
-        isDefault,
+        isDefault: effectiveDefault,
       },
     });
 

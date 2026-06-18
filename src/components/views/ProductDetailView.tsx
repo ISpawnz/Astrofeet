@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   ChevronRight,
@@ -17,6 +17,9 @@ import {
   Send,
   Heart,
   Ruler,
+  Loader2,
+  X,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -141,15 +144,9 @@ function DetailSkeleton() {
 // ---------------------------------------------------------------------------
 
 function Gallery({ product }: { product: Product }) {
-  // Build a thumbnail list. If only one image, synthesize 3 angle chips using
-  // the same image (visually complete).
-  const thumbs = useMemo(() => {
-    if (product.images.length > 1) return product.images;
-    return [product.images[0], product.images[0], product.images[0]];
-  }, [product.images]);
-
-  const [active, setActive] = useState(0);
-  const angleLabels = ["Frente", "Lateral", "Detalhe"];
+  const images = product.images;
+  const [currentImage, setCurrentImage] = useState(0);
+  const angleLabels = ["Frente", "Lateral", "Detalhe", "Verso", "Solo"];
 
   return (
     <div className="space-y-4">
@@ -167,12 +164,18 @@ function Gallery({ product }: { product: Product }) {
         {/* Subtle ring overlay */}
         <div className="pointer-events-none absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/5" />
 
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={thumbs[active]}
-          alt={product.name}
-          className="animate-astro-float relative h-full w-full object-contain p-8"
-        />
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={currentImage}
+            src={images[currentImage]}
+            alt={`${product.name} — ${angleLabels[currentImage % angleLabels.length]}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="animate-astro-float relative h-full w-full object-contain p-8 hover:scale-105 transition-transform duration-500"
+          />
+        </AnimatePresence>
 
         {/* Badges */}
         <div className="absolute left-3 top-3 flex flex-col gap-1.5">
@@ -195,34 +198,31 @@ function Gallery({ product }: { product: Product }) {
         </div>
       </motion.div>
 
-      {/* Thumbnails */}
-      <div className="flex gap-2">
-        {thumbs.map((src, i) => (
-          <button
-            key={i}
-            onClick={() => setActive(i)}
-            aria-label={`Ver ângulo ${angleLabels[i % 3]}`}
-            className={cn(
-              "relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border bg-white/[0.03] p-1.5 transition",
-              active === i
-                ? "border-[var(--neon-cyan)] ring-2 ring-[var(--neon-cyan)]/40"
-                : "border-white/10 hover:border-white/30",
-            )}
-            style={
-              active === i
-                ? { boxShadow: `0 0 18px ${product.accent}55` }
-                : undefined
-            }
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt={`${product.name} ângulo ${angleLabels[i % 3]}`}
-              className="h-full w-full object-contain"
-            />
-          </button>
-        ))}
-      </div>
+      {/* Thumbnail strip */}
+      {images.length > 1 && (
+        <div className="flex gap-3">
+          {images.map((src, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentImage(i)}
+              aria-label={`Ver ângulo ${angleLabels[i % angleLabels.length]}`}
+              className={cn(
+                "relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-white/[0.03] p-1 transition-all duration-200",
+                currentImage === i
+                  ? "border-[var(--neon-cyan)] shadow-[0_0_14px_var(--neon-cyan)]"
+                  : "border-white/10 hover:border-white/30",
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`${product.name} ângulo ${angleLabels[i % angleLabels.length]}`}
+                className="h-full w-full object-contain"
+              />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -534,6 +534,42 @@ function Info({
 // Reviews summary + form + list
 // ---------------------------------------------------------------------------
 
+function InteractiveStars({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const [hover, setHover] = useState(0);
+  const display = hover || value;
+
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(n)}
+          onMouseEnter={() => setHover(n)}
+          onMouseLeave={() => setHover(0)}
+          className="touch-manipulation p-0.5"
+          aria-label={`${n} estrela${n > 1 ? "s" : ""}`}
+        >
+          <Star
+            className={cn(
+              "h-7 w-7 transition-colors",
+              n <= display
+                ? "fill-amber-400 text-amber-400"
+                : "fill-transparent text-white/20 hover:text-white/40",
+            )}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function ReviewsSection({
   product,
   reviews,
@@ -543,15 +579,19 @@ function ReviewsSection({
 }) {
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
+  const openAuth = useUIStore((s) => s.openAuth);
 
-  const [author, setAuthor] = useState(user?.name ?? "");
-  const [rating, setRating] = useState(5);
+  const [showForm, setShowForm] = useState(false);
+  const [author, setAuthor] = useState("");
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [errors, setErrors] = useState<{
-    author?: string;
-    comment?: string;
-  }>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Sync author name when user logs in or form opens
+  useEffect(() => {
+    if (user?.name) setAuthor(user.name);
+  }, [user]);
 
   const dist = useMemo(() => {
     const base: Record<number, number> = {
@@ -575,15 +615,30 @@ function ReviewsSection({
     );
   }, [reviews]);
 
+  function resetForm() {
+    setRating(0);
+    setHoverRating(0);
+    setComment("");
+    setAuthor(user?.name ?? "");
+    setShowForm(false);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const nextErrors: { author?: string; comment?: string } = {};
-    if (!author.trim()) nextErrors.author = "Informe seu nome.";
-    if (!comment.trim()) nextErrors.comment = "Escreva um comentário.";
-    if (comment.trim().length < 3)
-      nextErrors.comment = "Comentário muito curto.";
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+
+    // Validation
+    if (rating <= 0) {
+      toast.error("Selecione uma nota de 1 a 5 estrelas.");
+      return;
+    }
+    if (author.trim().length < 2) {
+      toast.error("O nome deve ter pelo menos 2 caracteres.");
+      return;
+    }
+    if (comment.trim().length < 10) {
+      toast.error("O comentário deve ter pelo menos 10 caracteres.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -596,10 +651,8 @@ function ReviewsSection({
       await queryClient.invalidateQueries({
         queryKey: ["product", product.slug],
       });
-      toast.success("Avaliação enviada! Obrigado pelo feedback.");
-      setComment("");
-      setRating(5);
-      setErrors({});
+      toast.success("Avaliação enviada!");
+      resetForm();
     } catch (err) {
       toast.error(
         err instanceof Error
@@ -611,6 +664,8 @@ function ReviewsSection({
     }
   }
 
+  const displayRating = hoverRating || rating;
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 20 }}
@@ -619,15 +674,41 @@ function ReviewsSection({
       transition={{ duration: 0.5 }}
       className="space-y-8"
     >
-      <div className="flex items-center gap-3">
-        <h2 className="text-2xl font-black sm:text-3xl">Avaliações</h2>
-        <Badge
-          variant="secondary"
-          className="border-white/10 bg-white/5 text-muted-foreground"
-        >
-          {reviews.length}{" "}
-          {reviews.length === 1 ? "comentário" : "comentários"}
-        </Badge>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-black sm:text-3xl">Avaliações</h2>
+          <Badge
+            variant="secondary"
+            className="border-white/10 bg-white/5 text-muted-foreground"
+          >
+            {reviews.length}{" "}
+            {reviews.length === 1 ? "comentário" : "comentários"}
+          </Badge>
+        </div>
+
+        {/* Write review button / login hint */}
+        {user ? (
+          !showForm && (
+            <Button
+              onClick={() => setShowForm(true)}
+              className="gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 font-bold text-black hover:opacity-90"
+            >
+              <Pencil className="h-4 w-4" />
+              Escrever avaliação
+            </Button>
+          )
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Faça{" "}
+            <button
+              onClick={() => openAuth("login")}
+              className="font-semibold text-[var(--neon-cyan)] underline-offset-2 hover:underline"
+            >
+              login
+            </button>{" "}
+            para avaliar este produto.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
@@ -725,77 +806,120 @@ function ReviewsSection({
         </div>
       </div>
 
-      {/* Write a review */}
-      <form
-        onSubmit={submit}
-        className="glass rounded-3xl border border-white/10 p-6"
-      >
-        <h3 className="text-lg font-bold">Deixe sua avaliação</h3>
-        <p className="mb-5 text-sm text-muted-foreground">
-          Conte para a galera o que achou deste drop.
-        </p>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Nome
-            </label>
-            <Input
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Como te chamamos?"
-              className="rounded-xl border-white/10 bg-white/[0.03]"
-            />
-            {errors.author && (
-              <p className="text-xs text-rose-400">{errors.author}</p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Nota: <span className="text-foreground">{rating}</span> estrelas
-            </label>
-            <div className="flex items-center gap-3 pt-1">
-              <Slider
-                min={1}
-                max={5}
-                step={1}
-                value={[rating]}
-                onValueChange={(v) => setRating(v[0] ?? 5)}
-                className="flex-1"
-              />
-              <Stars value={rating} size={16} />
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 space-y-1.5">
-          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Comentário
-          </label>
-          <Textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={4}
-            placeholder="Conforto, acabamento, tamanho…"
-            className="resize-none rounded-xl border-white/10 bg-white/[0.03]"
-          />
-          {errors.comment && (
-            <p className="text-xs text-rose-400">{errors.comment}</p>
-          )}
-        </div>
-
-        <div className="mt-5 flex justify-end">
-          <Button
-            type="submit"
-            disabled={submitting}
-            className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 font-bold text-black hover:opacity-90"
+      {/* Review form — only when logged in and showForm is true */}
+      <AnimatePresence>
+        {showForm && user && (
+          <motion.form
+            key="review-form"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            onSubmit={submit}
+            className="glass overflow-hidden rounded-3xl border border-white/10 p-6"
           >
-            <Send className="mr-2 h-4 w-4" />
-            {submitting ? "Enviando…" : "Enviar avaliação"}
-          </Button>
-        </div>
-      </form>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">Escrever avaliação</h3>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={resetForm}
+                className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="mb-5 text-sm text-muted-foreground">
+              Conte o que achou deste sneaker.
+            </p>
+
+            {/* Star rating */}
+            <div className="mb-5 space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Nota
+              </label>
+              <div className="flex items-center gap-3">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setRating(n)}
+                    onMouseEnter={() => setHoverRating(n)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="touch-manipulation p-0.5"
+                    aria-label={`${n} estrela${n > 1 ? "s" : ""}`}
+                  >
+                    <Star
+                      className={cn(
+                        "h-8 w-8 transition-colors",
+                        n <= displayRating
+                          ? "fill-amber-400 text-amber-400"
+                          : "fill-transparent text-white/20 hover:text-white/40",
+                      )}
+                    />
+                  </button>
+                ))}
+                {rating > 0 && (
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {rating}/5
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Seu nome
+                </label>
+                <Input
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder="Como te chamamos?"
+                  className="rounded-xl border-white/10 bg-white/[0.03]"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Comentário
+              </label>
+              <Textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={4}
+                placeholder="Conte o que achou deste sneaker..."
+                className="resize-none rounded-xl border-white/10 bg-white/[0.03]"
+              />
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={resetForm}
+                className="rounded-full text-muted-foreground hover:text-foreground"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 font-bold text-black hover:opacity-90"
+              >
+                {submitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {submitting ? "Enviando…" : "Enviar avaliação"}
+              </Button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
     </motion.section>
   );
 }
@@ -804,8 +928,49 @@ function ReviewsSection({
 // Related products
 // ---------------------------------------------------------------------------
 
-function Related({ products }: { products: Product[] }) {
+function RelatedSkeleton() {
+  return (
+    <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="min-w-[200px] flex-1 space-y-3">
+          <Skeleton className="aspect-square w-full rounded-3xl" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Related({ productId }: { productId: string }) {
+  const { data: products, isLoading } = useQuery({
+    queryKey: ["related", productId],
+    queryFn: () => api.relatedProducts(productId),
+    enabled: !!productId,
+  });
+
+  if (isLoading) {
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.5 }}
+        className="space-y-5"
+      >
+        <div className="flex items-center gap-3">
+          <Heart className="h-6 w-6 text-[var(--neon-magenta)]" />
+          <h2 className="text-2xl font-black sm:text-3xl">
+            Você também pode gostar
+          </h2>
+        </div>
+        <RelatedSkeleton />
+      </motion.section>
+    );
+  }
+
   if (!products || products.length === 0) return null;
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 20 }}
@@ -814,12 +979,24 @@ function Related({ products }: { products: Product[] }) {
       transition={{ duration: 0.5 }}
       className="space-y-5"
     >
-      <h2 className="text-2xl font-black sm:text-3xl">
-        Você também vai curtir
-      </h2>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {products.map((p, i) => (
-          <ProductCard key={p.id} product={p} index={i} />
+      <div className="flex items-center gap-3">
+        <Heart className="h-6 w-6 text-[var(--neon-magenta)]" />
+        <h2 className="text-2xl font-black sm:text-3xl">
+          Você também pode gostar
+        </h2>
+      </div>
+      <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
+        {products.slice(0, 4).map((p, i) => (
+          <motion.div
+            key={p.id}
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4, delay: i * 0.1 }}
+            className="min-w-[220px] flex-1 sm:min-w-[240px]"
+          >
+            <ProductCard product={p} index={i} />
+          </motion.div>
         ))}
       </div>
     </motion.section>
@@ -848,14 +1025,6 @@ export function ProductDetailView() {
 
   const product = data?.product;
   const reviews = data?.reviews ?? [];
-
-  const { data: related } = useQuery({
-    queryKey: ["products", "related", product?.category, product?.id],
-    queryFn: () => api.products({ category: product?.category }),
-    enabled: !!product,
-    select: (list: Product[]) =>
-      list.filter((p) => p.id !== product?.id).slice(0, 4),
-  });
 
   // Track recently viewed (client-only, after product loads)
   useEffect(() => {
@@ -977,10 +1146,11 @@ export function ProductDetailView() {
       {/* Reviews */}
       <ReviewsSection product={product} reviews={reviews} />
 
-      <Separator className="my-16 bg-white/10" />
+      {/* Orbit divider */}
+      <div className="orbit-divider my-16" />
 
       {/* Related */}
-      <Related products={related ?? []} />
+      <Related productId={product.id} />
     </div>
   );
 }

@@ -14,6 +14,10 @@ export function jsonError(message: string, status = 400) {
 
 export function handleApiError(e: unknown) {
   if (e instanceof HttpError) return jsonError(e.message, e.status);
+  // AuthError extends Error but also has a status field
+  if (e instanceof Error && 'status' in e && typeof (e as { status: unknown }).status === 'number') {
+    return jsonError(e.message, (e as { status: number }).status);
+  }
   // Prisma known errors
   const prismaError = e as { code?: string; message?: string };
   if (prismaError?.code === "P2002") {

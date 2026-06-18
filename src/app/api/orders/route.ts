@@ -285,6 +285,27 @@ export async function POST(req: NextRequest) {
         }),
         orderId: order.id,
       });
+      // If a coupon was used, queue a coupon_applied notification too.
+      if (coupon?.code) {
+        await sendEmailNotification({
+          type: "coupon_applied",
+          to: customer.email,
+          subject: `Cupom ${coupon.code} aplicado · Pedido ${order.code}`,
+          body: [
+            `Olá, ${customer.name}!`,
+            "",
+            `O cupom ${coupon.code} foi aplicado com sucesso ao seu pedido ${order.code}.`,
+            "",
+            coupon.type === "percent"
+              ? `Desconto: ${coupon.value}% off → R$${discount.toFixed(2).replace(".", ",")}`
+              : `Desconto: R$${discount.toFixed(2).replace(".", ",")}`,
+            "",
+            "Obrigado por explorar a galáxia com a Astrofeet! 🚀",
+            "— Equipe Astrofeet",
+          ].join("\n"),
+          orderId: order.id,
+        });
+      }
     } catch {
       // Non-fatal: notification failure should never block order creation.
     }

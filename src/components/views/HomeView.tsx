@@ -46,7 +46,7 @@ export function HomeView() {
   return (
     <div className="flex flex-col">
       {/* ---------- HERO ---------- */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden comet-trail">
         <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-2 lg:pt-20">
           {/* Copy */}
           <motion.div
@@ -148,7 +148,7 @@ export function HomeView() {
                   <p className="text-sm font-bold">{hero.name}</p>
                   <button
                     onClick={heroAdd}
-                    className="mt-1 text-xs font-semibold text-[var(--neon-cyan)] hover:underline"
+                    className="btn-cosmic mt-1 text-xs font-semibold text-[var(--neon-cyan)]"
                   >
                     Adicionar por {formatPrice(hero.price)} →
                   </button>
@@ -183,7 +183,7 @@ export function HomeView() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[var(--neon-violet)]/15 via-transparent to-[var(--neon-magenta)]/15 p-8 sm:p-12"
+          className="gradient-border-animated relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[var(--neon-violet)]/15 via-transparent to-[var(--neon-magenta)]/15 p-8 sm:p-12"
         >
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[var(--neon-magenta)] opacity-20 blur-3xl" />
           <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-[var(--neon-cyan)] opacity-20 blur-3xl" />
@@ -204,7 +204,7 @@ export function HomeView() {
             </div>
             <button
               onClick={() => navigate("products")}
-              className="shrink-0 rounded-full bg-white px-6 py-3 text-sm font-bold text-black transition hover:opacity-90"
+              className="btn-cosmic shrink-0 rounded-full bg-white px-6 py-3 text-sm font-bold text-black transition hover:opacity-90"
             >
               Aproveitar
             </button>

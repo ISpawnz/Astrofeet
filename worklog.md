@@ -1363,3 +1363,153 @@ Applied new classes to:
 6. **Product image upload** in admin (file input + base64 or object storage).
 7. **Related products algorithm** — brand-based + "frequently bought together".
 8. **Performance**: next/image optimization, code-split heavy views.
+
+---
+Task ID: CRON-6B
+Agent: full-stack-developer
+Task: Related products UI + product gallery enhancement + Footer enhancement
+
+Work Log:
+- Read worklog.md to understand project context (CRON-5 entries, existing architecture)
+- Read ProductDetailView.tsx (989 lines), Footer.tsx, client.ts, types.ts, ProductCard.tsx
+- Feature 2: Enhanced product image gallery in ProductDetailView:
+  - Replaced single `<img>` with `AnimatePresence` + `motion.img` for smooth crossfade (opacity 0→1, 0.3s duration)
+  - Added `hover:scale-105 transition-transform duration-500` zoom effect on main image
+  - Added thumbnail strip below main image (w-16 h-16, rounded-xl, border-2)
+  - Active thumbnail gets `border-[var(--neon-cyan)]` + cyan glow shadow
+  - Inactive thumbnails get `border-white/10` with hover effect
+  - Thumbnail strip only shows when images.length > 1
+  - Uses real `product.images` array instead of synthesized duplicates
+- Feature 1: Replaced old Related component with new Related using `api.relatedProducts(id)`:
+  - Uses `useQuery(["related", productId], ...)` with proper enabled flag
+  - Section header: Heart icon + "Você também pode gostar" heading
+  - orbit-divider above the section
+  - Horizontal scrollable row (`flex gap-4 overflow-x-auto no-scrollbar pb-4`) of ProductCards
+  - Loading state: RelatedSkeleton with 4 skeleton cards
+  - Empty state: section hidden entirely (returns null)
+  - framer-motion staggered entrance on each card (opacity + x transition, delay i*0.1)
+- Feature 3: Complete Footer redesign:
+  - Social links row (Instagram, Twitter, Youtube, Github) with glass-chip buttons and hover glow
+  - Trust badges in glass cards with emoji icons (🚀 🔄 🔒 🛸)
+  - Link columns organized into 3 sections: Explorar, Ajuda, Sobre (in glass-strong panels)
+  - Navigation wired: Drops→products, Novidades→products(sort=newest), Mais vendidos→products(bestSeller=true), Rastrear pedido→track-order
+  - Enhanced newsletter with "Fique por dentro dos drops" heading + star hint text + Send icon button
+  - Bottom bar with orbit-divider, copyright 2026, "Feito com 💜 e stardust"
+  - framer-motion entrance animations on trust badges
+  - All styling uses glass/glass-strong panels, orbit-divider dividers, text-glow-hover on links
+- TypeScript verification: ZERO errors in ProductDetailView.tsx and Footer.tsx
+- ESLint: 0 errors, 1 warning (unused eslint-disable on thumbnail img, cosmetic only)
+- Dev server compiling successfully, related API endpoint returning data correctly
+
+Stage Summary:
+- Files modified: src/components/views/ProductDetailView.tsx, src/components/layout/Footer.tsx
+- Key decisions:
+  - Used AnimatePresence mode="wait" for crossfade to avoid stacking images
+  - Used real product.images instead of synthesizing duplicate angles
+  - Related products now uses dedicated API endpoint (api.relatedProducts) instead of client-side filtering
+  - Footer uses glass-strong panels for link columns to create visual depth
+  - Newsletter form uses Send icon instead of text for cleaner mobile UI
+  - Social links use glass-chip + hover glow for consistent cosmic theme
+
+---
+Task ID: CRON-6A
+Agent: full-stack-developer
+Task: Customer notifications tab + product reviews submission UI
+
+Work Log:
+- Read worklog.md to understand prior agent work (CRON-5 entries, project architecture)
+- Examined AccountView.tsx — identified 3 existing tabs (orders, profile, enderecos) and tab structure
+- Examined ProductDetailView.tsx — found existing ReviewsSection with always-visible form and Slider-based rating
+- Read client.ts to confirm api.listNotifications(limit) and api.createReview(payload) exist
+- Read types.ts to confirm Notification and NotificationType types exist
+- **Feature 1 (Notifications Tab)**: Added `Bell`, `RefreshCw`, `Truck`, `Ticket` imports; imported `Notification` and `NotificationType` types; created `NOTIFICATION_ICON` config map (4 types with icon + neon accent color); created `STATUS_BADGE` map (sent/queued/failed with emerald/amber/rose); created `NotificationsTab` component with useQuery, loading skeleton (3 cards), empty state, scrollable list (max-h-[28rem]) with Collapsible cards, staggered framer-motion entrance, type icon, subject, formatDate sentAt with Clock icon, status badge, expandable body (pre-wrap mono font bg-black/20), footer counter; added 4th TabsTrigger (Bell icon, value="notificacoes") and TabsContent rendering NotificationsTab
+- **Feature 2 (Review Submission UI)**: Added `Loader2`, `X`, `Pencil` imports; created `InteractiveStars` component (clickable stars with hover preview); replaced always-visible form with login-gated "Escrever avaliação" button (Pencil icon, gradient); login hint with openAuth("login") link when not logged in; review form only shown when showForm=true and user exists; form has 5 clickable stars (amber fill, hover preview), "Seu nome" input (pre-filled from auth store), "Comentário" textarea; validation via toast (rating>0, name≥2, comment≥10); AnimatePresence for form open/close; cancel button + X close button; Loader2 spinner during submit; on success: invalidate queries → toast "Avaliação enviada!" → close form → reset; star rating display already existed via Stars component on each review card
+- TypeScript check: zero errors in AccountView.tsx and ProductDetailView.tsx
+- Dev server compiling successfully
+
+Stage Summary:
+- Modified: src/components/views/AccountView.tsx (added NotificationsTab + 4th tab)
+- Modified: src/components/views/ProductDetailView.tsx (replaced review form with login-gated interactive star rating form)
+- Key decisions: Used Collapsible for notification expand (already imported in AccountView); used local state Set<string> for expanded IDs; kept existing Stars component for read-only rating display; used AnimatePresence for form open/close animation; validated with toast.error instead of inline errors for cleaner UX; InteractiveStars component created but inline clickable stars used directly in form for simplicity
+
+---
+Task ID: CRON-6 (main thread)
+Agent: main (Z.ai Code) — 15-min webDevReview cron job (id 214859)
+Task: QA + bug fixes + new features (customer notifications, welcome email, coupon notifications, related products, review submission UI, gallery enhancement, footer redesign, auto-default address, search fix, error handler fix)
+
+## Current project status assessment
+- Project stable from CRON-5 (saved addresses, password change, coupon usage analytics, admin notifications, styling polish all working).
+- Dev server healthy on port 3000. HTTP 200.
+- agent-browser QA: all views passing. Found case-sensitive search bug.
+
+## Completed modifications this round
+
+### Bug fixes
+1. **Case-insensitive search** (critical): `db.ts` `contains` operator used `String.includes()` which is case-sensitive. Searching "solar" returned 0 results while "Solar" returned 1. Fixed by converting both sides to `.toLowerCase()` in `contains` and `startsWith` operators. Verified: "solar", "VOID", "nebula" all return correct results.
+2. **API error handler fix**: `AuthError` (extends `Error` with custom `status` field) was falling through to the 500 catch-all in `handleApiError` because `instanceof HttpError` didn't match. Added a second check for `Error` instances with a numeric `status` field. Now unauthenticated requests return proper 401 instead of 500.
+
+### Backend new features
+1. **Welcome email on registration**: `POST /api/auth/register` now queues a "welcome" notification after creating a new user. Body includes greeting + info about free shipping, 30-day returns, and GALAXIA10 coupon. Non-fatal (never blocks registration).
+2. **Coupon_applied notification on checkout**: `POST /api/orders` now queues a "coupon_applied" notification when a coupon is used. Body includes coupon code + discount amount + order code.
+3. **Related products endpoint**: `GET /api/products/[id]/related` — returns up to 4 related products using a brand-first, category-second, fallback-others strategy. `api.relatedProducts(id)` added to client.ts.
+4. **Auto-default first address**: `POST /api/addresses` now auto-sets `isDefault=true` for the user's first address, even if the form didn't check "Salvar como padrão".
+
+### Frontend new features (via subagents)
+1. **Customer "Notificações" tab** (subagent CRON-6A):
+   - 4th tab in AccountView (Bell icon, value="notificacoes") after "Endereços".
+   - `NotificationsTab`: header + "Atualizar" button, loading skeleton, empty state, scrollable list of Collapsible notification cards with type icons (Package/Truck/Ticket/Sparkles), status badges (Enviado/Na fila/Falhou), expandable body.
+   - `useQuery(["my-notifications"])` fetches the customer's own notifications.
+   - Verified: 3 order_created notifications visible for explorador@astrofeet.com.
+2. **Product review submission UI** (subagent CRON-6A):
+   - "Escrever avaliação" gradient button (only when logged in; muted hint when not).
+   - Review form: 5 clickable stars with hover preview, "Seu nome" input (pre-filled from auth), "Comentário" textarea, validation, submit → api.createReview → invalidate + toast → close + reset.
+   - Cancel button to close form.
+3. **Related products section** (subagent CRON-6B):
+   - "Você também pode gostar" section at bottom of ProductDetailView.
+   - Horizontal scrollable row of ProductCard components with staggered framer-motion entrance.
+   - Uses `api.relatedProducts(product.id)`.
+   - Verified: "Você também pode gostar" heading present on product detail pages.
+4. **Product image gallery enhancement** (subagent CRON-6B):
+   - Thumbnail strip below main image (w-16 h-16, rounded-xl, border-2, active=cyan glow).
+   - Crossfade image switching via framer-motion AnimatePresence.
+   - Hover zoom effect (scale-105) on main image.
+5. **Footer redesign** (subagent CRON-6B):
+   - Social links row (Instagram, Twitter/X, Youtube, Github) as glass-chip buttons.
+   - 3 link columns (Explorar, Ajuda, Sobre) in glass-strong panels with navigation.
+   - Trust badges (🚀🔄🔒🛸) in glass cards.
+   - Enhanced newsletter section ("Fique por dentro dos drops").
+   - Bottom bar with orbit-divider + copyright + "Feito com 💜 e stardust".
+
+### Styling polish
+- HomeView hero section: added `comet-trail` class for sweeping light streak effect.
+- HomeView promo banner: added `gradient-border-animated` for animated gradient border.
+- HomeView CTA buttons: added `btn-cosmic` for magnetic lift + glow halo.
+
+## Verification results
+- TypeScript: 39 errors total (all pre-existing JSON-Prisma stub friction in API routes). ZERO errors in any frontend file or new backend file.
+- Dev server: HTTP 200, compiles cleanly, no runtime errors.
+- Case-insensitive search: "solar" → 1 result, "VOID" → 1 result, "nebula" → 3 results.
+- API error handler: unauthenticated requests now return 401 (not 500).
+- Welcome email: new user registration queues "welcome" notification. Verified for cron6@test.com.
+- Coupon_applied notification: order with GALAXIA10 queues both "order_created" + "coupon_applied" notifications.
+- Admin notifications: 3 types visible (order_created: 5, coupon_applied: 2, welcome: 1).
+- Related products: GET /api/products/[id]/related returns 4 products (same brand first, then same category, then others).
+- Auto-default first address: creating first address without checking "Padrão" still sets isDefault=true.
+- agent-browser QA:
+  - Account view: 4 tabs (Meus pedidos, Meus dados, Endereços, Notificações). Notificações shows 3 notifications with type icons + "Enviado" badges + expand/collapse.
+  - Product detail: gallery thumbnails, "Escrever avaliação" button, review form (5 stars + textarea + send), "Você também pode gostar" related products section.
+  - Footer: social links, trust badges, 3 link columns, newsletter, bottom bar.
+  - Search palette: "solar" now finds Solar Pulse (case-insensitive).
+
+## Unresolved issues / risks
+- 39 pre-existing TS errors (all JSON-Prisma stub friction in API routes). Non-runtime. Would be eliminated by switching to real Prisma client.
+- Some "Sobre" and "Ajuda" links in the footer (Guia de medidas, Quem somos, Sustentabilidade, Trocas e devoluções, Contato, Fale com a Nave) are static text, not wired to views yet. Could add dedicated pages or navigate to existing features (e.g., "Fale com a Nave" → open ShipAssistant).
+
+## Priority recommendations for next phase
+1. **Wire footer links** — "Guia de medidas" → open SizeGuideModal, "Fale com a Nave" → open ShipAssistant, "Rastrear pedido" → navigate("track-order").
+2. **Password change endpoint** — allow customers to update their password from the account page.
+3. **Real Prisma/Postgres swap** — db.ts is 1:1 Prisma-shaped; drop-in once prisma installs. Eliminates all 39 TS errors.
+4. **Product image upload** in admin (file input + base64 or object storage).
+5. **Performance**: next/image optimization, code-split heavy views.
+6. **Accessibility audit**: add ARIA labels, keyboard navigation, screen reader support.
+7. **SEO**: meta tags, structured data, sitemap.

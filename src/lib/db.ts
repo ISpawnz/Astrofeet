@@ -263,13 +263,13 @@ function matchOp(recordVal: unknown, cond: Record<string, unknown>): boolean {
           return false;
         break;
       case "contains": {
-        const s = String(rv ?? "");
-        if (!s.includes(String(tv))) return false;
+        const s = String(rv ?? "").toLowerCase();
+        if (!s.includes(String(tv).toLowerCase())) return false;
         break;
       }
       case "startsWith": {
-        const s = String(rv ?? "");
-        if (!s.startsWith(String(tv))) return false;
+        const s = String(rv ?? "").toLowerCase();
+        if (!s.startsWith(String(tv).toLowerCase())) return false;
         break;
       }
       case "in": {

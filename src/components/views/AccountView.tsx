@@ -39,6 +39,10 @@ import {
   EyeOff,
   Lock,
   Plus,
+  Bell,
+  RefreshCw,
+  Truck,
+  Ticket,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
@@ -54,7 +58,7 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Order, PublicUser, Address } from "@/lib/types";
+import type { Order, PublicUser, Address, Notification, NotificationType } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -1724,6 +1728,192 @@ function HelpFooter() {
   );
 }
 
+// ---------- Notifications tab ----------
+
+const NOTIFICATION_ICON: Record<NotificationType, { icon: typeof Package; color: string }> = {
+  order_created: { icon: Package, color: "var(--neon-cyan)" },
+  order_status: { icon: Truck, color: "var(--neon-lime)" },
+  coupon_applied: { icon: Ticket, color: "var(--neon-magenta)" },
+  welcome: { icon: Sparkles, color: "var(--neon-violet)" },
+};
+
+const STATUS_BADGE: Record<string, { label: string; className: string }> = {
+  sent: {
+    label: "Enviado",
+    className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  },
+  queued: {
+    label: "Na fila",
+    className: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  },
+  failed: {
+    label: "Falhou",
+    className: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+  },
+};
+
+function NotificationsTab() {
+  const user = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s.hydrated);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-notifications"],
+    queryFn: () => api.listNotifications(30),
+    enabled: hydrated && !!user,
+  });
+
+  const notifications = data ?? [];
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  function toggleExpand(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-xl font-bold sm:text-2xl">Minhas notificações</h2>
+          <p className="text-sm text-muted-foreground">
+            Acompanhe os e-mails que enviamos para você.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => queryClient.invalidateQueries({ queryKey: ["my-notifications"] })}
+          className="gap-2 rounded-full border-white/10 hover:bg-white/5"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Atualizar
+        </Button>
+      </div>
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="glass-strong rounded-2xl border border-white/10 p-4"
+            >
+              <div className="flex items-start gap-3">
+                <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty */}
+      {!isLoading && notifications.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-strong rounded-3xl border border-dashed border-white/10 p-8 text-center"
+        >
+          <Bell className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+          <p className="text-lg font-semibold">Você ainda não recebeu nenhuma notificação.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Quando você fizer um pedido ou usar um cupom, os e-mails aparecerão aqui.
+          </p>
+        </motion.div>
+      )}
+
+      {/* List */}
+      {!isLoading && notifications.length > 0 && (
+        <div className="max-h-[28rem] overflow-y-auto pr-1 custom-scrollbar">
+          <ul className="space-y-3">
+            {notifications.map((n, index) => {
+              const cfg = NOTIFICATION_ICON[n.type] ?? NOTIFICATION_ICON.welcome;
+              const Icon = cfg.icon;
+              const badge = STATUS_BADGE[n.status] ?? STATUS_BADGE.queued;
+              const isOpen = expanded.has(n.id);
+
+              return (
+                <motion.li
+                  key={n.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.04 }}
+                >
+                  <Collapsible
+                    open={isOpen}
+                    onOpenChange={() => toggleExpand(n.id)}
+                    className="glass-strong cursor-pointer rounded-2xl border border-white/10 transition-colors hover:border-white/20"
+                  >
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-start gap-3 p-4">
+                        <div
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                          style={{ background: `${cfg.color}18` }}
+                        >
+                          <Icon
+                            className="h-5 w-5"
+                            style={{ color: cfg.color }}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium leading-tight">
+                            {n.subject}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {formatDate(n.sentAt)}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={cn("text-[10px] px-1.5 py-0", badge.className)}
+                            >
+                              {badge.label}
+                            </Badge>
+                          </div>
+                        </div>
+                        <ChevronDown
+                          className={cn(
+                            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                            isOpen && "rotate-180",
+                          )}
+                        />
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="border-t border-white/5 px-4 pb-4 pt-3">
+                        <pre className="whitespace-pre-wrap break-words rounded-xl bg-black/20 p-3 font-mono text-sm leading-relaxed text-muted-foreground">
+                          {n.body}
+                        </pre>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </motion.li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Footer counter */}
+      {!isLoading && notifications.length > 0 && (
+        <p className="text-center text-xs text-muted-foreground">
+          Mostrando {notifications.length} notificações
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ---------- Main ----------
 
 export function AccountView() {
@@ -1783,6 +1973,13 @@ export function AccountView() {
             <MapPin className="h-4 w-4" />
             Endereços
           </TabsTrigger>
+          <TabsTrigger
+            value="notificacoes"
+            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+          >
+            <Bell className="h-4 w-4" />
+            Notificações
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="orders" className="mt-6">
           <OrdersTab orders={orders} isLoading={isLoading} />
@@ -1792,6 +1989,9 @@ export function AccountView() {
         </TabsContent>
         <TabsContent value="enderecos" className="mt-6">
           <AddressesTab />
+        </TabsContent>
+        <TabsContent value="notificacoes" className="mt-6">
+          <NotificationsTab />
         </TabsContent>
       </Tabs>
 

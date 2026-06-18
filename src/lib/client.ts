@@ -100,6 +100,12 @@ export const api = {
   async product(slug: string): Promise<{ product: Product; reviews: Review[] }> {
     return request(`/api/products/${encodeURIComponent(slug)}`);
   },
+  async relatedProducts(id: string): Promise<Product[]> {
+    const data = await request<{ products: Product[] }>(
+      `/api/products/${encodeURIComponent(id)}/related`,
+    );
+    return data.products;
+  },
   async createProduct(body: Partial<Product>): Promise<Product> {
     const data = await request<{ product: Product }>("/api/products", {
       method: "POST",

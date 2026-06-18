@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { hashPassword, setSessionCookie } from "@/lib/auth";
 import { HttpError, handleApiError, ok } from "@/lib/api";
+import { sendEmailNotification } from "@/lib/notifications";
 import type { Role } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -29,6 +30,30 @@ export async function POST(req: NextRequest) {
       },
     });
     await setSessionCookie(user.id, "customer", user.email, user.name);
+
+    // Queue a welcome notification (mock email).
+    try {
+      await sendEmailNotification({
+        type: "welcome",
+        to: email,
+        subject: `Bem-vindo à Astrofeet, ${name}! 🚀`,
+        body: [
+          `Olá, ${name}!`,
+          "",
+          "Bem-vindo à Astrofeet — sua nova navegação por sneakers de outro planeta!",
+          "",
+          "Aqui você encontra drops exclusivos, frete grátis acima de R$300 e 30 dias para trocar ou devolver.",
+          "",
+          "Fique de olhos abertos: novidades chegam o tempo todo. Use o cupom GALAXIA10 para 10% off na sua primeira compra!",
+          "",
+          "Boa exploração,",
+          "— Equipe Astrofeet",
+        ].join("\n"),
+      });
+    } catch {
+      // Non-fatal: notification failure should never block registration.
+    }
+
     return ok({
       user: {
         id: user.id,
