@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const NAV = [
   { label: "Drops", view: "products" as const, params: {} },
@@ -104,7 +105,15 @@ export function Header() {
               variant="ghost"
               size="icon"
               className="relative rounded-full text-foreground/80 hover:text-foreground"
-              onClick={toggleComparePanel}
+              onClick={() => {
+                if (compareCount === 0) {
+                  toast("Adicione produtos para comparar", {
+                    description: "Clique no ícone de comparar nos cards de produto para adicioná-los.",
+                  });
+                } else {
+                  toggleComparePanel();
+                }
+              }}
               aria-label="Comparar produtos"
               title="Comparar produtos"
             >

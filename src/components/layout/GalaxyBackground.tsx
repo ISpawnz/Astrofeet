@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 
 interface Star {
   top: string;
@@ -11,22 +11,44 @@ interface Star {
   opacity: number;
 }
 
+// Deterministic pseudo-random generator (mulberry32) so SSR and client
+// produce the exact same star field — avoids hydration mismatch.
+function mulberry32(seed: number) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function generateStars(): Star[] {
+  const rand = mulberry32(42); // fixed seed for deterministic output
+  const out: Star[] = [];
+  const n = 70;
+  for (let i = 0; i < n; i++) {
+    out.push({
+      top: `${rand() * 100}%`,
+      left: `${rand() * 100}%`,
+      size: rand() * 2 + 1,
+      delay: `${rand() * 6}s`,
+      duration: `${3 + rand() * 5}s`,
+      opacity: 0.3 + rand() * 0.6,
+    });
+  }
+  return out;
+}
+
 export function GalaxyBackground() {
-  const stars = useMemo<Star[]>(() => {
-    const out: Star[] = [];
-    const n = 70;
-    for (let i = 0; i < n; i++) {
-      out.push({
-        top: `${Math.random() * 100}%`,
-        left: `${Math.random() * 100}%`,
-        size: Math.random() * 2 + 1,
-        delay: `${Math.random() * 6}s`,
-        duration: `${3 + Math.random() * 5}s`,
-        opacity: 0.3 + Math.random() * 0.6,
-      });
-    }
-    return out;
-  }, []);
+  // Generate stars once. Using a deterministic seed means SSR and client
+  // produce identical markup, so no hydration mismatch.
+  const [stars] = useState<Star[]>(generateStars);
+
+  // Suppress any unused warning — stars is rendered below.
+  useEffect(() => {
+    // no-op: stars are purely decorative
+  }, [stars]);
 
   return (
     <div

@@ -3,7 +3,7 @@
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "sonner";
 import { useAuthStore } from "@/stores/auth";
 import { api } from "@/lib/client";
 
@@ -42,7 +42,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={client}>
         {children}
-        <Toaster />
+        <Sonner
+          position="bottom-right"
+          theme="dark"
+          richColors
+          closeButton
+          toastOptions={{
+            style: {
+              background: "var(--popover)",
+              border: "1px solid var(--border)",
+              color: "var(--popover-foreground)",
+            },
+          }}
+        />
       </QueryClientProvider>
     </ThemeProvider>
   );

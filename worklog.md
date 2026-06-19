@@ -2498,3 +2498,44 @@ Task: Fix ShipAssistant not appearing + hero image border radius + JS console er
 - Hero image: now has rounded-3xl border (24px radius) with overflow hidden.
 - Console errors: 0 (previously had DialogContent warning).
 - agent-browser QA: all interactions working without errors.
+
+---
+Task ID: CRON-10.2 (bugfix)
+Agent: main (Z.ai Code)
+Task: Fix hydration error + compare button not working + Sonner toaster not mounting
+
+## Issues reported
+1. "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties" — hydration mismatch error.
+2. Botão do lado do pesquisar (Comparar produtos) não funciona.
+3. Erro no console JS.
+
+## Root causes found & fixed
+
+### Bug 1: Hydration mismatch (CRITICAL)
+- **Root cause**: `GalaxyBackground.tsx` used `Math.random()` inside `useMemo` to generate star field positions. During SSR, the server generated one set of random values; when the client hydrated, it generated different values, causing the HTML attributes (style="top: X%, left: Y%") to mismatch.
+- **Fix**: Replaced `Math.random()` with a deterministic pseudo-random generator (`mulberry32` with fixed seed `42`). Now SSR and client produce identical star positions, eliminating the hydration mismatch.
+- **File**: `src/components/layout/GalaxyBackground.tsx` — complete rewrite with deterministic `mulberry32(42)` seeded PRNG.
+
+### Bug 2: Compare button not working
+- **Root cause**: The compare button's onClick called `toggleComparePanel()` which only opens the panel if `ids.length > 0`. When the compare list was empty (no products added), clicking the button did nothing — no feedback to the user.
+- **Fix**: Modified the onClick handler in `Header.tsx` to show a toast when the compare list is empty: "Adicione produtos para comparar" with description "Clique no ícone de comparar nos cards de produto para adicioná-los." If products are in the list, it toggles the panel normally.
+- **File**: `src/components/layout/Header.tsx` — added `toast` import + conditional onClick logic.
+
+### Bug 3: Sonner Toaster not mounting (CRITICAL — caused toast() calls to fail silently)
+- **Root cause**: `providers.tsx` imported `Toaster` from `@/components/ui/toaster` (the old shadcn toast system based on `useToast` hook), but ALL components in the app use `toast` from the `sonner` package directly. The Sonner `<Toaster>` component was never mounted, so `toast()` calls did nothing.
+- **Fix**: Changed `providers.tsx` to import `Toaster as Sonner` directly from the `sonner` package (instead of the wrapper in `@/components/ui/sonner`). Configured with `position="bottom-right"`, `theme="dark"`, `richColors`, `closeButton`, and custom dark-theme toast styles.
+- **File**: `src/components/providers.tsx` — replaced `Toaster` import with direct `sonner` import + added configuration props.
+- **Note**: Also removed a duplicate `<Toaster />` from `page.tsx` that was added during debugging.
+
+## Verification
+- **Hydration error**: Next.js dev overlay shows 0 errors/dialogs after page load. GalaxyBackground stars are deterministic (same positions on SSR and client).
+- **Compare button**: Clicking the compare button with empty list now shows toast "Adicione produtos para comparar". Verified toast appears with correct message.
+- **Sonner Toaster**: After fixing the import, `toast()` calls work correctly. The Toaster mounts lazily (only when first toast is triggered, per Sonner's design). Verified by submitting the newsletter form (toast appeared) and clicking the compare button (toast appeared).
+- **ShipAssistant (Nave)**: Still works correctly — clicking the floating rocket opens the chat panel.
+- **Dev server**: HTTP 200, compiles cleanly, no errors in dev.log.
+
+## Files modified
+- `src/components/layout/GalaxyBackground.tsx` — deterministic PRNG (mulberry32) replaces Math.random()
+- `src/components/layout/Header.tsx` — compare button shows toast when list empty
+- `src/components/providers.tsx` — Sonner Toaster directly from "sonner" package with dark theme config
+- `src/app/page.tsx` — removed duplicate Toaster import (kept in providers only)
