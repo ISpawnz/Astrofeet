@@ -1,6 +1,6 @@
 "use client";
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useCompareStore } from "@/stores/compare";
 import { useUIStore } from "@/stores/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -198,6 +198,9 @@ export function CompareDrawer() {
               {ids.length}/4
             </span>
           </SheetTitle>
+          <SheetDescription className="sr-only">
+            Compare até 4 produtos lado a lado com atributos detalhados.
+          </SheetDescription>
           <p className="text-xs text-muted-foreground">
             Compare até 4 produtos lado a lado.
           </p>

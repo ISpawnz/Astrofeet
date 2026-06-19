@@ -2458,3 +2458,43 @@ Task: QA + loyalty program + admin product search/filter + admin dashboard chart
 6. **SEO**: meta tags, structured data, sitemap.
 7. **Email template designer** — richer HTML email templates for notifications.
 8. **Abandoned cart recovery** — notify users who left items in cart for 24h+.
+
+---
+Task ID: CRON-10.1 (bugfix)
+Agent: main (Z.ai Code)
+Task: Fix ShipAssistant not appearing + hero image border radius + JS console errors
+
+## Issues reported
+1. Chat (ShipAssistant) parou de aparecer ao clicar no botão.
+2. Primeira imagem (hero) sem borda arredondada.
+3. Erro no console JS.
+
+## Root causes found & fixed
+
+### Bug 1: ShipAssistant panel not appearing (CRITICAL)
+- **Root cause**: The `.gradient-border-animated` CSS class in `globals.css` had `position: relative` which overrode the `position: fixed` Tailwind utility class on the ShipAssistant chat panel (`className="gradient-border-animated fixed bottom-24 right-5 z-50 ..."`). This caused the panel to render with `position: relative` instead of `fixed`, making it appear at the bottom of the page (y: 3908px) instead of fixed in the viewport.
+- **Fix**: Removed `position: relative` from the `.gradient-border-animated` class in `src/app/globals.css`. The `::before` pseudo-element still works because the parent element establishes a positioning context via its own `position` (fixed/relative/absolute) from Tailwind classes.
+- **Verified**: After fix, the panel correctly has `position: fixed` and appears at `y: 1` (top of viewport, above the floating button).
+
+### Bug 2: Hero image without rounded border
+- **Root cause**: The hero product image container in `HomeView.tsx` (`<div className="relative mx-auto aspect-square max-w-md">`) had no border radius or overflow hidden, while product card images use `rounded-2xl overflow-hidden`.
+- **Fix**: Added `overflow-hidden rounded-3xl` to the hero image container in `src/components/views/HomeView.tsx`.
+- **Verified**: Hero image now has `border-radius: 24px` (rounded-3xl) and `overflow: hidden`.
+
+### Bug 3: JS console errors (DialogContent warning)
+- **Root cause**: The `CartDrawer` and `CompareDrawer` components (using shadcn `Sheet`) were missing `SheetDescription`, causing a Radix UI accessibility warning: "Missing `Description` or `aria-describedby` for {DialogContent}".
+- **Fix**: Added `SheetDescription` (sr-only) to both `CartDrawer.tsx` and `CompareDrawer.tsx` with descriptive text.
+- **Verified**: After fix, console errors/warnings count = 0.
+
+## Files modified
+- `src/app/globals.css` — removed `position: relative` from `.gradient-border-animated`
+- `src/components/views/HomeView.tsx` — added `overflow-hidden rounded-3xl` to hero image container
+- `src/components/views/CartDrawer.tsx` — added `SheetDescription` (sr-only)
+- `src/components/views/CompareDrawer.tsx` — added `SheetDescription` (sr-only)
+
+## Verification
+- Dev server: HTTP 200, compiles cleanly.
+- ShipAssistant: clicking the floating rocket button now opens the chat panel correctly (fixed position, visible in viewport).
+- Hero image: now has rounded-3xl border (24px radius) with overflow hidden.
+- Console errors: 0 (previously had DialogContent warning).
+- agent-browser QA: all interactions working without errors.

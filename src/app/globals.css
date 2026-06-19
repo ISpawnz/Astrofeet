@@ -586,7 +586,6 @@
 
 /* Gradient border (animated) */
 .gradient-border-animated {
-  position: relative;
   background-clip: padding-box;
 }
 .gradient-border-animated::before {

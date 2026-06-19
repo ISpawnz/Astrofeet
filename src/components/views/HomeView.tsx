@@ -114,7 +114,7 @@ export function HomeView() {
             transition={{ duration: 0.8, delay: 0.1 }}
             className="relative"
           >
-            <div className="relative mx-auto aspect-square max-w-md">
+            <div className="relative mx-auto aspect-square max-w-md overflow-hidden rounded-3xl">
               {/* orbit rings */}
               <div className="absolute inset-0 rounded-full border border-white/5 animate-spin-slow" />
               <div className="absolute inset-8 rounded-full border border-white/[0.07]" />

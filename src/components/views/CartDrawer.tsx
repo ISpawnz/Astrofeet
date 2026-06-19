@@ -1,6 +1,6 @@
 "use client";
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useCartStore } from "@/stores/cart";
 import { useUIStore } from "@/stores/ui";
 import { formatPrice } from "@/lib/format";
@@ -33,6 +33,9 @@ export function CartDrawer() {
             <ShoppingBag className="h-5 w-5 text-[var(--neon-cyan)]" />
             Seu carrinho
           </SheetTitle>
+          <SheetDescription className="sr-only">
+            Seu carrinho de compras com itens, quantidades e total.
+          </SheetDescription>
           <p className="text-xs text-muted-foreground">
             {items.reduce((n, i) => n + i.quantity, 0)}{" "}
             {items.reduce((n, i) => n + i.quantity, 0) === 1
