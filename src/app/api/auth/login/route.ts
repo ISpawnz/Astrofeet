@@ -2,16 +2,18 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { setSessionCookie, verifyPassword } from "@/lib/auth";
 import { HttpError, handleApiError, ok } from "@/lib/api";
+import { rateLimit } from "@/lib/rate-limit";
 import type { Role } from "@/lib/types";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
+    rateLimit(req, "auth:login", 10, 15 * 60 * 1000);
     const body = await req.json().catch(() => ({}));
     const email = String(body.email ?? "").trim().toLowerCase();
     const password = String(body.password ?? "");
-    if (!email.includes("@") || password.length < 6) {
+    if (!email.includes("@") || password.length < 8) {
       throw new HttpError("E-mail ou senha inválidos.", 400);
     }
     const user = await db.user.findUnique({ where: { email } });

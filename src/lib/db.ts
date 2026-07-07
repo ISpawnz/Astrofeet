@@ -7,6 +7,7 @@
 // the repository surface stays 1:1 with Prisma so swapping to a real DB later
 // is a drop-in change.
 
+import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";

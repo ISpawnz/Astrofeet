@@ -1,10 +1,19 @@
+import "server-only";
 import crypto from "node:crypto";
 
 // Password hashing + token signing utilities (no DB dependency, to avoid cycles).
 
-const SECRET =
-  process.env.ASTROFEET_AUTH_SECRET ||
-  "astrofeet-dev-secret-change-me-in-production-please";
+const DEV_SECRET = "astrofeet-dev-secret-change-me-in-production-please";
+
+function getAuthSecret(): string {
+  const secret = process.env.ASTROFEET_AUTH_SECRET;
+
+  if (process.env.NODE_ENV === "production" && (!secret || secret.length < 32)) {
+    throw new Error("ASTROFEET_AUTH_SECRET deve ter pelo menos 32 caracteres em producao.");
+  }
+
+  return secret || DEV_SECRET;
+}
 
 function buf(key: string): Buffer {
   return crypto.createHash("sha256").update(key).digest();
@@ -46,7 +55,7 @@ export function signToken(
   const body: TokenPayload = { ...payload, iat, exp };
   const data = Buffer.from(JSON.stringify(body)).toString("base64url");
   const sig = crypto
-    .createHmac("sha256", buf(SECRET))
+    .createHmac("sha256", buf(getAuthSecret()))
     .update(data)
     .digest("base64url");
   return `${data}.${sig}`;
@@ -57,7 +66,7 @@ export function verifyToken(token: string): TokenPayload | null {
     const [data, sig] = token.split(".");
     if (!data || !sig) return null;
     const expected = crypto
-      .createHmac("sha256", buf(SECRET))
+      .createHmac("sha256", buf(getAuthSecret()))
       .update(data)
       .digest("base64url");
     if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected)))

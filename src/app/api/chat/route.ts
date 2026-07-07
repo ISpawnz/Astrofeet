@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
 import { handleApiError, ok, HttpError } from "@/lib/api";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,7 @@ Regras:
 
 export async function POST(req: NextRequest) {
   try {
+    rateLimit(req, "chat", 40, 15 * 60 * 1000);
     const body = await req.json().catch(() => ({}));
     const rawMessages = Array.isArray(body.messages) ? body.messages : [];
     const messages = rawMessages

@@ -1,3 +1,4 @@
+import "server-only";
 import { db } from "@/lib/db";
 import type { NotificationType, Order } from "@/lib/types";
 

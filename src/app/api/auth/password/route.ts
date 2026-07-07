@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser, setSessionCookie } from "@/lib/auth";
 import { verifyPassword, hashPassword } from "@/lib/crypto";
 import { HttpError, handleApiError, ok } from "@/lib/api";
+import { rateLimit } from "@/lib/rate-limit";
 import type { Role } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -11,6 +12,7 @@ export const runtime = "nodejs";
 // Body: { currentPassword: string, newPassword: string }
 export async function POST(req: NextRequest) {
   try {
+    rateLimit(req, "auth:password", 8, 15 * 60 * 1000);
     const user = await getCurrentUser();
     if (!user) throw new HttpError("Não autenticado.", 401);
 
@@ -20,8 +22,8 @@ export async function POST(req: NextRequest) {
 
     if (!currentPassword)
       throw new HttpError("Informe sua senha atual.", 400);
-    if (newPassword.length < 6)
-      throw new HttpError("A nova senha precisa ter ao menos 6 caracteres.", 400);
+    if (newPassword.length < 8)
+      throw new HttpError("A nova senha precisa ter ao menos 8 caracteres.", 400);
     if (newPassword.length > 100)
       throw new HttpError("A nova senha é longa demais.", 400);
     if (currentPassword === newPassword)

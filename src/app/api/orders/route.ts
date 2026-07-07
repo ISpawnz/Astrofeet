@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser, requireAdmin } from "@/lib/auth";
 import { serializeOrder } from "@/lib/serialize";
 import { HttpError, handleApiError, ok } from "@/lib/api";
+import { rateLimit } from "@/lib/rate-limit";
 import { sendEmailNotification, buildOrderConfirmationBody } from "@/lib/notifications";
 import type { OrderLineItem, Order } from "@/lib/types";
 
@@ -11,6 +12,8 @@ export const runtime = "nodejs";
 // Shipping rules — backend authority
 const FREE_SHIPPING_THRESHOLD = 300;
 const BASE_SHIPPING = 29.9;
+const MAX_ITEMS_PER_ORDER = 30;
+const MAX_QUANTITY_PER_ITEM = 10;
 
 function computeShipping(subtotalAfterDiscount: number): number {
   if (subtotalAfterDiscount <= 0) return 0;
@@ -89,10 +92,13 @@ async function resolveCoupon(
 
 export async function POST(req: NextRequest) {
   try {
+    rateLimit(req, "orders:create", 30, 15 * 60 * 1000);
     const user = await getCurrentUser();
     const body = await req.json().catch(() => ({}));
 
     const rawItems = Array.isArray(body.items) ? body.items : [];
+    if (rawItems.length > MAX_ITEMS_PER_ORDER)
+      throw new HttpError("Seu carrinho tem itens demais para um unico pedido.", 400);
     if (rawItems.length === 0)
       throw new HttpError("Seu carrinho está vazio.", 400);
 
@@ -111,7 +117,8 @@ export async function POST(req: NextRequest) {
           !i.productId ||
           !Number.isFinite(i.size) ||
           !Number.isInteger(i.quantity) ||
-          i.quantity < 1,
+          i.quantity < 1 ||
+          i.quantity > MAX_QUANTITY_PER_ITEM,
       )
     ) {
       throw new HttpError("Itens do pedido inválidos.", 400);

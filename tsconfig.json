@@ -31,12 +31,23 @@
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "next.config.ts",
+    "tailwind.config.ts",
+    "postcss.config.mjs",
+    "eslint.config.mjs",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "examples",
+    "download",
+    "upload",
+    "tool-results",
+    "agent-ctx",
+    "mini-services",
+    ".zscripts"
   ]
 }

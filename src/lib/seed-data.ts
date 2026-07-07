@@ -1,4 +1,5 @@
 // Initial seed data for Astrofeet. Used by the JSON-backed store on first run.
+import "server-only";
 import type { Product, Review } from "@/lib/types";
 
 export interface SeedUser {

@@ -27,9 +27,7 @@ export function handleApiError(e: unknown) {
     return jsonError("Registro não encontrado.", 404);
   }
   console.error("[api error]", e);
-  const msg =
-    e instanceof Error ? e.message : "Algo deu errado. Tente novamente.";
-  return jsonError(msg, 500);
+  return jsonError("Erro interno do servidor.", 500);
 }
 
 export function ok<T>(data: T, status = 200) {
