@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 import { Button } from "@/components/ui/button";
+import { fadeUp } from "@/components/shared/motion";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,10 +51,7 @@ interface ContactChannel {
 // Page content configs
 // ---------------------------------------------------------------------------
 
-const PAGE_META: Record<
-  InfoPage,
-  { eyebrow: string; title: string; subtitle: string }
-> = {
+const PAGE_META: Record<InfoPage, { eyebrow: string; title: string; subtitle: string }> = {
   "quem-somos": {
     eyebrow: "Nossa história",
     title: "Quem somos",
@@ -63,14 +61,12 @@ const PAGE_META: Record<
   sustentabilidade: {
     eyebrow: "Nosso compromisso",
     title: "Sustentabilidade",
-    subtitle:
-      "Reduzir impacto faz parte de cada decisão: dos materiais à entrega.",
+    subtitle: "Reduzir impacto faz parte de cada decisão: dos materiais à entrega.",
   },
   contato: {
     eyebrow: "Fale com a gente",
     title: "Fale com a gente",
-    subtitle:
-      "Nossa equipe está pronta para te ajudar. Escolha o canal que faz mais sentido para você.",
+    subtitle: "Nossa equipe está pronta para te ajudar. Escolha o canal que faz mais sentido para você.",
   },
   trocas: {
     eyebrow: "Política de trocas",
@@ -172,46 +168,25 @@ const TROCA_STEPS: NumberedStep[] = [
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function PageHero({
-  eyebrow,
-  title,
-  subtitle,
-}: {
-  eyebrow: string;
-  title: string;
-  subtitle: string;
-}) {
+function PageHero({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle: string }) {
   return (
-    <motion.header
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="relative px-4 pt-12 text-center sm:pt-16"
-    >
+    <motion.header {...fadeUp} transition={{ duration: 0.6 }} className="relative px-4 pt-12 text-center sm:pt-16">
       <div className="mx-auto max-w-3xl">
-        <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-3 py-1 text-xs font-medium uppercase tracking-wider text-foreground/80 backdrop-blur">
+        <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-3 py-1 text-xs font-medium tracking-wider text-foreground/80 uppercase backdrop-blur">
           <Sparkles className="h-3.5 w-3.5 text-[var(--brand)]" />
           {eyebrow}
         </span>
-        <h1 className="mt-5 text-balance text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+        <h1 className="mt-5 text-4xl leading-[1.05] font-black tracking-tight text-balance sm:text-5xl lg:text-6xl">
           <span className="text-gradient-animated">{title}</span>
         </h1>
-        <p className="mx-auto mt-5 max-w-2xl text-pretty text-sm text-muted-foreground sm:text-base">
-          {subtitle}
-        </p>
+        <p className="mx-auto mt-5 max-w-2xl text-sm text-pretty text-muted-foreground sm:text-base">{subtitle}</p>
       </div>
       <div className="orbit-divider mt-8" />
     </motion.header>
   );
 }
 
-function PillarCard({
-  pillar,
-  index,
-}: {
-  pillar: ValuePillar;
-  index: number;
-}) {
+function PillarCard({ pillar, index }: { pillar: ValuePillar; index: number }) {
   const Icon = pillar.icon;
   return (
     <motion.div
@@ -231,9 +206,7 @@ function PillarCard({
         <Icon className="h-6 w-6" />
       </div>
       <h3 className="relative mt-4 text-lg font-bold">{pillar.title}</h3>
-      <p className="relative mt-1.5 text-sm text-muted-foreground">
-        {pillar.desc}
-      </p>
+      <p className="relative mt-1.5 text-sm text-muted-foreground">{pillar.desc}</p>
     </motion.div>
   );
 }
@@ -270,29 +243,24 @@ function QuemSomosPage() {
   return (
     <div className="space-y-10">
       {/* Story */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="space-y-4"
-      >
-        <p className="text-pretty text-sm leading-relaxed text-foreground/85 sm:text-base">
-          A Astrofeet começou com um grupo de amigos que acreditava em uma coisa simples: <strong className="text-foreground">um bom tênis muda o seu dia</strong>. Nascemos do encontro entre a cultura das ruas, o esporte e o design.
+      <motion.div {...fadeUp} transition={{ duration: 0.6, delay: 0.1 }} className="space-y-4">
+        <p className="text-sm leading-relaxed text-pretty text-foreground/85 sm:text-base">
+          A Astrofeet começou com um grupo de amigos que acreditava em uma coisa simples:{" "}
+          <strong className="text-foreground">um bom tênis muda o seu dia</strong>. Nascemos do encontro entre a cultura
+          das ruas, o esporte e o design.
         </p>
-        <p className="text-pretty text-sm leading-relaxed text-foreground/85 sm:text-base">
-          Unimos designers, engenheiros de materiais e atletas para criar tênis com solado próprio, identidade própria e acabamento de primeira.
+        <p className="text-sm leading-relaxed text-pretty text-foreground/85 sm:text-base">
+          Unimos designers, engenheiros de materiais e atletas para criar tênis com solado próprio, identidade própria e
+          acabamento de primeira.
         </p>
-        <p className="text-pretty text-sm leading-relaxed text-foreground/85 sm:text-base">
+        <p className="text-sm leading-relaxed text-pretty text-foreground/85 sm:text-base">
           Hoje, a Astrofeet está nos pés de quem corre, trabalha e vive a cidade em todo o Brasil.
         </p>
       </motion.div>
 
       {/* Pillars */}
       <div>
-        <SectionHeading
-          icon={<Sparkles className="h-4 w-4" />}
-          accent="var(--brand)"
-        >
+        <SectionHeading icon={<Sparkles className="h-4 w-4" />} accent="var(--brand)">
           O que nos move
         </SectionHeading>
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
@@ -311,14 +279,13 @@ function QuemSomosPage() {
         className="relative overflow-hidden rounded-3xl border border-black/10 bg-[var(--surface)] p-6 sm:p-8"
       >
         <div className="relative">
-          <span className="inline-flex items-center gap-2 rounded-full bg-black/[0.06] px-3 py-1 text-xs font-semibold uppercase tracking-wider">
+          <span className="inline-flex items-center gap-2 rounded-full bg-black/[0.06] px-3 py-1 text-xs font-semibold tracking-wider uppercase">
             <MessageCircle className="h-3.5 w-3.5" />
             Nossa missão
           </span>
-          <p className="mt-4 text-balance text-lg font-bold leading-relaxed sm:text-xl">
-            Transformar cada caminhada em uma exploração. Levar o conforto do
-            espaço para o asfalto e fazer da moda uma ponte entre pessoas que
-            olham para o alto.
+          <p className="mt-4 text-lg leading-relaxed font-bold text-balance sm:text-xl">
+            Transformar cada caminhada em uma exploração. Levar o conforto do espaço para o asfalto e fazer da moda uma
+            ponte entre pessoas que olham para o alto.
           </p>
         </div>
       </motion.div>
@@ -329,29 +296,19 @@ function QuemSomosPage() {
 function SustentabilidadePage() {
   return (
     <div className="space-y-10">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="space-y-4"
-      >
-        <p className="text-pretty text-sm leading-relaxed text-foreground/85 sm:text-base">
-          Por isso,
-          a Astrofeet se compromete a reduzir o impacto ambiental em cada etapa
-          do caminho — do design do sneaker até a entrega na sua porta.
+      <motion.div {...fadeUp} transition={{ duration: 0.6, delay: 0.1 }} className="space-y-4">
+        <p className="text-sm leading-relaxed text-pretty text-foreground/85 sm:text-base">
+          Por isso, a Astrofeet se compromete a reduzir o impacto ambiental em cada etapa do caminho — do design do
+          sneaker até a entrega na sua porta.
         </p>
-        <p className="text-pretty text-sm leading-relaxed text-foreground/85 sm:text-base">
-          Acreditamos que estilo e responsabilidade andam juntos. Cada
-          decisão nossa passa por uma pergunta simples:{" "}
+        <p className="text-sm leading-relaxed text-pretty text-foreground/85 sm:text-base">
+          Acreditamos que estilo e responsabilidade andam juntos. Cada decisão nossa passa por uma pergunta simples:{" "}
           <strong className="text-foreground">isso é bom para as pessoas e para o planeta?</strong>
         </p>
       </motion.div>
 
       <div>
-        <SectionHeading
-          icon={<Leaf className="h-4 w-4" />}
-          accent="var(--success)"
-        >
+        <SectionHeading icon={<Leaf className="h-4 w-4" />} accent="var(--success)">
           Nossas iniciativas
         </SectionHeading>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -370,14 +327,11 @@ function SustentabilidadePage() {
       >
         <div className="relative">
           <Sparkles className="mx-auto h-8 w-8 text-[var(--success)]" />
-          <p className="mt-3 text-balance text-xl font-black sm:text-2xl">
-            <span className="text-gradient-animated">
-              Pequenos passos, grande impacto planetário.
-            </span>
+          <p className="mt-3 text-xl font-black text-balance sm:text-2xl">
+            <span className="text-gradient-animated">Pequenos passos, grande impacto planetário.</span>
           </p>
           <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-            Cada sneaker Astrofeet é uma escolha a favor do futuro. Junte-se a
-            nós nessa missão.
+            Cada sneaker Astrofeet é uma escolha a favor do futuro. Junte-se a nós nessa missão.
           </p>
         </div>
       </motion.div>
@@ -392,10 +346,7 @@ function ContatoPage() {
   return (
     <div className="space-y-10">
       <div>
-        <SectionHeading
-          icon={<Mail className="h-4 w-4" />}
-          accent="var(--hot)"
-        >
+        <SectionHeading icon={<Mail className="h-4 w-4" />} accent="var(--hot)">
           Canais de comunicação
         </SectionHeading>
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
@@ -417,9 +368,7 @@ function ContatoPage() {
                   <Icon className="h-6 w-6" />
                 </div>
                 <h3 className="relative mt-4 text-lg font-bold">{c.title}</h3>
-                <p className="relative mt-1.5 text-sm text-muted-foreground">
-                  {c.desc}
-                </p>
+                <p className="relative mt-1.5 text-sm text-muted-foreground">{c.desc}</p>
               </motion.div>
             );
           })}
@@ -433,10 +382,9 @@ function ContatoPage() {
         transition={{ duration: 0.6 }}
         className="glass-strong rounded-3xl border border-black/10 p-6 text-center sm:p-8"
       >
-        <p className="text-pretty text-sm text-muted-foreground sm:text-base">
-          Nossa equipe responde em até{" "}
-          <strong className="text-foreground">24h</strong>. Para assuntos
-          urgentes, fale com nosso assistente — ele está sempre disponível.
+        <p className="text-sm text-pretty text-muted-foreground sm:text-base">
+          Nossa equipe responde em até <strong className="text-foreground">24h</strong>. Para assuntos urgentes, fale
+          com nosso assistente — ele está sempre disponível.
         </p>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
           <Button
@@ -467,8 +415,7 @@ function TrocasPage() {
     <div className="space-y-10">
       {/* Policy */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        {...fadeUp}
         transition={{ duration: 0.6, delay: 0.1 }}
         className="glass-strong rounded-3xl border border-black/10 p-6 sm:p-8"
       >
@@ -500,10 +447,7 @@ function TrocasPage() {
 
       {/* Steps */}
       <div>
-        <SectionHeading
-          icon={<Compass className="h-4 w-4" />}
-          accent="var(--ink)"
-        >
+        <SectionHeading icon={<Compass className="h-4 w-4" />} accent="var(--ink)">
           Como funciona
         </SectionHeading>
         <ol className="mt-5 space-y-3">
@@ -521,9 +465,7 @@ function TrocasPage() {
               </span>
               <div>
                 <p className="text-sm font-bold">{step.title}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-                  {step.desc}
-                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">{step.desc}</p>
               </div>
             </motion.li>
           ))}
@@ -538,16 +480,13 @@ function TrocasPage() {
         transition={{ duration: 0.6 }}
         className="glass rounded-3xl border border-black/10 p-6 sm:p-8"
       >
-        <SectionHeading
-          icon={<ShieldCheck className="h-4 w-4" />}
-          accent="var(--hot)"
-        >
+        <SectionHeading icon={<ShieldCheck className="h-4 w-4" />} accent="var(--hot)">
           Condições para troca
         </SectionHeading>
         <ul className="mt-4 space-y-2.5 text-sm text-foreground/85">
           <li className="flex items-start gap-2.5">
-            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" />
-            O sneaker precisa estar sem uso, sem marcas de desgaste.
+            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" />O sneaker precisa estar sem
+            uso, sem marcas de desgaste.
           </li>
           <li className="flex items-start gap-2.5">
             <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" />
@@ -574,12 +513,9 @@ function TrocasPage() {
       >
         <MapPin className="h-8 w-8 text-[var(--brand)]" />
         <div>
-          <p className="text-lg font-bold sm:text-xl">
-            Precisa abrir uma solicitação de troca?
-          </p>
+          <p className="text-lg font-bold sm:text-xl">Precisa abrir uma solicitação de troca?</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            O assistente coleta os dados do seu pedido e gera o código de postagem
-            em segundos.
+            O assistente coleta os dados do seu pedido e gera o código de postagem em segundos.
           </p>
         </div>
         <Button
@@ -599,12 +535,7 @@ function TrocasPage() {
 // ---------------------------------------------------------------------------
 
 function isValidPage(value: unknown): value is InfoPage {
-  return (
-    value === "quem-somos" ||
-    value === "sustentabilidade" ||
-    value === "contato" ||
-    value === "trocas"
-  );
+  return value === "quem-somos" || value === "sustentabilidade" || value === "contato" || value === "trocas";
 }
 
 export function InfoView() {
@@ -616,17 +547,12 @@ export function InfoView() {
   const meta = PAGE_META[page];
 
   return (
-    <section className="mx-auto w-full max-w-4xl px-4 pb-16 pt-6 sm:px-6">
-      <PageHero
-        eyebrow={meta.eyebrow}
-        title={meta.title}
-        subtitle={meta.subtitle}
-      />
+    <section className="mx-auto w-full max-w-4xl px-4 pt-6 pb-16 sm:px-6">
+      <PageHero eyebrow={meta.eyebrow} title={meta.title} subtitle={meta.subtitle} />
 
       <motion.div
         key={page}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
+        {...fadeUp}
         transition={{ duration: 0.5, delay: 0.15 }}
         className="glass-strong mt-8 rounded-3xl border border-black/10 p-5 sm:p-8"
       >

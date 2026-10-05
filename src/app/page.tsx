@@ -28,28 +28,42 @@ function ViewSkeleton() {
     </div>
   );
 }
-const view = (loader: () => Promise<{ default: React.ComponentType }>) =>
-  dynamic(loader, { loading: ViewSkeleton });
-const overlay = (loader: () => Promise<{ default: React.ComponentType }>) =>
-  dynamic(loader, { ssr: false });
+const view = (loader: () => Promise<{ default: React.ComponentType }>) => dynamic(loader, { loading: ViewSkeleton });
+const overlay = (loader: () => Promise<{ default: React.ComponentType }>) => dynamic(loader, { ssr: false });
 
 const ProductsView = view(() => import("@/components/views/ProductsView").then((m) => ({ default: m.ProductsView })));
-const ProductDetailView = view(() => import("@/components/views/ProductDetailView").then((m) => ({ default: m.ProductDetailView })));
+const ProductDetailView = view(() =>
+  import("@/components/views/ProductDetailView").then((m) => ({ default: m.ProductDetailView })),
+);
 const CheckoutView = view(() => import("@/components/views/CheckoutView").then((m) => ({ default: m.CheckoutView })));
-const OrderSuccessView = view(() => import("@/components/views/OrderSuccessView").then((m) => ({ default: m.OrderSuccessView })));
-const AdminView = view(() => import("@/components/views/AdminView").then((m) => ({ default: m.AdminView })));
+const OrderSuccessView = view(() =>
+  import("@/components/views/OrderSuccessView").then((m) => ({ default: m.OrderSuccessView })),
+);
+const AdminView = view(() => import("@/components/admin/AdminView").then((m) => ({ default: m.AdminView })));
 const WishlistView = view(() => import("@/components/views/WishlistView").then((m) => ({ default: m.WishlistView })));
-const TrackOrderView = view(() => import("@/components/views/TrackOrderView").then((m) => ({ default: m.TrackOrderView })));
-const AccountView = view(() => import("@/components/views/AccountView").then((m) => ({ default: m.AccountView })));
+const TrackOrderView = view(() =>
+  import("@/components/views/TrackOrderView").then((m) => ({ default: m.TrackOrderView })),
+);
+const AccountView = view(() => import("@/components/account/AccountView").then((m) => ({ default: m.AccountView })));
 const InfoView = view(() => import("@/components/views/InfoView").then((m) => ({ default: m.InfoView })));
 
 const CartDrawer = overlay(() => import("@/components/views/CartDrawer").then((m) => ({ default: m.CartDrawer })));
 const AuthModal = overlay(() => import("@/components/views/AuthModal").then((m) => ({ default: m.AuthModal })));
-const SizeGuideModal = overlay(() => import("@/components/views/SizeGuideModal").then((m) => ({ default: m.SizeGuideModal })));
-const SearchPalette = overlay(() => import("@/components/views/SearchPalette").then((m) => ({ default: m.SearchPalette })));
-const CompareDrawer = overlay(() => import("@/components/views/CompareDrawer").then((m) => ({ default: m.CompareDrawer })));
-const QuickViewModal = overlay(() => import("@/components/views/QuickViewModal").then((m) => ({ default: m.QuickViewModal })));
-const ShipAssistant = overlay(() => import("@/components/layout/ShipAssistant").then((m) => ({ default: m.ShipAssistant })));
+const SizeGuideModal = overlay(() =>
+  import("@/components/views/SizeGuideModal").then((m) => ({ default: m.SizeGuideModal })),
+);
+const SearchPalette = overlay(() =>
+  import("@/components/views/SearchPalette").then((m) => ({ default: m.SearchPalette })),
+);
+const CompareDrawer = overlay(() =>
+  import("@/components/views/CompareDrawer").then((m) => ({ default: m.CompareDrawer })),
+);
+const QuickViewModal = overlay(() =>
+  import("@/components/views/QuickViewModal").then((m) => ({ default: m.QuickViewModal })),
+);
+const ShipAssistant = overlay(() =>
+  import("@/components/layout/ShipAssistant").then((m) => ({ default: m.ShipAssistant })),
+);
 
 export default function Page() {
   const current = useUIStore((s) => s.view);
@@ -62,7 +76,7 @@ export default function Page() {
     <div className="relative flex min-h-screen flex-col">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-[var(--brand)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-full focus:bg-[var(--brand)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
       >
         Pular para o conteúdo
       </a>

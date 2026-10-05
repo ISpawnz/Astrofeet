@@ -52,7 +52,7 @@ export function Footer() {
     <footer className="mt-auto bg-foreground text-background">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div className="space-y-4">
-          <p className="text-2xl font-black uppercase tracking-tighter">Astrofeet</p>
+          <p className="text-2xl font-black tracking-tighter uppercase">Astrofeet</p>
           <p className="max-w-xs text-sm text-white/65">
             Tênis com design próprio para correr, andar e viver a cidade.
           </p>

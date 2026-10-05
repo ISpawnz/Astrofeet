@@ -23,9 +23,7 @@ const SEGMENT_PARAM: Partial<Record<ViewName, string>> = {
   info: "page",
 };
 
-const BY_PATH = new Map(
-  (Object.entries(PATH) as [ViewName, string][]).map(([v, p]) => [p, v]),
-);
+const BY_PATH = new Map((Object.entries(PATH) as [ViewName, string][]).map(([v, p]) => [p, v]));
 
 export const VIEW_TITLES: Record<ViewName, string> = {
   home: "Tênis de corrida, casual e skate",

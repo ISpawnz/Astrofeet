@@ -1,80 +1,93 @@
 "use client";
 
-import type {
-  Product,
-  Review,
-  Order,
-  PublicUser,
-  Coupon,
-  Address,
-  Notification,
-} from "@/shared/types";
+import type { Address, Coupon, Notification, Order, Product, PublicUser, Review } from "@/shared/types";
 
-async function request<T>(
-  input: string,
-  init?: RequestInit & { auth?: boolean },
-): Promise<T> {
-  const res = await fetch(input, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
+/** Único ponto do front que fala com o servidor. Erros viram `Error` com a mensagem da API. */
+async function request<T>(url: string, method = "GET", body?: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method,
     credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
-  const text = await res.text();
-  const data = text ? safeParse(text) : null;
-  if (!res.ok) {
-    const parsedMessage =
-      data && typeof data === "object" && "message" in data
-        ? String((data as { message?: unknown }).message)
-        : "";
-    const message =
-      parsedMessage ||
-      `Erro ${res.status}: não foi possível concluir a ação.`;
-    throw new Error(message);
-  }
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.message || `Erro ${res.status}: não foi possível concluir a ação.`);
   return data as T;
 }
 
-function safeParse(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
+/** Faz a chamada e devolve só a chave `key` da resposta ({ product } → product). */
+const unwrap = <T>(key: string, url: string, method?: string, body?: unknown) =>
+  request<Record<string, T>>(url, method, body).then((d) => d[key]);
+
+const qs = (params: Record<string, unknown> = {}) =>
+  new URLSearchParams(
+    Object.entries(params).flatMap(([k, v]) => (v === undefined || v === null || v === "" ? [] : [[k, String(v)]])),
+  ).toString();
+const enc = encodeURIComponent;
+
+type Input<T> = Partial<Omit<T, "id" | "createdAt">>;
+
+export interface TrackedOrder {
+  code: string;
+  status: string;
+  total: number;
+  subtotal: number;
+  shipping: number;
+  items: { name: string; quantity: number; size: number; unitPrice: number; subtotal: number }[];
+  customerName: string;
+  city: string;
+  state: string;
+  paymentMethod: string;
+  createdAt: string;
 }
 
-// ---------- Auth ----------
-export const api = {
-  async me(): Promise<PublicUser | null> {
-    try {
-      const data = await request<{ user: PublicUser | null }>("/api/auth/me");
-      return data.user;
-    } catch {
-      return null;
-    }
-  },
-  async login(email: string, password: string): Promise<PublicUser> {
-    const data = await request<{ user: PublicUser }>("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
-    return data.user;
-  },
-  async register(name: string, email: string, password: string): Promise<PublicUser> {
-    const data = await request<{ user: PublicUser }>("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ name, email, password }),
-    });
-    return data.user;
-  },
-  async logout(): Promise<void> {
-    await request<{ ok: true }>("/api/auth/logout", { method: "POST" });
-  },
+export interface CouponPreview {
+  valid: boolean;
+  code: string;
+  type?: "percent" | "fixed";
+  value?: number;
+  description: string;
+  discount: number;
+  minSubtotal?: number;
+  message?: string;
+}
 
-  // ---------- Products ----------
-  async products(params?: {
+export interface Loyalty {
+  points: number;
+  pointsValue: number;
+  pointsPerReal: number;
+  pointsToBrlRate: number;
+  minRedeemPoints: number;
+  history: { type: "earned"; points: number; description: string; date: string }[];
+}
+
+export interface AdminMetrics {
+  ordersToday: number;
+  revenue: number;
+  ticket: number;
+  totalOrders: number;
+  totalProducts: number;
+  totalCustomers: number;
+  recent: Order[];
+  byStatus: Record<string, number>;
+  revenueLast7Days: { date: string; label: string; revenue: number; orders: number }[];
+  topProducts: { name: string; slug: string; units: number; revenue: number }[];
+}
+
+export const api = {
+  // Auth
+  me: () => unwrap<PublicUser | null>("user", "/api/auth/me").catch(() => null),
+  login: (email: string, password: string) =>
+    unwrap<PublicUser>("user", "/api/auth/login", "POST", { email, password }),
+  register: (name: string, email: string, password: string) =>
+    unwrap<PublicUser>("user", "/api/auth/register", "POST", { name, email, password }),
+  logout: () => request<void>("/api/auth/logout", "POST"),
+  updateProfile: (name: string) => unwrap<PublicUser>("user", "/api/auth/me", "PATCH", { name }),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<void>("/api/auth/password", "POST", { currentPassword, newPassword }),
+
+  // Produtos
+  products: (params?: {
     category?: string;
     brand?: string;
     q?: string;
@@ -85,327 +98,65 @@ export const api = {
     featured?: boolean;
     bestSeller?: boolean;
     ids?: string;
-  }): Promise<Product[]> {
-    const qs = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([k, v]) => {
-        if (v !== undefined && v !== null && v !== "")
-          qs.set(k, String(v));
-      });
-    }
-    const data = await request<{ products: Product[] }>(
-      `/api/products?${qs.toString()}`,
-    );
-    return data.products;
-  },
-  async product(slug: string): Promise<{ product: Product; reviews: Review[] }> {
-    return request(`/api/products/${encodeURIComponent(slug)}`);
-  },
-  async relatedProducts(id: string): Promise<Product[]> {
-    const data = await request<{ products: Product[] }>(
-      `/api/products/${encodeURIComponent(id)}/related`,
-    );
-    return data.products;
-  },
-  async createProduct(body: Partial<Product>): Promise<Product> {
-    const data = await request<{ product: Product }>("/api/products", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-    return data.product;
-  },
-  async updateProduct(id: string, body: Partial<Product>): Promise<Product> {
-    const data = await request<{ product: Product }>(
-      `/api/products/${id}`,
-      { method: "PUT", body: JSON.stringify(body) },
-    );
-    return data.product;
-  },
-  async deleteProduct(id: string): Promise<void> {
-    await request<{ ok: true }>(`/api/products/${id}`, { method: "DELETE" });
-  },
+  }) => unwrap<Product[]>("products", `/api/products?${qs(params)}`),
+  product: (slug: string) => request<{ product: Product; reviews: Review[] }>(`/api/products/${enc(slug)}`),
+  relatedProducts: (id: string) => unwrap<Product[]>("products", `/api/products/${enc(id)}/related`),
+  createProduct: (body: Partial<Product>) => unwrap<Product>("product", "/api/products", "POST", body),
+  updateProduct: (id: string, body: Partial<Product>) => unwrap<Product>("product", `/api/products/${id}`, "PUT", body),
+  deleteProduct: (id: string) => request<void>(`/api/products/${id}`, "DELETE"),
+  createReview: (body: { productId: string; rating: number; comment: string; authorName: string }) =>
+    unwrap<Review>("review", "/api/reviews", "POST", body),
 
-  // ---------- Orders ----------
-  async createOrder(payload: {
+  // Pedidos
+  createOrder: (body: {
     items: { productId: string; size: number; quantity: number }[];
     customer: Order["customer"];
     address: Order["address"];
     payment: Order["payment"];
     couponCode?: string;
-  }): Promise<Order> {
-    const data = await request<{ order: Order }>("/api/orders", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-    return data.order;
-  },
-  async listOrders(): Promise<Order[]> {
-    const data = await request<{ orders: Order[] }>("/api/orders");
-    return data.orders;
-  },
-  async updateOrderStatus(id: string, status: string): Promise<Order> {
-    const data = await request<{ order: Order }>(
-      `/api/orders/${id}/status`,
-      { method: "PATCH", body: JSON.stringify({ status }) },
-    );
-    return data.order;
-  },
-  async trackOrder(code: string, email: string): Promise<{
-    order: {
-      code: string;
-      status: string;
-      total: number;
-      subtotal: number;
-      shipping: number;
-      items: { name: string; quantity: number; size: number; unitPrice: number; subtotal: number }[];
-      customerName: string;
-      city: string;
-      state: string;
-      paymentMethod: string;
-      createdAt: string;
-    };
-  }> {
-    const qs = new URLSearchParams({ code, email });
-    return request(`/api/orders/track?${qs.toString()}`);
-  },
-
-  // ---------- Coupons ----------
-  async validateCoupon(
-    code: string,
-    subtotal: number,
-  ): Promise<{
-    valid: boolean;
-    code: string;
-    type?: "percent" | "fixed";
-    value?: number;
-    description: string;
-    discount: number;
-    minSubtotal?: number;
-    message?: string;
-  }> {
-    return request("/api/coupons/validate", {
-      method: "POST",
-      body: JSON.stringify({ code, subtotal }),
-    });
-  },
-  async listCoupons(): Promise<Coupon[]> {
-    const data = await request<{ coupons: Coupon[] }>("/api/coupons");
-    return data.coupons;
-  },
-  async createCoupon(body: {
-    code: string;
-    type: "percent" | "fixed";
-    value: number;
-    minSubtotal?: number;
-    description: string;
-    active?: boolean;
-    expiresAt?: string | null;
-  }): Promise<{ id: string; code: string }> {
-    return request("/api/coupons", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }).then((d) => (d as { coupon: { id: string; code: string } }).coupon);
-  },
-  async updateCoupon(
-    id: string,
-    body: Partial<{
-      code: string;
-      value: number;
-      minSubtotal: number;
-      description: string;
-      active: boolean;
-      expiresAt: string | null;
-    }>,
-  ): Promise<{ id: string; code: string }> {
-    return request(`/api/coupons/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(body),
-    }).then((d) => (d as { coupon: { id: string; code: string } }).coupon);
-  },
-  async deleteCoupon(id: string): Promise<void> {
-    await request<{ ok: true }>(`/api/coupons/${id}`, { method: "DELETE" });
-  },
-
-  // ---------- Profile ----------
-  async updateProfile(name: string): Promise<PublicUser> {
-    const data = await request<{ user: PublicUser }>("/api/auth/me", {
-      method: "PATCH",
-      body: JSON.stringify({ name }),
-    });
-    return data.user;
-  },
-  async changePassword(
-    currentPassword: string,
-    newPassword: string,
-  ): Promise<void> {
-    await request<{ ok: true }>("/api/auth/password", {
-      method: "POST",
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
-  },
-
-  // ---------- Addresses ----------
-  async listAddresses(): Promise<Address[]> {
-    const data = await request<{ addresses: Address[] }>("/api/addresses");
-    return data.addresses;
-  },
-  async createAddress(body: {
-    label: string;
-    recipient: string;
-    cep: string;
-    street: string;
-    number: string;
-    complement?: string;
-    district?: string;
-    city: string;
-    state: string;
-    isDefault?: boolean;
-  }): Promise<Address> {
-    const data = await request<{ address: Address }>("/api/addresses", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-    return data.address;
-  },
-  async updateAddress(
-    id: string,
-    body: Partial<{
-      label: string;
-      recipient: string;
-      cep: string;
-      street: string;
-      number: string;
-      complement: string;
-      district: string;
-      city: string;
-      state: string;
-      isDefault: boolean;
-    }>,
-  ): Promise<Address> {
-    const data = await request<{ address: Address }>(
-      `/api/addresses/${id}`,
-      { method: "PATCH", body: JSON.stringify(body) },
-    );
-    return data.address;
-  },
-  async deleteAddress(id: string): Promise<void> {
-    await request<{ ok: true }>(`/api/addresses/${id}`, {
-      method: "DELETE",
-    });
-  },
-
-  // ---------- Notifications (mock email) ----------
-  async listNotifications(limit?: number): Promise<Notification[]> {
-    const qs = new URLSearchParams();
-    if (limit) qs.set("limit", String(limit));
-    const data = await request<{ notifications: Notification[] }>(
-      `/api/notifications?${qs.toString()}`,
-    );
-    return data.notifications;
-  },
-
-  // ---------- Stock alerts ----------
-  async listStockAlerts(): Promise<string[]> {
-    const data = await request<{ productIds: string[] }>("/api/stock-alerts");
-    return data.productIds;
-  },
-  async subscribeStockAlert(productId: string): Promise<void> {
-    await request<{ ok: true }>("/api/stock-alerts", {
-      method: "POST",
-      body: JSON.stringify({ productId }),
-    });
-  },
-  async unsubscribeStockAlert(productId: string): Promise<void> {
-    await request<{ ok: true }>(`/api/stock-alerts?productId=${encodeURIComponent(productId)}`, {
-      method: "DELETE",
-    });
-  },
-
-  // ---------- Order export ----------
+  }) => unwrap<Order>("order", "/api/orders", "POST", body),
+  /** `mine`: o admin também vê só os próprios pedidos (ex.: em "Minha conta"). */
+  listOrders: (mine = false) => unwrap<Order[]>("orders", `/api/orders?${qs({ mine: mine || undefined })}`),
+  updateOrderStatus: (id: string, status: string) =>
+    unwrap<Order>("order", `/api/orders/${id}/status`, "PATCH", { status }),
+  bulkUpdateStatus: (orderIds: string[], status: string) =>
+    request<{ updated: number; total: number }>("/api/admin/bulk-status", "POST", { orderIds, status }),
+  trackOrder: (code: string, email: string) =>
+    request<{ order: TrackedOrder }>(`/api/orders/track?${qs({ code, email })}`),
   async exportOrders(format: "csv" | "json" = "csv"): Promise<Blob> {
-    const res = await fetch(`/api/orders/export?format=${format}`, {
-      credentials: "include",
-    });
-    if (!res.ok) {
-      throw new Error(`Erro ${res.status}: não foi possível exportar.`);
-    }
+    const res = await fetch(`/api/orders/export?format=${format}`, { credentials: "include" });
+    if (!res.ok) throw new Error(`Erro ${res.status}: não foi possível exportar.`);
     return res.blob();
   },
 
-  // ---------- Admin bulk status ----------
-  async bulkUpdateStatus(
-    orderIds: string[],
-    status: string,
-  ): Promise<{ updated: number; total: number }> {
-    const data = await request<{
-      updated: number;
-      total: number;
-      results: { id: string; code: string; success: boolean }[];
-    }>("/api/admin/bulk-status", {
-      method: "POST",
-      body: JSON.stringify({ orderIds, status }),
-    });
-    return { updated: data.updated, total: data.total };
-  },
+  // Cupons
+  validateCoupon: (code: string, subtotal: number) =>
+    request<CouponPreview>("/api/coupons/validate", "POST", { code, subtotal }),
+  listCoupons: () => unwrap<Coupon[]>("coupons", "/api/coupons"),
+  createCoupon: (body: Input<Coupon>) => unwrap<Coupon>("coupon", "/api/coupons", "POST", body),
+  updateCoupon: (id: string, body: Input<Coupon>) => unwrap<Coupon>("coupon", `/api/coupons/${id}`, "PATCH", body),
+  deleteCoupon: (id: string) => request<void>(`/api/coupons/${id}`, "DELETE"),
 
-  // ---------- Loyalty program ----------
-  async getLoyalty(): Promise<{
-    points: number;
-    pointsValue: number;
-    pointsPerReal: number;
-    pointsToBrlRate: number;
-    minRedeemPoints: number;
-    history: { type: "earned"; points: number; description: string; date: string }[];
-  }> {
-    return request("/api/loyalty");
-  },
-  async redeemLoyalty(points: number): Promise<{
-    coupon: { id: string; code: string; type: "fixed"; value: number; description: string };
-    pointsRemaining: number;
-    discount: number;
-  }> {
-    return request("/api/loyalty/redeem", {
-      method: "POST",
-      body: JSON.stringify({ points }),
-    });
-  },
+  // Endereços
+  listAddresses: () => unwrap<Address[]>("addresses", "/api/addresses"),
+  createAddress: (body: Input<Address>) => unwrap<Address>("address", "/api/addresses", "POST", body),
+  updateAddress: (id: string, body: Input<Address>) =>
+    unwrap<Address>("address", `/api/addresses/${id}`, "PATCH", body),
+  deleteAddress: (id: string) => request<void>(`/api/addresses/${id}`, "DELETE"),
 
-  // ---------- Reviews ----------
-  async createReview(payload: {
-    productId: string;
-    rating: number;
-    comment: string;
-    authorName: string;
-  }): Promise<Review> {
-    const data = await request<{ review: Review }>("/api/reviews", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-    return data.review;
-  },
-
-  // ---------- Admin metrics ----------
-  async adminMetrics(): Promise<{
-    ordersToday: number;
-    revenue: number;
-    ticket: number;
-    totalOrders: number;
-    totalProducts: number;
-    totalCustomers: number;
-    recent: Order[];
-    byStatus: Record<string, number>;
-    revenueLast7Days: { date: string; label: string; revenue: number; orders: number }[];
-    topProducts: { name: string; slug: string; units: number; revenue: number }[];
-  }> {
-    return request("/api/admin/metrics");
-  },
-
-  // ---------- Chat (AI assistant) ----------
-  async chat(messages: { role: "user" | "assistant"; content: string }[]): Promise<string> {
-    const data = await request<{ reply: string }>("/api/chat", {
-      method: "POST",
-      body: JSON.stringify({ messages }),
-    });
-    return data.reply;
-  },
+  // Notificações, alertas de estoque, fidelidade, admin, chat
+  listNotifications: (limit?: number) => unwrap<Notification[]>("notifications", `/api/notifications?${qs({ limit })}`),
+  listStockAlerts: () => unwrap<string[]>("productIds", "/api/stock-alerts"),
+  subscribeStockAlert: (productId: string) => request<void>("/api/stock-alerts", "POST", { productId }),
+  unsubscribeStockAlert: (productId: string) => request<void>(`/api/stock-alerts?${qs({ productId })}`, "DELETE"),
+  getLoyalty: () => request<Loyalty>("/api/loyalty"),
+  redeemLoyalty: (points: number) =>
+    request<{
+      coupon: { id: string; code: string; type: "fixed"; value: number; description: string };
+      pointsRemaining: number;
+      discount: number;
+    }>("/api/loyalty/redeem", "POST", { points }),
+  adminMetrics: () => request<AdminMetrics>("/api/admin/metrics"),
+  chat: (messages: { role: "user" | "assistant"; content: string }[]) =>
+    unwrap<string>("reply", "/api/chat", "POST", { messages }),
 };

@@ -7,16 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/client/api";
 import { formatPrice } from "@/shared/format";
 import type { Product } from "@/shared/types";
-import {
-  GitCompare,
-  X,
-  Star,
-  Trash2,
-  Sparkles,
-  PackageX,
-} from "lucide-react";
+import { GitCompare, X, Star, Trash2, Sparkles, PackageX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { fadeUp } from "@/components/shared/motion";
 
 interface CompareRow {
   key: string;
@@ -36,12 +30,8 @@ const ROWS: CompareRow[] = [
         className="relative mx-auto flex h-full w-full items-center justify-center overflow-hidden rounded-xl bg-black/[0.03]"
         style={{ boxShadow: `inset 0 0 20px ${p.accent}30` }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={p.images[0]}
-          alt={p.name}
-          className="h-full w-full object-contain p-1"
-        />
+        {}
+        <img src={p.images[0]} alt={p.name} className="h-full w-full object-contain p-1" />
       </div>
     ),
   },
@@ -49,19 +39,13 @@ const ROWS: CompareRow[] = [
     key: "name",
     label: "Nome",
     cellClass: "min-h-[44px]",
-    render: (p) => (
-      <p className="line-clamp-2 text-sm font-semibold">{p.name}</p>
-    ),
+    render: (p) => <p className="line-clamp-2 text-sm font-semibold">{p.name}</p>,
   },
   {
     key: "brand",
     label: "Marca",
     cellClass: "min-h-[28px]",
-    render: (p) => (
-      <p className="text-xs uppercase tracking-wider text-muted-foreground">
-        {p.brand}
-      </p>
-    ),
+    render: (p) => <p className="text-xs tracking-wider text-muted-foreground uppercase">{p.brand}</p>,
   },
   {
     key: "category",
@@ -82,12 +66,8 @@ const ROWS: CompareRow[] = [
     cellClass: "min-h-[44px]",
     render: (p) => (
       <div className="text-center">
-        <p className="text-base font-bold text-[var(--success)]">
-          {formatPrice(p.price)}
-        </p>
-        <p className="text-[10px] text-muted-foreground">
-          ou 10x de {formatPrice(p.price / 10)}
-        </p>
+        <p className="text-base font-bold text-[var(--success)]">{formatPrice(p.price)}</p>
+        <p className="text-[10px] text-muted-foreground">ou 10x de {formatPrice(p.price / 10)}</p>
       </div>
     ),
   },
@@ -100,9 +80,7 @@ const ROWS: CompareRow[] = [
         <Star className="h-3.5 w-3.5 fill-current" />
         <span className="font-medium">{p.rating.toFixed(1)}</span>
         {typeof p.reviewCount === "number" && (
-          <span className="text-[10px] text-muted-foreground">
-            ({p.reviewCount})
-          </span>
+          <span className="text-[10px] text-muted-foreground">({p.reviewCount})</span>
         )}
       </div>
     ),
@@ -111,9 +89,7 @@ const ROWS: CompareRow[] = [
     key: "sizes",
     label: "Tamanhos",
     cellClass: "min-h-[28px]",
-    render: (p) => (
-      <p className="text-xs text-foreground/80">{p.sizes.join(", ")}</p>
-    ),
+    render: (p) => <p className="text-xs text-foreground/80">{p.sizes.join(", ")}</p>,
   },
   {
     key: "stock",
@@ -138,17 +114,10 @@ function CompareSkeleton({ count }: { count: number }) {
     <div className="flex gap-3">
       <div className="w-28 shrink-0" />
       {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="min-w-[180px] flex-1 space-y-3 rounded-2xl border border-black/10 bg-black/[0.02] p-3"
-        >
+        <div key={i} className="min-w-[180px] flex-1 space-y-3 rounded-2xl border border-black/10 bg-black/[0.02] p-3">
           <div className="skeleton-cosmic mx-auto h-20 w-20 rounded-xl" />
           {Array.from({ length: 7 }).map((_, j) => (
-            <div
-              key={j}
-              className="skeleton-cosmic h-4 rounded"
-              style={{ width: `${60 + ((i + j) % 4) * 10}%` }}
-            />
+            <div key={j} className="skeleton-cosmic h-4 rounded" style={{ width: `${60 + ((i + j) % 4) * 10}%` }} />
           ))}
         </div>
       ))}
@@ -194,16 +163,14 @@ export function CompareDrawer() {
           <SheetTitle className="flex items-center gap-3 pr-8 text-lg">
             <GitCompare className="h-5 w-5 text-[var(--success)]" />
             Comparar produtos
-            <span className="animate-pop-in flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--success)]/15 px-2 text-xs font-bold text-[var(--success)] border border-[var(--success)]/30">
+            <span className="animate-pop-in flex h-6 min-w-6 items-center justify-center rounded-full border border-[var(--success)]/30 bg-[var(--success)]/15 px-2 text-xs font-bold text-[var(--success)]">
               {ids.length}/4
             </span>
           </SheetTitle>
           <SheetDescription className="sr-only">
             Compare até 4 produtos lado a lado com atributos detalhados.
           </SheetDescription>
-          <p className="text-xs text-muted-foreground">
-            Compare até 4 produtos lado a lado.
-          </p>
+          <p className="text-xs text-muted-foreground">Compare até 4 produtos lado a lado.</p>
         </SheetHeader>
 
         {/* Body — comparison table */}
@@ -255,14 +222,14 @@ export function CompareDrawer() {
                 {/* Attribute labels column (sticky) */}
                 <div className="sticky left-0 z-10 flex w-28 shrink-0 flex-col gap-3 self-start rounded-2xl border border-black/10 bg-background p-3 backdrop-blur">
                   {/* Header row (matches remove-button height) */}
-                  <div className="flex h-7 items-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                  <div className="flex h-7 items-center text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase">
                     Atributo
                   </div>
                   {ROWS.map((row) => (
                     <div
                       key={row.key}
                       className={cn(
-                        "flex items-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
+                        "flex items-center text-[11px] font-semibold tracking-wider text-muted-foreground uppercase",
                         row.cellClass,
                       )}
                     >
@@ -276,8 +243,7 @@ export function CompareDrawer() {
                   <motion.div
                     key={product.id}
                     layout
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    {...fadeUp}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.25, delay: idx * 0.04 }}
                     className="flex min-w-[180px] flex-1 flex-col gap-3 rounded-2xl border border-black/10 bg-black/[0.02] p-3"
@@ -295,13 +261,7 @@ export function CompareDrawer() {
 
                     {/* Attribute value rows */}
                     {ROWS.map((row) => (
-                      <div
-                        key={row.key}
-                        className={cn(
-                          "flex items-center justify-center text-center",
-                          row.cellClass,
-                        )}
-                      >
+                      <div key={row.key} className={cn("flex items-center justify-center text-center", row.cellClass)}>
                         {row.render(product)}
                       </div>
                     ))}
@@ -315,9 +275,7 @@ export function CompareDrawer() {
                     className="flex min-w-[140px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-black/15 bg-black/[0.02] p-4 text-center text-muted-foreground transition hover:border-[var(--success)]/40 hover:bg-[var(--success)]/[0.04] hover:text-[var(--success)]"
                   >
                     <Sparkles className="h-6 w-6" />
-                    <span className="text-xs font-medium">
-                      Adicionar outro
-                    </span>
+                    <span className="text-xs font-medium">Adicionar outro</span>
                   </button>
                 )}
               </motion.div>

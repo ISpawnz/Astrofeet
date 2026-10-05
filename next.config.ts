@@ -19,6 +19,11 @@ const csp = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // O db.ts lê um caminho dinâmico (ASTROFEET_DB_PATH), o que faz o tracer copiar o
+  // projeto inteiro para o build — inclusive o banco com dados. Exclui o que não é runtime.
+  outputFileTracingExcludes: {
+    "*": ["db/**", "docs/**", "upload/**", "tool-results/**", "src/**", "prisma/**", "scripts/**", "*.md", "*.lock"],
+  },
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   // Build falha em erro de tipo (antes eram silenciados).
@@ -27,16 +32,9 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "**" },
-    ],
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
-  allowedDevOrigins: [
-    "*.space-z.ai",
-    "*.chatglm.cn",
-    "localhost",
-    "127.0.0.1",
-  ],
+  allowedDevOrigins: ["*.space-z.ai", "*.chatglm.cn", "localhost", "127.0.0.1"],
   async headers() {
     return [
       {

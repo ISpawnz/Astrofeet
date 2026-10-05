@@ -38,9 +38,7 @@ export function CartDrawer() {
           </SheetDescription>
           <p className="text-xs text-muted-foreground">
             {items.reduce((n, i) => n + i.quantity, 0)}{" "}
-            {items.reduce((n, i) => n + i.quantity, 0) === 1
-              ? "item"
-              : "itens"}
+            {items.reduce((n, i) => n + i.quantity, 0) === 1 ? "item" : "itens"}
           </p>
         </SheetHeader>
 
@@ -49,16 +47,11 @@ export function CartDrawer() {
           <div className="border-b border-black/10 px-5 py-3">
             {remaining > 0 ? (
               <p className="mb-2 text-xs text-muted-foreground">
-                Faltam{" "}
-                <span className="font-semibold text-[var(--brand)]">
-                  {formatPrice(remaining)}
-                </span>{" "}
-                para o frete grátis
+                Faltam <span className="font-semibold text-[var(--brand)]">{formatPrice(remaining)}</span> para o frete
+                grátis
               </p>
             ) : (
-              <p className="mb-2 text-xs font-medium text-[var(--success)]">
-                Frete grátis liberado!
-              </p>
+              <p className="mb-2 text-xs font-medium text-[var(--success)]">Frete grátis liberado!</p>
             )}
             <div className="h-1.5 overflow-hidden rounded-full bg-black/[0.06]">
               <motion.div
@@ -79,9 +72,7 @@ export function CartDrawer() {
               </div>
               <div>
                 <p className="font-semibold">Seu carrinho está vazio</p>
-                <p className="text-sm text-muted-foreground">
-                  Explore os drops e encontre seu próximo par.
-                </p>
+                <p className="text-sm text-muted-foreground">Explore os drops e encontre seu próximo par.</p>
               </div>
               <button
                 onClick={() => {
@@ -105,26 +96,18 @@ export function CartDrawer() {
                     exit={{ opacity: 0, x: -40, height: 0 }}
                     className="flex gap-3 rounded-2xl border border-black/5 bg-black/[0.02] p-3"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {}
                     <div
                       className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-black/[0.03]"
                       style={{ boxShadow: `inset 0 0 20px ${item.accent}30` }}
                     >
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="h-full w-full object-contain p-1"
-                      />
+                      <img src={item.image} alt={item.name} className="h-full w-full object-contain p-1" />
                     </div>
                     <div className="flex flex-1 flex-col">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="line-clamp-1 text-sm font-semibold">
-                            {item.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Tamanho {item.size}
-                          </p>
+                          <p className="line-clamp-1 text-sm font-semibold">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">Tamanho {item.size}</p>
                         </div>
                         <button
                           onClick={() => remove(item.productId, item.size)}
@@ -137,38 +120,22 @@ export function CartDrawer() {
                       <div className="mt-auto flex items-center justify-between">
                         <div className="flex items-center gap-1 rounded-full border border-black/10 bg-black/[0.03]">
                           <button
-                            onClick={() =>
-                              setQuantity(
-                                item.productId,
-                                item.size,
-                                item.quantity - 1,
-                              )
-                            }
+                            onClick={() => setQuantity(item.productId, item.size, item.quantity - 1)}
                             className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-black/[0.06]"
                             aria-label="Diminuir"
                           >
                             <Minus className="h-3.5 w-3.5" />
                           </button>
-                          <span className="w-6 text-center text-sm font-medium">
-                            {item.quantity}
-                          </span>
+                          <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
                           <button
-                            onClick={() =>
-                              setQuantity(
-                                item.productId,
-                                item.size,
-                                item.quantity + 1,
-                              )
-                            }
+                            onClick={() => setQuantity(item.productId, item.size, item.quantity + 1)}
                             className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-black/[0.06]"
                             aria-label="Aumentar"
                           >
                             <Plus className="h-3.5 w-3.5" />
                           </button>
                         </div>
-                        <p className="text-sm font-bold">
-                          {formatPrice(item.price * item.quantity)}
-                        </p>
+                        <p className="text-sm font-bold">{formatPrice(item.price * item.quantity)}</p>
                       </div>
                     </div>
                   </motion.li>
@@ -189,11 +156,7 @@ export function CartDrawer() {
               <div className="flex justify-between text-muted-foreground">
                 <span>Frete</span>
                 <span>
-                  {shipping === 0 ? (
-                    <span className="text-[var(--success)]">Grátis</span>
-                  ) : (
-                    formatPrice(shipping)
-                  )}
+                  {shipping === 0 ? <span className="text-[var(--success)]">Grátis</span> : formatPrice(shipping)}
                 </span>
               </div>
               <div className="flex justify-between pt-2 text-base font-bold">

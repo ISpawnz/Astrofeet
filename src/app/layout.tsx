@@ -17,17 +17,10 @@ export const metadata: Metadata = {
   title: "Astrofeet — Tênis de corrida, casual e skate",
   description:
     "Tênis premium de corrida, casual e skate com design próprio. Frete grátis acima de R$300 e troca em 30 dias.",
-  keywords: [
-    "Astrofeet",
-    "tênis",
-    "sneakers",
-    "drop limitado",
-    "tênis premium",
-  ],
+  keywords: ["Astrofeet", "tênis", "sneakers", "drop limitado", "tênis premium"],
   openGraph: {
     title: "Astrofeet — Tênis de corrida, casual e skate",
-    description:
-      "Tênis premium com design próprio. Frete grátis acima de R$300 e troca em 30 dias.",
+    description: "Tênis premium com design próprio. Frete grátis acima de R$300 e troca em 30 dias.",
     siteName: "Astrofeet",
     type: "website",
   },
@@ -41,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

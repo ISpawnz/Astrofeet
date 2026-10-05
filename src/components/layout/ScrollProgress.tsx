@@ -26,7 +26,7 @@ export function ScrollProgress() {
     <>
       {/* Scroll progress bar (top of viewport) */}
       <motion.div
-        className="fixed left-0 right-0 top-0 z-50 h-0.5 origin-left bg-[var(--brand)]"
+        className="fixed top-0 right-0 left-0 z-50 h-0.5 origin-left bg-[var(--brand)]"
         style={{ scaleX }}
         aria-hidden
       />
@@ -40,7 +40,7 @@ export function ScrollProgress() {
             exit={{ opacity: 0, scale: 0.6, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="fixed bottom-24 left-5 z-40 flex h-11 w-11 items-center justify-center rounded-full glass-strong text-foreground/80 transition hover:scale-110 hover:text-[var(--brand)]"
+            className="glass-strong fixed bottom-24 left-5 z-40 flex h-11 w-11 items-center justify-center rounded-full text-foreground/80 transition hover:scale-110 hover:text-[var(--brand)]"
             aria-label="Voltar ao topo"
           >
             <ArrowUp className="h-5 w-5" />

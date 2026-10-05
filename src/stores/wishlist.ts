@@ -63,8 +63,7 @@ export const useWishlistStore = create<WishlistState>()(
         });
       },
       has: (id) => !!get().items.find((i) => i.id === id),
-      remove: (id) =>
-        set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
+      remove: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
       clear: () => set({ items: [] }),
       count: () => get().items.length,
       setHydrated: (v) => set({ hydrated: v }),

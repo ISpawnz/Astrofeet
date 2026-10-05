@@ -1,87 +1,13 @@
 // Initial seed data for Astrofeet. Used by the JSON-backed store on first run.
 import "server-only";
-import type { Product, Review } from "@/shared/types";
 
-export interface SeedUser {
-  id: string;
-  email: string;
-  name: string;
-  passwordHash: string;
-  role: "customer" | "admin";
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SeedProduct {
-  id: string;
-  slug: string;
-  name: string;
-  brand: string;
-  category: string;
-  price: number;
-  description: string;
-  images: string;
-  sizes: string;
-  stock: number;
-  sizeStock?: string; // JSON: { "38": 5, "39": 0, ... }
-  rating: number;
-  accent: string;
-  badge: string | null;
-  featured: boolean;
-  bestSeller: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SeedCoupon {
-  id: string;
-  code: string;
-  type: "percent" | "fixed";
-  value: number;
-  minSubtotal: number;
-  active: boolean;
-  description: string;
-  expiresAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SeedReview {
-  id: string;
-  productId: string;
-  userId: string | null;
-  authorName: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
-}
-
-export interface SeedOrder {
-  id: string;
-  code: string;
-  userId: string | null;
-  status: string;
-  items: string;
-  subtotal: number;
-  shipping: number;
-  total: number;
-  customer: string;
-  address: string;
-  payment: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Passwords (scrypt hashes). Generated lazily by the store via hashPassword.
-// Here we only store the plaintext intended for seed; the store hashes them.
+// Senhas em texto: o db.ts gera o hash ao semear (só em desenvolvimento).
 export const SEED_USERS: { email: string; name: string; password: string; role: "customer" | "admin" }[] = [
   { email: "admin@astrofeet.com", name: "Administrador Astrofeet", password: "admin123", role: "admin" },
   { email: "explorador@astrofeet.com", name: "Cliente Demo", password: "explorador123", role: "customer" },
 ];
 
-const now = () => new Date().toISOString();
-
-export const SEED_PRODUCTS: Omit<SeedProduct, "id" | "createdAt" | "updatedAt">[] = [
+export const SEED_PRODUCTS = [
   {
     slug: "orion-runner",
     name: "Orion Runner",
@@ -192,18 +118,43 @@ export const SEED_PRODUCTS: Omit<SeedProduct, "id" | "createdAt" | "updatedAt">[
   },
 ];
 
-export const SEED_REVIEWS: { slug: string; authorName: string; rating: number; comment: string }[] = [
-  { slug: "orion-runner", authorName: "Lucas M.", rating: 5, comment: "Confortável demais, parece que tô flutuando. Visual de outro nível." },
-  { slug: "orion-runner", authorName: "Bianca R.", rating: 4, comment: "Lindo, só achei meio justo no peito do pé. Recomendo pegar meia numeração acima." },
-  { slug: "lunar-drift", authorName: "Pedro H.", rating: 5, comment: "Couro macio e acabamento impecável. Vale cada real." },
+export const SEED_REVIEWS = [
+  {
+    slug: "orion-runner",
+    authorName: "Lucas M.",
+    rating: 5,
+    comment: "Confortável demais, parece que tô flutuando. Visual de outro nível.",
+  },
+  {
+    slug: "orion-runner",
+    authorName: "Bianca R.",
+    rating: 4,
+    comment: "Lindo, só achei meio justo no peito do pé. Recomendo pegar meia numeração acima.",
+  },
+  {
+    slug: "lunar-drift",
+    authorName: "Pedro H.",
+    rating: 5,
+    comment: "Couro macio e acabamento impecável. Vale cada real.",
+  },
   { slug: "lunar-drift", authorName: "Ana C.", rating: 5, comment: "Combina com tudo, virei meu cotidiano." },
   { slug: "solar-pulse", authorName: "Júlia S.", rating: 5, comment: "Corro meia maratona com ele, leveza absurda." },
   { slug: "solar-pulse", authorName: "Rafael T.", rating: 5, comment: "Melhor tênis de performance que já tive." },
-  { slug: "void-classic", authorName: "Marcos L.", rating: 4, comment: "Clássico que faltava no meu armário. Aderência boa de skate." },
-  { slug: "meteor-air", authorName: "Camila V.", rating: 5, comment: "O câmara de ar é sensacional, parece trampolim." },
+  {
+    slug: "void-classic",
+    authorName: "Marcos L.",
+    rating: 4,
+    comment: "Clássico que faltava no meu armário. Aderência boa de skate.",
+  },
+  {
+    slug: "meteor-air",
+    authorName: "Camila V.",
+    rating: 5,
+    comment: "O câmara de ar é sensacional, parece trampolim.",
+  },
 ];
 
-export const SEED_COUPONS: Omit<SeedCoupon, "id" | "createdAt" | "updatedAt">[] = [
+export const SEED_COUPONS = [
   {
     code: "GALAXIA10",
     type: "percent",
@@ -232,5 +183,3 @@ export const SEED_COUPONS: Omit<SeedCoupon, "id" | "createdAt" | "updatedAt">[] 
     expiresAt: null,
   },
 ];
-
-export const nowIso = now;

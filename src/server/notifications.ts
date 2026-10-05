@@ -1,116 +1,78 @@
 import "server-only";
 import { db } from "@/server/db";
+import { formatPrice, orderStatusLabel } from "@/shared/format";
 import type { NotificationType, Order } from "@/shared/types";
 
-const ORDER_STATUS_LABELS: Record<string, string> = {
-  created: "Recebido",
-  paid: "Pago",
-  shipped: "Enviado",
-  delivered: "Entregue",
-  cancelled: "Cancelado",
-};
-
 /**
- * Mock email-sender. Records a notification in the DB so the admin can see
- * what would have been emailed to the customer. In production this would
- * delegate to a real transactional email provider (e.g. SES, Postmark).
- *
- * Returns the persisted notification id.
+ * E-mail simulado: grava a notificação no banco (o admin vê o que seria
+ * enviado). Em produção, delegaria a um provedor transacional (SES, Postmark…).
+ * Nunca lança: falha de notificação não pode derrubar pedido ou cadastro.
  */
-export async function sendEmailNotification(payload: {
+export async function sendEmailNotification(n: {
   type: NotificationType;
   to: string;
   subject: string;
   body: string;
   orderId?: string | null;
-}): Promise<string> {
-  const created = await db.notification.create({
-    data: {
-      type: payload.type,
-      to: payload.to,
-      subject: payload.subject,
-      body: payload.body,
-      orderId: payload.orderId ?? null,
-      sentAt: new Date(),
-      status: "sent",
-    },
-  });
-  return created.id as string;
+}): Promise<void> {
+  try {
+    await db.notification.create({ data: { ...n, orderId: n.orderId ?? null, sentAt: new Date(), status: "sent" } });
+  } catch (e) {
+    console.error("[notification]", e);
+  }
 }
 
-/** Build a friendly order-confirmation email body in pt-BR. */
-export function buildOrderConfirmationBody(order: {
-  code: string;
-  customer: { name: string };
-  items: Order["items"];
-  total: number;
-  subtotal: number;
-  shipping: number;
-  payment: Order["payment"];
-  address: Order["address"];
-}): string {
-  const itemLines = order.items
-    .map(
-      (i) =>
-        `  • ${i.name} — tam. ${i.size} × ${i.quantity} — R$${i.subtotal.toFixed(2).replace(".", ",")}`,
-    )
-    .join("\n");
-  const discount =
-    typeof order.payment.discount === "number" && order.payment.discount > 0
-      ? `\nDesconto (${order.payment.couponCode}): -R$${order.payment.discount.toFixed(2).replace(".", ",")}`
-      : "";
+export function buildOrderConfirmationBody(o: Order): string {
+  const { payment: p, address: a } = o;
   return [
-    `Olá, ${order.customer.name}!`,
+    `Olá, ${o.customer.name}!`,
     "",
-    `Recebemos seu pedido ${order.code} e já estamos separando os seus itens.`,
+    `Recebemos seu pedido ${o.code} e já estamos separando os seus itens.`,
     "",
     "ITENS DO PEDIDO:",
-    itemLines,
+    ...o.items.map((i) => `  • ${i.name} — tam. ${i.size} × ${i.quantity} — ${formatPrice(i.subtotal)}`),
     "",
-    `Subtotal: R$${order.subtotal.toFixed(2).replace(".", ",")}${discount}`,
-    `Frete: ${order.shipping === 0 ? "Grátis" : `R$${order.shipping.toFixed(2).replace(".", ",")}`}`,
-    `Total: R$${order.total.toFixed(2).replace(".", ",")}`,
+    `Subtotal: ${formatPrice(o.subtotal)}`,
+    ...(p.discount ? [`Desconto (${p.couponCode}): -${formatPrice(p.discount)}`] : []),
+    `Frete: ${o.shipping === 0 ? "Grátis" : formatPrice(o.shipping)}`,
+    `Total: ${formatPrice(o.total)}`,
     "",
-    `Entrega: ${order.address.street}, ${order.address.number} — ${order.address.city}/${order.address.state}`,
-    `Pagamento: ${order.payment.method === "card" ? `cartão final ${order.payment.cardLast4 ?? "—"}` : order.payment.method}`,
+    `Entrega: ${a.street}, ${a.number} — ${a.city}/${a.state}`,
+    `Pagamento: ${p.method === "card" ? `cartão final ${p.cardLast4 ?? "—"}` : p.method}`,
     "",
     "Obrigado por comprar na Astrofeet.",
     "— Equipe Astrofeet",
   ].join("\n");
 }
 
-/** Build a status-update email body. */
-export function buildOrderStatusBody(opts: {
-  code: string;
-  customerName: string;
-  newStatus: string;
-}): string {
-  const label = ORDER_STATUS_LABELS[opts.newStatus] ?? opts.newStatus;
-  const lines: string[] = [
-    `Olá, ${opts.customerName}!`,
+const STATUS_NOTE: Record<string, string> = {
+  paid: "Recebemos o pagamento. Seu pedido já está em preparação.",
+  shipped: "Seu pedido foi enviado! Em breve ele chega na sua porta.",
+  delivered: "Seu tênis chegou! Esperamos que você aproveite cada passo.",
+  cancelled: "Seu pedido foi cancelado. Se isso foi um engano, fale com nosso assistente para reabrir.",
+};
+
+export function buildOrderStatusBody(o: { code: string; customerName: string; newStatus: string }): string {
+  const note = STATUS_NOTE[o.newStatus];
+  return [
+    `Olá, ${o.customerName}!`,
     "",
-    `Atualizamos o status do seu pedido ${opts.code}.`,
+    `Atualizamos o status do seu pedido ${o.code}.`,
     "",
-    `Novo status: ${label}.`,
-  ];
-  if (opts.newStatus === "shipped") {
-    lines.push(
-      "",
-      "Seu pedido foi enviado! Em breve ele chega na sua porta.",
-    );
-  } else if (opts.newStatus === "delivered") {
-    lines.push(
-      "",
-      "Seu sneaker chegou! Esperamos que você aproveite cada passo.",
-    );
-  } else if (opts.newStatus === "cancelled") {
-    lines.push(
-      "",
-      "Seu pedido foi cancelado. Se isso foi um engano, fale com nosso assistente para reabrir.",
-    );
-  } else if (opts.newStatus === "paid") {
-    lines.push("", "Recebemos o pagamento. Seu pedido já está em preparação.");
-  }
-  lines.push("", "— Equipe Astrofeet");
-  return lines.join("\n");
+    `Novo status: ${orderStatusLabel(o.newStatus)}.`,
+    ...(note ? ["", note] : []),
+    "",
+    "— Equipe Astrofeet",
+  ].join("\n");
+}
+
+/** Notifica a mudança de status de um pedido já serializado. */
+export function notifyOrderStatus(order: Order, newStatus: string) {
+  return sendEmailNotification({
+    type: "order_status",
+    to: order.customer.email,
+    subject: `Pedido ${order.code} · status atualizado`,
+    body: buildOrderStatusBody({ code: order.code, customerName: order.customer.name, newStatus }),
+    orderId: order.id,
+  });
 }

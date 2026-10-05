@@ -3,15 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import {
-  Search,
-  SlidersHorizontal,
-  X,
-  RotateCcw,
-  Sparkles,
-  PackageSearch,
-  Compass,
-} from "lucide-react";
+import { Search, SlidersHorizontal, X, RotateCcw, PackageSearch, Compass } from "lucide-react";
 import { api } from "@/client/api";
 import { useUIStore } from "@/stores/ui";
 import { formatPrice } from "@/shared/format";
@@ -21,21 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { fadeUp } from "@/components/shared/motion";
 
 const SIZES = [36, 37, 38, 39, 40, 41, 42, 43, 44];
 const PRICE_MIN = 0;
@@ -83,9 +63,7 @@ export function ProductsView() {
   // ---- Local UI state (initialized from store params on mount) ----
   const [searchInput, setSearchInput] = useState<string>(params.q ?? "");
   const [q, setQ] = useState<string>(params.q ?? "");
-  const [sort, setSort] = useState<SortValue>(
-    (params.sort as SortValue) || "newest",
-  );
+  const [sort, setSort] = useState<SortValue>((params.sort as SortValue) || "newest");
   const [filters, setFilters] = useState<Filters>({
     category: params.category ?? "Todos",
     brand: params.brand ?? "Todas",
@@ -109,8 +87,7 @@ export function ProductsView() {
   const apiParams = useMemo(() => {
     const p: Record<string, string | number | boolean> = { sort };
     if (q) p.q = q;
-    if (filters.category && filters.category !== "Todos")
-      p.category = filters.category;
+    if (filters.category && filters.category !== "Todos") p.category = filters.category;
     if (filters.brand && filters.brand !== "Todas") p.brand = filters.brand;
     if (filters.size) p.size = filters.size;
     if (filters.min != null) p.min = filters.min;
@@ -182,11 +159,7 @@ export function ProductsView() {
       <FilterGroup title="Categoria">
         <ChipRow>
           {categories.map((c) => (
-            <Chip
-              key={c}
-              active={filters.category === c}
-              onClick={() => setCategory(c)}
-            >
+            <Chip key={c} active={filters.category === c} onClick={() => setCategory(c)}>
               {c}
             </Chip>
           ))}
@@ -197,11 +170,7 @@ export function ProductsView() {
       <FilterGroup title="Marca">
         <ChipRow>
           {brands.map((b) => (
-            <Chip
-              key={b}
-              active={filters.brand === b}
-              onClick={() => setBrand(b)}
-            >
+            <Chip key={b} active={filters.brand === b} onClick={() => setBrand(b)}>
               {b}
             </Chip>
           ))}
@@ -242,13 +211,9 @@ export function ProductsView() {
           className="py-2"
         />
         <div className="mt-3 flex items-center justify-between text-sm">
-          <span className="font-medium text-foreground">
-            {formatPrice(priceRange[0])}
-          </span>
+          <span className="font-medium text-foreground">{formatPrice(priceRange[0])}</span>
           <span className="text-foreground/30">—</span>
-          <span className="font-medium text-foreground">
-            {formatPrice(priceRange[1])}
-          </span>
+          <span className="font-medium text-foreground">{formatPrice(priceRange[1])}</span>
         </div>
       </FilterGroup>
 
@@ -267,29 +232,26 @@ export function ProductsView() {
   );
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-6 lg:pt-16">
+    <div className="mx-auto max-w-7xl px-4 pt-10 pb-24 sm:px-6 lg:pt-16">
       {/* ---------- Header ---------- */}
       <header className="flex flex-col gap-3">
         <motion.span
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--brand)]"
+          {...fadeUp}
+          className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.25em] text-[var(--brand)] uppercase"
         >
           Catálogo
         </motion.span>
         <motion.h1
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
+          {...fadeUp}
           transition={{ delay: 0.05 }}
-          className="text-balance text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl"
+          className="text-4xl leading-[1.05] font-black tracking-tight text-balance sm:text-5xl"
         >
           {pageTitle}
         </motion.h1>
         <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
+          {...fadeUp}
           transition={{ delay: 0.1 }}
-          className="max-w-xl text-pretty text-sm text-muted-foreground sm:text-base"
+          className="max-w-xl text-sm text-pretty text-muted-foreground sm:text-base"
         >
           Filtre por categoria, marca, tamanho ou preço e encontre o par certo para você.
         </motion.p>
@@ -298,20 +260,20 @@ export function ProductsView() {
       {/* ---------- Toolbar: search + sort + mobile filter trigger ---------- */}
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Buscar por nome, marca ou estilo…"
             aria-label="Buscar modelos"
-            className="h-11 rounded-full border-black/10 bg-black/[0.03] pl-11 pr-10 text-sm placeholder:text-muted-foreground/70 focus-visible:border-[var(--brand)]/50 focus-visible:ring-[var(--brand)]/20"
+            className="h-11 rounded-full border-black/10 bg-black/[0.03] pr-10 pl-11 text-sm placeholder:text-muted-foreground/70 focus-visible:border-[var(--brand)]/50 focus-visible:ring-[var(--brand)]/20"
           />
           {searchInput && (
             <button
               type="button"
               onClick={() => setSearchInput("")}
-              className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-black/[0.06] hover:text-foreground"
+              className="absolute top-1/2 right-3 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-black/[0.06] hover:text-foreground"
               aria-label="Limpar busca"
             >
               <X className="h-4 w-4" />
@@ -357,22 +319,16 @@ export function ProductsView() {
                   Filtros
                 </SheetTitle>
                 {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-xs text-[var(--brand)] hover:underline"
-                  >
+                  <button onClick={clearFilters} className="text-xs text-[var(--brand)] hover:underline">
                     Limpar
                   </button>
                 )}
               </SheetHeader>
-              <div className="flex-1 overflow-y-auto px-5 py-5">
-                {FiltersPanel}
-              </div>
+              <div className="flex-1 overflow-y-auto px-5 py-5">{FiltersPanel}</div>
               <div className="border-t border-black/10 p-4">
                 <SheetClose asChild>
                   <Button className="h-11 w-full rounded-full bg-[var(--brand)] text-sm font-bold text-white">
-                    Ver {products.length}{" "}
-                    {products.length === 1 ? "modelo" : "modelos"}
+                    Ver {products.length} {products.length === 1 ? "modelo" : "modelos"}
                   </Button>
                 </SheetClose>
               </div>
@@ -387,14 +343,9 @@ export function ProductsView() {
         <aside className="hidden lg:block">
           <div className="sticky top-24 rounded-3xl border border-black/10 bg-black/[0.02] p-5 backdrop-blur">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Filtros
-              </h2>
+              <h2 className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">Filtros</h2>
               {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="text-xs text-[var(--brand)] transition hover:underline"
-                >
+                <button onClick={clearFilters} className="text-xs text-[var(--brand)] transition hover:underline">
                   Limpar
                 </button>
               )}
@@ -414,12 +365,8 @@ export function ProductsView() {
                 <span className="text-amber-700">Falha ao carregar.</span>
               ) : (
                 <>
-                  <span className="font-bold text-foreground">
-                    {products.length}
-                  </span>{" "}
-                  {products.length === 1
-                    ? "modelo encontrado"
-                    : "modelos encontrados"}
+                  <span className="font-bold text-foreground">{products.length}</span>{" "}
+                  {products.length === 1 ? "modelo encontrado" : "modelos encontrados"}
                 </>
               )}
             </p>
@@ -463,18 +410,10 @@ export function ProductsView() {
 
 // ---------- Sub-components ----------
 
-function FilterGroup({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-        {title}
-      </h3>
+      <h3 className="mb-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">{title}</h3>
       {children}
     </div>
   );
@@ -484,15 +423,7 @@ function ChipRow({ children }: { children: ReactNode }) {
   return <div className="flex flex-wrap gap-2">{children}</div>;
 }
 
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
@@ -514,7 +445,7 @@ function ProductCardSkeleton() {
   return (
     <div className="overflow-hidden rounded-3xl border border-black/10 bg-black/[0.02] p-3">
       <Skeleton className="aspect-square w-full rounded-2xl bg-black/[0.036]" />
-      <div className="space-y-2 px-2 pb-1 pt-3">
+      <div className="space-y-2 px-2 pt-3 pb-1">
         <Skeleton className="h-3 w-16 bg-black/[0.036]" />
         <Skeleton className="h-4 w-32 bg-black/[0.036]" />
         <Skeleton className="h-6 w-24 bg-black/[0.036]" />
@@ -538,8 +469,7 @@ function EmptyState({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
+      {...fadeUp}
       className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-black/10 bg-black/[0.02] p-12 text-center backdrop-blur"
     >
       <div className="flex h-16 w-16 items-center justify-center rounded-full border border-black/10 bg-black/[0.03]">
@@ -547,14 +477,9 @@ function EmptyState({
       </div>
       <div>
         <h3 className="text-lg font-bold">{title}</h3>
-        <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-          {description}
-        </p>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
       </div>
-      <Button
-        onClick={onAction}
-        className="h-11 rounded-full bg-[var(--brand)] px-6 text-sm font-bold text-white"
-      >
+      <Button onClick={onAction} className="h-11 rounded-full bg-[var(--brand)] px-6 text-sm font-bold text-white">
         {actionLabel}
       </Button>
     </motion.div>

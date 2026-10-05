@@ -47,17 +47,14 @@ export function ShipAssistant() {
     setInput("");
     setLoading(true);
     try {
-      const reply = await api.chat(
-        next.map((m) => ({ role: m.role, content: m.content })),
-      );
+      const reply = await api.chat(next.map((m) => ({ role: m.role, content: m.content })));
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
     } catch {
       setMessages((m) => [
         ...m,
         {
           role: "assistant",
-          content:
-            "Tive um problema para responder agora, mas pode tentar de novo!",
+          content: "Tive um problema para responder agora, mas pode tentar de novo!",
         },
       ]);
     } finally {
@@ -70,7 +67,7 @@ export function ShipAssistant() {
       {/* Floating ship button */}
       <motion.button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full"
+        className="fixed right-5 bottom-5 z-50 flex h-14 w-14 items-center justify-center rounded-full"
         aria-label="Abrir assistente"
         animate={{ y: [0, -8, 0] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -82,7 +79,7 @@ export function ShipAssistant() {
           {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
         </span>
         {!open && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
+          <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--hot)] opacity-75" />
             <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--hot)]" />
           </span>
@@ -96,7 +93,7 @@ export function ShipAssistant() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 280, damping: 26 }}
-            className="gradient-border-animated fixed bottom-24 right-5 z-50 flex h-[30rem] w-[min(22rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-3xl glass-strong shadow-2xl"
+            className="gradient-border-animated glass-strong fixed right-5 bottom-24 z-50 flex h-[30rem] w-[min(22rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-3xl shadow-2xl"
           >
             {/* Header */}
             <div className="flex items-center gap-3 border-b border-black/10 bg-[var(--surface)] p-4">
@@ -104,27 +101,16 @@ export function ShipAssistant() {
                 <MessageCircle className="h-5 w-5" />
               </span>
               <div className="flex-1">
-                <p className="text-sm font-bold leading-tight">Assistente Astrofeet</p>
-                <p className="text-xs text-muted-foreground">
-                  Respostas na hora, 24h
-                </p>
+                <p className="text-sm leading-tight font-bold">Assistente Astrofeet</p>
+                <p className="text-xs text-muted-foreground">Respostas na hora, 24h</p>
               </div>
               <Sparkles className="h-4 w-4 text-[var(--brand)]" />
             </div>
 
             {/* Messages */}
-            <div
-              ref={scrollRef}
-              className="flex-1 space-y-3 overflow-y-auto p-4"
-            >
+            <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
               {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "flex",
-                    m.role === "user" ? "justify-end" : "justify-start",
-                  )}
-                >
+                <div key={i} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
                   <div
                     className={cn(
                       "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
@@ -195,9 +181,6 @@ export function ShipAssistant() {
 
 function Dot({ delay }: { delay: string }) {
   return (
-    <span
-      className="h-1.5 w-1.5 animate-bounce rounded-full bg-foreground/60"
-      style={{ animationDelay: delay }}
-    />
+    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-foreground/60" style={{ animationDelay: delay }} />
   );
 }

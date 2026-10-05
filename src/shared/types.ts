@@ -1,4 +1,5 @@
 // Shared domain types for Astrofeet
+import type { ORDER_STATUSES } from "@/shared/rules";
 
 export type Role = "customer" | "admin";
 
@@ -80,11 +81,7 @@ export interface Address {
   createdAt: string;
 }
 
-export type NotificationType =
-  | "order_created"
-  | "order_status"
-  | "coupon_applied"
-  | "welcome";
+export type NotificationType = "order_created" | "order_status" | "coupon_applied" | "welcome";
 
 export interface Notification {
   id: string;
@@ -127,12 +124,7 @@ export interface OrderLineItem {
   subtotal: number;
 }
 
-export type OrderStatus =
-  | "created"
-  | "paid"
-  | "shipped"
-  | "delivered"
-  | "cancelled";
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export interface Order {
   id: string;

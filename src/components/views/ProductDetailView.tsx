@@ -5,16 +5,12 @@ import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft,
   ChevronRight,
-  Minus,
-  Plus,
   ShoppingCart,
   Star,
   Truck,
   RefreshCw,
   ShieldCheck,
-  Check,
   Send,
   Heart,
   Ruler,
@@ -39,40 +35,31 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ProductCard } from "./ProductCard";
+import { fadeUp } from "@/components/shared/motion";
+import { QuantityStepper, SizePicker } from "@/components/shared/ProductControls";
+import { stockFor } from "@/shared/rules";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { useStockAlerts } from "@/hooks/use-stock-alerts";
 
 const FREE_SHIPPING_THRESHOLD = 300;
-
 
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function Stars({
-  value,
-  size = 16,
-  className,
-}: {
-  value: number;
-  size?: number;
-  className?: string;
-}) {
+function Stars({ value, size = 16, className }: { value: number; size?: number; className?: string }) {
   return (
     <div className={cn("flex items-center gap-0.5", className)}>
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
           style={{ width: size, height: size }}
-          className={cn(
-            n <= Math.round(value)
-              ? "fill-amber-400 text-amber-700"
-              : "fill-transparent text-black/15",
-          )}
+          className={cn(n <= Math.round(value) ? "fill-amber-400 text-amber-700" : "fill-transparent text-black/15")}
         />
       ))}
     </div>
@@ -93,10 +80,8 @@ function TrustRow() {
           className="flex flex-col items-center gap-1.5 rounded-2xl border border-black/10 bg-black/[0.02] p-3 text-center"
         >
           <it.icon className="h-5 w-5 text-[var(--brand)]" />
-          <p className="text-xs font-semibold leading-tight">{it.title}</p>
-          <p className="text-[10px] text-muted-foreground leading-tight">
-            {it.sub}
-          </p>
+          <p className="text-xs leading-tight font-semibold">{it.title}</p>
+          <p className="text-[10px] leading-tight text-muted-foreground">{it.sub}</p>
         </div>
       ))}
     </div>
@@ -120,236 +105,50 @@ function isProductOutOfStock(product: Product): boolean {
   return product.stock <= 0;
 }
 
-/**
- * Glass banner shown in the Info panel when a product is fully sold out.
- * Offers a one-tap subscription to the back-in-stock alert.
- */
+/** Produto esgotado: oferece o alerta de volta ao estoque. */
 function StockAlertBanner({ product }: { product: Product }) {
-  const user = useAuthStore((s) => s.user);
-  const openAuth = useUIStore((s) => s.openAuth);
-  const queryClient = useQueryClient();
-
-  const { data: subscribedIds } = useQuery({
-    queryKey: ["stock-alerts"],
-    queryFn: () => api.listStockAlerts(),
-    enabled: !!user,
-  });
-
-  const isSubscribed = (subscribedIds ?? []).includes(product.id);
-  const [email, setEmail] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [unsubscribing, setUnsubscribing] = useState(false);
-
-  // Prefill email from auth user when logged in.
-  useEffect(() => {
-    if (user?.email) setEmail(user.email);
-  }, [user?.email]);
-
-  async function handleSubscribe(e: React.FormEvent) {
-    e.preventDefault();
-    if (!user) {
-      openAuth("login");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await api.subscribeStockAlert(product.id);
-      await queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
-      toast.success("Você será avisado quando este sneaker voltar ao estoque!");
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível ativar o alerta agora.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function handleUnsubscribe() {
-    setUnsubscribing(true);
-    try {
-      await api.unsubscribeStockAlert(product.id);
-      await queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
-      toast.success("Inscrição cancelada.");
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível cancelar a inscrição.",
-      );
-    } finally {
-      setUnsubscribing(false);
-    }
-  }
-
+  const alerts = useStockAlerts();
+  const on = alerts.has(product.id);
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="glass relative overflow-hidden rounded-2xl border border-amber-500/30 p-4"
-    >
-      {/* Amber/violet accent glow */}
-
-      <div className="relative flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 ring-1 ring-inset ring-amber-500/30">
-          <Bell className="h-5 w-5 text-amber-700" />
-        </div>
-
-        <div className="min-w-0 flex-1 space-y-3">
-          <div>
-            <p className="text-sm font-bold text-rose-700">Produto esgotado</p>
-            <p className="text-xs text-muted-foreground">
-              Avise-me quando voltar ao estoque
-            </p>
-          </div>
-
-          {isSubscribed ? (
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--success)]/40 bg-[var(--success)]/15 px-3 py-1 text-xs font-bold text-[var(--success)]">
-                <Check className="h-3.5 w-3.5" />
-                Inscrito
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleUnsubscribe}
-                disabled={unsubscribing}
-                className="h-8 gap-1.5 rounded-full border-black/10 px-3 text-xs font-medium text-muted-foreground hover:bg-black/[0.03] hover:text-foreground"
-              >
-                {unsubscribing ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <BellOff className="h-3.5 w-3.5" />
-                )}
-                Cancelar inscrição
-              </Button>
-            </div>
-          ) : !user ? (
-            <div className="flex flex-wrap items-center gap-2.5">
-              <p className="text-xs text-muted-foreground">
-                Faça login para ser avisado.
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => openAuth("login")}
-                className="h-8 gap-1.5 rounded-full bg-[var(--brand)] px-3 text-xs font-bold text-white hover:opacity-90"
-              >
-                Entrar
-              </Button>
-            </div>
-          ) : (
-            <form
-              onSubmit={handleSubscribe}
-              className="flex flex-col gap-2 sm:flex-row sm:items-center"
-            >
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                aria-label="Seu e-mail"
-                className="h-9 rounded-full border-black/10 bg-black/[0.02] text-sm"
-              />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={submitting}
-                className="h-9 shrink-0 gap-1.5 rounded-full bg-[var(--brand)] px-5 text-sm font-bold text-white hover:opacity-90"
-              >
-                {submitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Bell className="h-4 w-4" />
-                )}
-                Avise-me
-              </Button>
-            </form>
-          )}
-        </div>
+    <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4">
+      <Bell className="h-5 w-5 shrink-0 text-amber-800" />
+      <div className="flex-1">
+        <p className="text-sm font-bold text-rose-700">Produto esgotado</p>
+        <p className="text-xs text-muted-foreground">
+          {on ? "Você será avisado quando voltar." : "Avise-me quando voltar ao estoque."}
+        </p>
       </div>
-    </motion.div>
+      <Button
+        size="sm"
+        variant={on ? "outline" : "default"}
+        disabled={alerts.busy}
+        onClick={() => alerts.set(product.id, !on)}
+        className="rounded-full"
+      >
+        {on ? <BellOff className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
+        {on ? "Cancelar alerta" : "Avise-me"}
+      </Button>
+    </div>
   );
 }
 
-/**
- * Tiny inline hint shown under the size selector when the *selected* size
- * has 1-2 units left. Offers a quick subscribe link so shoppers can be
- * notified if it sells out before they checkout.
- */
-function LowStockHint({
-  product,
-  count,
-}: {
-  product: Product;
-  count: number;
-}) {
-  const user = useAuthStore((s) => s.user);
-  const openAuth = useUIStore((s) => s.openAuth);
-  const queryClient = useQueryClient();
-
-  const { data: subscribedIds } = useQuery({
-    queryKey: ["stock-alerts"],
-    queryFn: () => api.listStockAlerts(),
-    enabled: !!user,
-  });
-
-  const isSubscribed = (subscribedIds ?? []).includes(product.id);
-  const [busy, setBusy] = useState(false);
-
-  async function handleSubscribe() {
-    if (!user) {
-      openAuth("login");
-      return;
-    }
-    setBusy(true);
-    try {
-      await api.subscribeStockAlert(product.id);
-      await queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
-      toast.success("Você será avisado se este sneaker esgotar antes!");
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível ativar o alerta agora.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (isSubscribed) {
-    return (
-      <p className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--success)]">
-        <Check className="h-3.5 w-3.5" />
-        Alerta ativo para este sneaker.
-      </p>
-    );
-  }
-
+/** Tamanho escolhido com 1–2 unidades: oferece o alerta caso esgote antes. */
+function LowStockHint({ product, count }: { product: Product; count: number }) {
+  const alerts = useStockAlerts();
   return (
-    <p className="inline-flex flex-wrap items-center gap-1.5 text-xs text-amber-700">
-      <span>
-        Estoque baixo neste tamanho — apenas {count}{" "}
-        unidade{count === 1 ? "" : "s"}.
-      </span>
-      <button
-        type="button"
-        onClick={handleSubscribe}
-        disabled={busy}
-        className="inline-flex items-center gap-1 font-semibold underline-offset-2 transition hover:underline disabled:opacity-50"
-      >
-        {busy ? (
-          <Loader2 className="h-3 w-3 animate-spin" />
-        ) : (
-          <Bell className="h-3 w-3" />
-        )}
-        Avise-me se esgotar antes.
-      </button>
+    <p className="text-xs text-amber-800">
+      Estoque baixo neste tamanho — {count === 1 ? "última unidade" : `apenas ${count} unidades`}.{" "}
+      {alerts.has(product.id) ? (
+        <span className="font-semibold text-[var(--success)]">Alerta ativo.</span>
+      ) : (
+        <button
+          onClick={() => alerts.set(product.id, true)}
+          disabled={alerts.busy}
+          className="font-semibold underline-offset-2 hover:underline"
+        >
+          Avise-me se esgotar.
+        </button>
+      )}
     </p>
   );
 }
@@ -360,7 +159,7 @@ function LowStockHint({
 
 function DetailSkeleton() {
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 pt-8 pb-20 sm:px-6">
       <div className="grid gap-10 lg:grid-cols-2">
         <div className="space-y-4">
           <Skeleton className="aspect-square w-full rounded-3xl" />
@@ -397,12 +196,10 @@ function Gallery({ product }: { product: Product }) {
   return (
     <div className="space-y-4">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        {...fadeUp}
         transition={{ duration: 0.5 }}
         className="relative aspect-square overflow-hidden rounded-3xl bg-[var(--surface)]"
       >
-
         <AnimatePresence mode="wait">
           <motion.img
             key={currentImage}
@@ -417,7 +214,7 @@ function Gallery({ product }: { product: Product }) {
         </AnimatePresence>
 
         {/* Badges */}
-        <div className="absolute left-3 top-3 flex flex-col gap-1.5">
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           {product.badge && (
             <span
               className={cn(
@@ -433,7 +230,7 @@ function Gallery({ product }: { product: Product }) {
             </span>
           )}
           {product.stock <= 5 && product.stock > 0 && (
-            <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase text-amber-700 backdrop-blur">
+            <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 uppercase backdrop-blur">
               Últimas {product.stock}
             </span>
           )}
@@ -450,12 +247,10 @@ function Gallery({ product }: { product: Product }) {
               aria-label={`Ver ângulo ${angleLabels[i % angleLabels.length]}`}
               className={cn(
                 "relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-black/[0.02] p-1 transition-all duration-200",
-                currentImage === i
-                  ? "border-[var(--brand)]"
-                  : "border-black/10 hover:border-black/25",
+                currentImage === i ? "border-[var(--brand)]" : "border-black/10 hover:border-black/25",
               )}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {}
               <img
                 src={src}
                 alt={`${product.name} ângulo ${angleLabels[i % angleLabels.length]}`}
@@ -473,13 +268,7 @@ function Gallery({ product }: { product: Product }) {
 // Info panel
 // ---------------------------------------------------------------------------
 
-function Info({
-  product,
-  reviews,
-}: {
-  product: Product;
-  reviews: Review[];
-}) {
+function Info({ product, reviews }: { product: Product; reviews: Review[] }) {
   const add = useCartStore((s) => s.add);
   const openCart = useCartStore((s) => s.open);
   const navigate = useUIStore((s) => s.navigate);
@@ -503,12 +292,7 @@ function Info({
   }, []);
 
   // Per-size-aware max quantity (fall back to global stock when sizeStock absent).
-  const sizeStockMap = product.sizeStock ?? {};
-  const selectedSizeStock =
-    size !== null ? sizeStockMap[String(size)] : undefined;
-  const effectiveMax =
-    selectedSizeStock !== undefined ? selectedSizeStock : product.stock;
-  const maxQty = Math.max(1, Math.min(effectiveMax, 99));
+  const maxQty = Math.max(1, Math.min(size === null ? product.stock : stockFor(product, size), 99));
   const installment = product.price / 10;
   const freeShipping = product.price >= FREE_SHIPPING_THRESHOLD;
   const reviewCount = reviews.length;
@@ -550,25 +334,14 @@ function Info({
     toggleWishlist(product);
     setHeartBump(true);
     setTimeout(() => setHeartBump(false), 450);
-    toast.success(
-      inWishlist
-        ? `${product.name} saiu da sua lista`
-        : `${product.name} salvo na lista de desejos`,
-    );
+    toast.success(inWishlist ? `${product.name} saiu da sua lista` : `${product.name} salvo na lista de desejos`);
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.1 }}
-      className="flex flex-col gap-5"
-    >
+    <motion.div {...fadeUp} transition={{ duration: 0.5, delay: 0.1 }} className="flex flex-col gap-5">
       {/* Brand + wishlist */}
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-          {product.brand}
-        </p>
+        <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">{product.brand}</p>
         <button
           onClick={handleWishlist}
           className={cn(
@@ -577,29 +350,22 @@ function Info({
               ? "border-[var(--hot)]/50 bg-[var(--hot)]/20 text-[var(--hot)]"
               : "border-black/10 bg-black/[0.03] text-foreground/70 hover:text-foreground",
           )}
-          aria-label={
-            inWishlist ? "Remover da lista de desejos" : "Salvar na lista de desejos"
-          }
+          aria-label={inWishlist ? "Remover da lista de desejos" : "Salvar na lista de desejos"}
           aria-pressed={inWishlist}
         >
-          <Heart
-            className={cn("h-5 w-5", heartBump && "animate-heartbeat", inWishlist && "fill-current")}
-          />
+          <Heart className={cn("h-5 w-5", heartBump && "animate-heartbeat", inWishlist && "fill-current")} />
         </button>
       </div>
 
       {/* Name */}
-      <h1 className="text-3xl font-black leading-tight sm:text-4xl">
-        {product.name}
-      </h1>
+      <h1 className="text-3xl leading-tight font-black sm:text-4xl">{product.name}</h1>
 
       {/* Rating */}
       <div className="flex items-center gap-2 text-sm">
         <Stars value={product.rating} size={16} />
         <span className="font-semibold">{product.rating.toFixed(1)}</span>
         <span className="text-muted-foreground">
-          · {reviewCount}{" "}
-          {reviewCount === 1 ? "avaliação" : "avaliações"}
+          · {reviewCount} {reviewCount === 1 ? "avaliação" : "avaliações"}
         </span>
       </div>
 
@@ -607,21 +373,10 @@ function Info({
       <div className="space-y-1">
         <p className="text-3xl font-bold">{formatPrice(product.price)}</p>
         <p className="text-sm text-muted-foreground">
-          ou 10x de{" "}
-          <span className="font-semibold text-foreground">
-            {formatPrice(installment)}
-          </span>{" "}
-          sem juros
+          ou 10x de <span className="font-semibold text-foreground">{formatPrice(installment)}</span> sem juros
         </p>
-        <p
-          className={cn(
-            "text-xs font-medium",
-            freeShipping ? "text-[var(--success)]" : "text-muted-foreground",
-          )}
-        >
-          {freeShipping
-            ? "Frete grátis para este produto"
-            : "Frete grátis em pedidos acima de R$300"}
+        <p className={cn("text-xs font-medium", freeShipping ? "text-[var(--success)]" : "text-muted-foreground")}>
+          {freeShipping ? "Frete grátis para este produto" : "Frete grátis em pedidos acima de R$300"}
         </p>
       </div>
 
@@ -629,8 +384,7 @@ function Info({
 
       {/* Short description */}
       <p className="text-sm leading-relaxed text-muted-foreground">
-        {product.description.split("\n")[0]?.slice(0, 220) ??
-          "Modelo exclusivo Astrofeet."}
+        {product.description.split("\n")[0]?.slice(0, 220) ?? "Modelo exclusivo Astrofeet."}
       </p>
 
       {/* Size selector */}
@@ -645,84 +399,16 @@ function Info({
             Guia de medidas
           </button>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {product.sizes.map((s) => {
-            const isSelected = size === s;
-            // Per-size stock: prefer sizeStock map, fall back to global stock.
-            const sizeStockMap = product.sizeStock ?? {};
-            const perSize = sizeStockMap[String(s)];
-            const effectiveStock =
-              perSize !== undefined ? perSize : product.stock;
-            const soldOut = effectiveStock <= 0;
-            const lowStock = !soldOut && effectiveStock <= 2;
-            return (
-              <button
-                key={s}
-                onClick={() => !soldOut && selectSize(s)}
-                disabled={soldOut}
-                aria-pressed={isSelected}
-                title={
-                  soldOut
-                    ? `Tamanho ${s} esgotado`
-                    : lowStock
-                      ? `Últimas ${effectiveStock} unidades`
-                      : `Tamanho ${s}`
-                }
-                className={cn(
-                  "relative h-12 min-w-14 rounded-xl border px-3 text-sm font-bold transition",
-                  soldOut && "cursor-not-allowed opacity-40 line-through",
-                  isSelected && !soldOut
-                    ? "border-foreground bg-foreground text-background"
-                    : lowStock
-                      ? "border-amber-500/40 bg-amber-500/5 text-amber-700 hover:border-amber-500/60"
-                      : "border-black/10 bg-black/[0.02] hover:border-black/25 hover:bg-black/[0.036]",
-                )}
-              >
-                {s}
-                {isSelected && !soldOut && (
-                  <Check className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[var(--brand)] p-0.5 text-white" />
-                )}
-                {!isSelected && lowStock && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-500/80 px-1 text-[8px] font-bold text-foreground">
-                    {effectiveStock} rest.
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <SizePicker product={product} value={size} onChange={selectSize} />
         {isProductOutOfStock(product) && <StockAlertBanner product={product} />}
-        {size !== null && (() => {
-          const sizeStockMap = product.sizeStock ?? {};
-          const perSize = sizeStockMap[String(size)];
-          const eff = perSize !== undefined ? perSize : product.stock;
-          return eff <= 2 && eff > 0 ? (
-            <LowStockHint product={product} count={eff} />
-          ) : null;
-        })()}
+        {size !== null && stockFor(product, size) > 0 && stockFor(product, size) <= 2 && (
+          <LowStockHint product={product} count={stockFor(product, size)} />
+        )}
       </div>
 
       {/* Quantity + Stock */}
       <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-1 rounded-full border border-black/10 bg-black/[0.02] p-1">
-          <button
-            onClick={() => setQty((q) => Math.max(1, q - 1))}
-            disabled={qty <= 1}
-            aria-label="Diminuir quantidade"
-            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-black/[0.06] disabled:opacity-40"
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <span className="w-8 text-center text-sm font-bold">{qty}</span>
-          <button
-            onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
-            disabled={qty >= maxQty}
-            aria-label="Aumentar quantidade"
-            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-black/[0.06] disabled:opacity-40"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
+        <QuantityStepper value={qty} onChange={setQty} max={maxQty} />
 
         {product.stock > 5 ? (
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
@@ -778,7 +464,7 @@ function Info({
             <div className="flex items-center gap-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[11px] text-muted-foreground">{product.name}</p>
-                <p className="whitespace-nowrap text-base font-bold">{formatPrice(product.price)}</p>
+                <p className="text-base font-bold whitespace-nowrap">{formatPrice(product.price)}</p>
               </div>
               <Button
                 tabIndex={ctaVisible || soldOut ? -1 : 0}
@@ -813,13 +499,7 @@ function Info({
 // Reviews summary + form + list
 // ---------------------------------------------------------------------------
 
-function InteractiveStars({
-  value,
-  onChange,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-}) {
+function InteractiveStars({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hover, setHover] = useState(0);
   const display = hover || value;
 
@@ -849,13 +529,7 @@ function InteractiveStars({
   );
 }
 
-function ReviewsSection({
-  product,
-  reviews,
-}: {
-  product: Product;
-  reviews: Review[];
-}) {
+function ReviewsSection({ product, reviews }: { product: Product; reviews: Review[] }) {
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const openAuth = useUIStore((s) => s.openAuth);
@@ -883,9 +557,7 @@ function ReviewsSection({
     [reviews],
   );
 
-  const avgRating = reviews.length > 0
-    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
-    : product.rating;
+  const avgRating = reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : product.rating;
 
   function resetForm() {
     setRating(0);
@@ -926,11 +598,7 @@ function ReviewsSection({
       toast.success("Avaliação enviada!");
       resetForm();
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível enviar sua avaliação.",
-      );
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar sua avaliação.");
     } finally {
       setSubmitting(false);
     }
@@ -949,12 +617,8 @@ function ReviewsSection({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-black sm:text-3xl">Avaliações</h2>
-          <Badge
-            variant="secondary"
-            className="border-black/10 bg-black/[0.03] text-muted-foreground"
-          >
-            {reviews.length}{" "}
-            {reviews.length === 1 ? "comentário" : "comentários"}
+          <Badge variant="secondary" className="border-black/10 bg-black/[0.03] text-muted-foreground">
+            {reviews.length} {reviews.length === 1 ? "comentário" : "comentários"}
           </Badge>
         </div>
 
@@ -987,22 +651,18 @@ function ReviewsSection({
         {/* Rating distribution panel — above the review list */}
         {reviews.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...fadeUp}
             transition={{ duration: 0.4 }}
             className="glass rounded-2xl border border-black/10 p-6 text-center sm:p-8"
           >
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-black/10 bg-black/[0.02]">
               <Star className="h-7 w-7 fill-amber-400 text-amber-700" />
             </div>
-            <p className="font-semibold text-foreground">
-              Ainda não há avaliações. Seja o primeiro a avaliar!
-            </p>
+            <p className="font-semibold text-foreground">Ainda não há avaliações. Seja o primeiro a avaliar!</p>
           </motion.div>
         ) : (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...fadeUp}
             transition={{ duration: 0.4 }}
             className="glass rounded-2xl border border-black/10 p-4 sm:p-6"
           >
@@ -1010,29 +670,23 @@ function ReviewsSection({
               {/* Left column — average rating */}
               <div className="flex flex-col items-center justify-center text-center sm:w-44 sm:shrink-0">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-gradient-animated text-5xl font-black leading-none sm:text-6xl">
+                  <span className="text-gradient-animated text-5xl leading-none font-black sm:text-6xl">
                     {avgRating.toFixed(1)}
                   </span>
                   <Star className="h-6 w-6 self-center fill-amber-400 text-amber-700" />
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  {reviews.length}{" "}
-                  {reviews.length === 1 ? "avaliação" : "avaliações"}
+                  {reviews.length} {reviews.length === 1 ? "avaliação" : "avaliações"}
                 </p>
               </div>
 
               {/* Right column — 5 horizontal bars */}
               <div className="flex-1 space-y-2">
                 {distribution.map(({ stars, count, pct }, idx) => (
-                  <div
-                    key={stars}
-                    className="flex items-center gap-3 text-xs"
-                  >
+                  <div key={stars} className="flex items-center gap-3 text-xs">
                     <div className="flex w-8 shrink-0 items-center gap-1">
                       <Star className="h-3 w-3 fill-amber-400 text-amber-700" />
-                      <span className="font-semibold text-foreground">
-                        {stars}
-                      </span>
+                      <span className="font-semibold text-foreground">{stars}</span>
                     </div>
                     <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/[0.06]">
                       <motion.div
@@ -1075,19 +729,13 @@ function ReviewsSection({
                           {r.authorName.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold leading-tight">
-                            {r.authorName}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {formatShortDate(r.createdAt)}
-                          </p>
+                          <p className="text-sm leading-tight font-semibold">{r.authorName}</p>
+                          <p className="text-[10px] text-muted-foreground">{formatShortDate(r.createdAt)}</p>
                         </div>
                       </div>
                       <Stars value={r.rating} size={12} />
                     </div>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {r.comment}
-                    </p>
+                    <p className="mt-2 text-sm text-muted-foreground">{r.comment}</p>
                   </motion.li>
                 ))}
               </ul>
@@ -1120,15 +768,11 @@ function ReviewsSection({
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <p className="mb-5 text-sm text-muted-foreground">
-              Conte o que achou deste sneaker.
-            </p>
+            <p className="mb-5 text-sm text-muted-foreground">Conte o que achou deste sneaker.</p>
 
             {/* Star rating */}
             <div className="mb-5 space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Nota
-              </label>
+              <label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Nota</label>
               <div className="flex items-center gap-3">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button
@@ -1150,19 +794,13 @@ function ReviewsSection({
                     />
                   </button>
                 ))}
-                {rating > 0 && (
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {rating}/5
-                  </span>
-                )}
+                {rating > 0 && <span className="text-sm font-medium text-muted-foreground">{rating}/5</span>}
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Seu nome
-                </label>
+                <label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Seu nome</label>
                 <Input
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
@@ -1173,9 +811,7 @@ function ReviewsSection({
             </div>
 
             <div className="mt-4 space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Comentário
-              </label>
+              <label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Comentário</label>
               <Textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
@@ -1199,11 +835,7 @@ function ReviewsSection({
                 disabled={submitting}
                 className="gap-2 rounded-full bg-[var(--brand)] px-6 font-bold text-white hover:opacity-90"
               >
-                {submitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 {submitting ? "Enviando…" : "Enviar avaliação"}
               </Button>
             </div>
@@ -1220,7 +852,7 @@ function ReviewsSection({
 
 function RelatedSkeleton() {
   return (
-    <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
+    <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="min-w-[200px] flex-1 space-y-3">
           <Skeleton className="aspect-square w-full rounded-3xl" />
@@ -1250,9 +882,7 @@ function Related({ productId }: { productId: string }) {
       >
         <div className="flex items-center gap-3">
           <Heart className="h-6 w-6 text-[var(--hot)]" />
-          <h2 className="text-2xl font-black sm:text-3xl">
-            Você também pode gostar
-          </h2>
+          <h2 className="text-2xl font-black sm:text-3xl">Você também pode gostar</h2>
         </div>
         <RelatedSkeleton />
       </motion.section>
@@ -1271,11 +901,9 @@ function Related({ productId }: { productId: string }) {
     >
       <div className="flex items-center gap-3">
         <Heart className="h-6 w-6 text-[var(--hot)]" />
-        <h2 className="text-2xl font-black sm:text-3xl">
-          Você também pode gostar
-        </h2>
+        <h2 className="text-2xl font-black sm:text-3xl">Você também pode gostar</h2>
       </div>
-      <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
+      <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4">
         {products.slice(0, 4).map((p, i) => (
           <motion.div
             key={p.id}
@@ -1303,11 +931,7 @@ export function ProductDetailView() {
   const addRecent = useRecentStore((s) => s.add);
   const slug = params.id;
 
-  const {
-    data,
-    isLoading,
-    isError,
-  } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["product", slug],
     queryFn: () => api.product(slug as string),
     enabled: !!slug,
@@ -1339,34 +963,28 @@ export function ProductDetailView() {
   // ---------- Error / not found ----------
   if (isError || !product) {
     return (
-      <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 pb-20 pt-24 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-black/[0.03]">
-          <Star className="h-9 w-9 text-muted-foreground" />
-        </div>
-        <h1 className="text-2xl font-black">Produto não encontrado</h1>
-        <p className="text-sm text-muted-foreground">
-          O produto que você procura pode ter sido removido ou não existe.
-        </p>
-        <Button
-          onClick={() => navigate("products")}
-          className="mt-2 rounded-full bg-[var(--brand)] px-6 font-bold text-white hover:opacity-90"
+      <section className="px-4 py-20">
+        <EmptyState
+          icon={Star}
+          title="Produto não encontrado"
+          action={
+            <Button onClick={() => navigate("products")} className="rounded-full">
+              Ver todos os tênis
+            </Button>
+          }
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Ver todos os tênis
-        </Button>
-      </div>
+          O produto que você procura pode ter sido removido ou não existe.
+        </EmptyState>
+      </section>
     );
   }
 
   // ---------- Render ----------
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-20 pt-6 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 pt-6 pb-20 sm:px-6">
       {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <button
-          onClick={() => navigate("products")}
-          className="transition hover:text-foreground"
-        >
+        <button onClick={() => navigate("products")} className="transition hover:text-foreground">
           Tênis
         </button>
         <ChevronRight className="h-3 w-3" />
@@ -1377,9 +995,7 @@ export function ProductDetailView() {
           {product.category}
         </button>
         <ChevronRight className="h-3 w-3" />
-        <span className="line-clamp-1 font-medium text-foreground">
-          {product.name}
-        </span>
+        <span className="line-clamp-1 font-medium text-foreground">{product.name}</span>
       </nav>
 
       {/* Gallery + Info */}
@@ -1398,15 +1014,11 @@ export function ProductDetailView() {
       >
         <div className="space-y-3">
           <h2 className="text-2xl font-black sm:text-3xl">Detalhes do produto</h2>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-            {product.description}
-          </p>
+          <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">{product.description}</p>
         </div>
 
         <aside className="glass h-fit rounded-3xl border border-black/10 p-6">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-            Especificações
-          </h3>
+          <h3 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">Especificações</h3>
           <dl className="mt-4 space-y-3 text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Categoria</dt>
@@ -1425,11 +1037,7 @@ export function ProductDetailView() {
             <Separator className="bg-black/[0.06]" />
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Disponibilidade</dt>
-              <dd className="font-medium">
-                {product.stock > 0
-                  ? `${product.stock} em estoque`
-                  : "Esgotado"}
-              </dd>
+              <dd className="font-medium">{product.stock > 0 ? `${product.stock} em estoque` : "Esgotado"}</dd>
             </div>
           </dl>
         </aside>

@@ -1,10 +1,23 @@
 "use client";
 
-import Link from "next/link";
+import { api } from "@/client/api";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
 import { useAuthStore } from "@/stores/auth";
-import { ShoppingBag as ShoppingCart, Search, User, Menu, X, LayoutDashboard, LogOut, Heart, Truck, Package, UserCircle, GitCompare } from "lucide-react";
+import {
+  ShoppingBag as ShoppingCart,
+  Search,
+  User,
+  Menu,
+  X,
+  LayoutDashboard,
+  LogOut,
+  Heart,
+  Truck,
+  Package,
+  UserCircle,
+  GitCompare,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { useWishlistStore } from "@/stores/wishlist";
 import { useCompareStore } from "@/stores/compare";
@@ -62,14 +75,8 @@ export function Header() {
       <div className="border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Logo */}
-          <button
-            onClick={() => navigate("home")}
-            className="flex items-center"
-            aria-label="Astrofeet — início"
-          >
-            <span className="text-2xl font-black uppercase tracking-tighter">
-              Astrofeet
-            </span>
+          <button onClick={() => navigate("home")} className="flex items-center" aria-label="Astrofeet — início">
+            <span className="text-2xl font-black tracking-tighter uppercase">Astrofeet</span>
           </button>
 
           {/* Desktop nav */}
@@ -116,7 +123,7 @@ export function Header() {
             >
               <GitCompare className="h-5 w-5" />
               {mounted && compareCount > 0 && (
-                <span className="animate-pop-in absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--success)] px-1 text-[10px] font-bold text-white">
+                <span className="animate-pop-in absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--success)] px-1 text-[10px] font-bold text-white">
                   {compareCount}
                 </span>
               )}
@@ -131,7 +138,7 @@ export function Header() {
             >
               <Heart className="h-5 w-5" />
               {mounted && wishlistCount > 0 && (
-                <span className="animate-pop-in absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--hot)] px-1 text-[10px] font-bold text-white">
+                <span className="animate-pop-in absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--hot)] px-1 text-[10px] font-bold text-white">
                   {wishlistCount}
                 </span>
               )}
@@ -146,7 +153,7 @@ export function Header() {
             >
               <ShoppingCart className="h-5 w-5" />
               {mounted && cartCount > 0 && (
-                <span className="animate-pop-in absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[10px] font-bold text-white">
+                <span className="animate-pop-in absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[10px] font-bold text-white">
                   {cartCount}
                 </span>
               )}
@@ -167,51 +174,34 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="px-2 py-1.5">
                     <p className="text-sm font-semibold">{user.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {user.email}
-                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => navigate("wishlist")}
-                    className="cursor-pointer"
-                  >
+                  <DropdownMenuItem onClick={() => navigate("wishlist")} className="cursor-pointer">
                     <Heart className="mr-2 h-4 w-4" />
                     Lista de desejos
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => navigate("track-order")}
-                    className="cursor-pointer"
-                  >
+                  <DropdownMenuItem onClick={() => navigate("track-order")} className="cursor-pointer">
                     <Truck className="mr-2 h-4 w-4" />
                     Rastrear pedido
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => navigate("account")}
-                    className="cursor-pointer"
-                  >
+                  <DropdownMenuItem onClick={() => navigate("account")} className="cursor-pointer">
                     <UserCircle className="mr-2 h-4 w-4" />
                     Minha conta
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => navigate("account")}
-                    className="cursor-pointer"
-                  >
+                  <DropdownMenuItem onClick={() => navigate("account")} className="cursor-pointer">
                     <Package className="mr-2 h-4 w-4" />
                     Meus pedidos
                   </DropdownMenuItem>
                   {user.role === "admin" && (
-                    <DropdownMenuItem
-                      onClick={() => navigate("admin")}
-                      className="cursor-pointer"
-                    >
+                    <DropdownMenuItem onClick={() => navigate("admin")} className="cursor-pointer">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Painel
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
                     onClick={async () => {
-                      await fetch("/api/auth/logout", { method: "POST" });
+                      await api.logout().catch(() => {});
                       logout();
                       navigate("home");
                     }}

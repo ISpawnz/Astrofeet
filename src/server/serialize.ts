@@ -1,150 +1,72 @@
 import "server-only";
-import type { Product, Review, Order, OrderLineItem, Address, Notification, NotificationType } from "@/shared/types";
+import { parseJSON } from "@/server/http";
+import type { Address, Coupon, Notification, Order, Product, Review } from "@/shared/types";
 
-// Linha crua do store (JSON dinâmico, espelha o Prisma Client).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Linha crua do banco → formato público (nunca vaza campos internos como passwordHash).
+
 type Row = Record<string, any>;
 
-// Parse the JSON-encoded arrays stored on the Product model and return a clean
-// public shape (never leak internal storage details to the client).
-export function serializeProduct(p: Row,
-  reviewCount?: number,
-): Product {
-  let images: string[] = [];
-  let sizes: number[] = [];
-  let sizeStock: Record<string, number> = {};
-  try {
-    images = JSON.parse(p.images || "[]");
-  } catch {
-    images = [];
-  }
-  try {
-    sizes = JSON.parse(p.sizes || "[]").map((n: unknown) => Number(n));
-  } catch {
-    sizes = [];
-  }
-  try {
-    sizeStock = JSON.parse(p.sizeStock || "{}");
-  } catch {
-    sizeStock = {};
-  }
-  if (!images.length) images = ["/products/placeholder.svg"];
+const iso = (d: unknown) => (d instanceof Date ? d.toISOString() : String(d));
+const pick = <K extends string>(r: Row, keys: readonly K[]) =>
+  Object.fromEntries(keys.map((k) => [k, r[k]])) as Record<K, Row[K]>;
+
+export function serializeProduct(p: Row, reviewCount?: number): Product {
+  const images = parseJSON<string[]>(p.images, []);
+  const sizeStock = parseJSON<Record<string, number>>(p.sizeStock, {});
   return {
-    id: p.id,
-    slug: p.slug,
-    name: p.name,
-    brand: p.brand,
-    category: p.category,
-    price: p.price,
-    description: p.description,
-    images,
-    sizes,
-    stock: p.stock,
+    ...pick(p, [
+      "id",
+      "slug",
+      "name",
+      "brand",
+      "category",
+      "price",
+      "description",
+      "stock",
+      "rating",
+      "accent",
+      "badge",
+      "featured",
+      "bestSeller",
+    ] as const),
+    images: images.length ? images : ["/products/placeholder.svg"],
+    sizes: parseJSON<unknown[]>(p.sizes, []).map(Number),
     sizeStock: Object.keys(sizeStock).length ? sizeStock : undefined,
-    rating: p.rating,
-    accent: p.accent,
-    badge: p.badge,
-    featured: p.featured,
-    bestSeller: p.bestSeller,
-    createdAt: p.createdAt.toISOString(),
-    reviewCount: reviewCount ?? (p.reviews as { length?: number } | undefined)?.length ?? 0,
-  };
+    createdAt: iso(p.createdAt),
+    reviewCount: reviewCount ?? p.reviews?.length ?? 0,
+  } as Product;
 }
 
-export function serializeCoupon(c: Row,
-) {
-  return {
-    id: c.id,
-    code: c.code,
-    type: c.type as "percent" | "fixed",
-    value: c.value,
-    minSubtotal: c.minSubtotal,
-    active: c.active,
-    description: c.description,
-    expiresAt: c.expiresAt,
-    createdAt: c.createdAt.toISOString(),
-  };
-}
+export const serializeCoupon = (c: Row): Coupon =>
+  ({
+    ...pick(c, ["id", "code", "type", "value", "minSubtotal", "active", "description", "expiresAt"] as const),
+    createdAt: iso(c.createdAt),
+  }) as Coupon;
 
-export function serializeReview(r: Row): Review {
-  return {
-    id: r.id,
-    productId: r.productId,
-    authorName: r.authorName,
-    rating: r.rating,
-    comment: r.comment,
-    createdAt: r.createdAt.toISOString(),
-  };
-}
+export const serializeReview = (r: Row): Review =>
+  ({
+    ...pick(r, ["id", "productId", "authorName", "rating", "comment"] as const),
+    createdAt: iso(r.createdAt),
+  }) as Review;
 
-export function serializeOrder(o: Row): Order {
-  let items: OrderLineItem[] = [];
-  let customer = { name: "", email: "" };
-  let address = {} as Order["address"];
-  let payment = { method: "pix" } as Order["payment"];
-  try {
-    items = JSON.parse(o.items || "[]");
-  } catch {
-    items = [];
-  }
-  try {
-    customer = JSON.parse(o.customer || "{}");
-  } catch {
-    /* noop */
-  }
-  try {
-    address = JSON.parse(o.address || "{}");
-  } catch {
-    /* noop */
-  }
-  try {
-    payment = JSON.parse(o.payment || "{}");
-  } catch {
-    /* noop */
-  }
-  return {
-    id: o.id,
-    code: o.code,
-    userId: o.userId,
-    status: o.status as Order["status"],
-    items,
-    subtotal: o.subtotal,
-    shipping: o.shipping,
-    total: o.total,
-    customer,
-    address,
-    payment,
-    createdAt: o.createdAt.toISOString(),
-  };
-}
+export const serializeOrder = (o: Row): Order => ({
+  ...pick(o, ["id", "code", "userId", "status", "subtotal", "shipping", "total"] as const),
+  items: parseJSON(o.items, []),
+  customer: parseJSON(o.customer, { name: "", email: "" }),
+  address: parseJSON(o.address, {} as Order["address"]),
+  payment: parseJSON(o.payment, { method: "pix" }),
+  createdAt: iso(o.createdAt),
+});
 
-export function serializeAddress(a: Row): Address {
-  return {
-    id: a.id,
-    userId: a.userId,
-    label: a.label,
-    recipient: a.recipient,
-    cep: a.cep,
-    street: a.street,
-    number: a.number,
-    complement: a.complement || undefined,
-    district: a.district,
-    city: a.city,
-    state: a.state,
-    isDefault: Boolean(a.isDefault),
-    createdAt: a.createdAt.toISOString(),
-  };
-}
+export const serializeAddress = (a: Row): Address => ({
+  ...pick(a, ["id", "userId", "label", "recipient", "cep", "street", "number", "district", "city", "state"] as const),
+  complement: a.complement || undefined,
+  isDefault: Boolean(a.isDefault),
+  createdAt: iso(a.createdAt),
+});
 
-export function serializeNotification(n: Row): Notification {
-  return {
-    id: n.id,
-    type: n.type as NotificationType,
-    to: n.to,
-    subject: n.subject,
-    body: n.body,
-    orderId: n.orderId ?? null,
-    sentAt: n.sentAt.toISOString(),
-    status: n.status as Notification["status"],
-  };
-}
+export const serializeNotification = (n: Row): Notification => ({
+  ...pick(n, ["id", "type", "to", "subject", "body", "status"] as const),
+  orderId: n.orderId ?? null,
+  sentAt: iso(n.sentAt),
+});

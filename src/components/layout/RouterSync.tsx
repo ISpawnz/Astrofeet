@@ -44,9 +44,7 @@ export function RouterSync() {
 
   useEffect(() => {
     desired.current =
-      view === "home"
-        ? "Astrofeet — Tênis de corrida, casual e skate"
-        : `${VIEW_TITLES[view]} · Astrofeet`;
+      view === "home" ? "Astrofeet — Tênis de corrida, casual e skate" : `${VIEW_TITLES[view]} · Astrofeet`;
     document.title = desired.current;
     if (first.current) {
       first.current = false;

@@ -34,12 +34,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [setUser]);
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="light"
-      enableSystem={false}
-      disableTransitionOnChange
-    >
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
       <QueryClientProvider client={client}>
         {children}
         <Sonner

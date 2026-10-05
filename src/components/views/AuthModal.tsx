@@ -1,21 +1,8 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  X,
-  Mail,
-  Lock,
-  User as UserIcon,
-  Loader2,
-  ArrowRight,
-} from "lucide-react";
+import { X, Mail, Lock, User as UserIcon, Loader2, ArrowRight } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 import { useAuthStore } from "@/stores/auth";
 import { api } from "@/client/api";
@@ -23,6 +10,7 @@ import type { PublicUser } from "@/shared/types";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { fadeUp } from "@/components/shared/motion";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -46,20 +34,11 @@ interface FieldProps {
   name?: string;
 }
 
-function Field({
-  icon,
-  error,
-  type = "text",
-  placeholder,
-  value,
-  onChange,
-  autoComplete,
-  name,
-}: FieldProps) {
+function Field({ icon, error, type = "text", placeholder, value, onChange, autoComplete, name }: FieldProps) {
   return (
     <div>
       <div className="relative">
-        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
+        <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground">
           {icon}
         </span>
         <input
@@ -72,8 +51,7 @@ function Field({
           className={cn(
             inputClass,
             "pl-10",
-            error &&
-              "border-rose-400/60 focus:border-rose-400 focus:ring-rose-400/30",
+            error && "border-rose-400/60 focus:border-rose-400 focus:ring-rose-400/30",
           )}
         />
       </div>
@@ -93,13 +71,7 @@ function Field({
   );
 }
 
-function SubmitButton({
-  loading,
-  label,
-}: {
-  loading: boolean;
-  label: string;
-}) {
+function SubmitButton({ loading, label }: { loading: boolean; label: string }) {
   return (
     <motion.button
       type="submit"
@@ -120,13 +92,7 @@ function SubmitButton({
   );
 }
 
-function ToggleBrandButton({
-  onClick,
-  label,
-}: {
-  onClick: () => void;
-  label: string;
-}) {
+function ToggleBrandButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
     <motion.button
       type="button"
@@ -171,9 +137,7 @@ export function AuthModal() {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const t = window.setTimeout(() => {
-      cardRef.current
-        ?.querySelector<HTMLInputElement>("input")
-        ?.focus();
+      cardRef.current?.querySelector<HTMLInputElement>("input")?.focus();
     }, 140);
     return () => {
       document.removeEventListener("keydown", onKey);
@@ -194,12 +158,9 @@ export function AuthModal() {
 
   function validate(): boolean {
     const e: Errors = {};
-    if (mode === "register" && name.trim().length < 2)
-      e.name = "Informe seu nome (ao menos 2 caracteres).";
-    if (!email.includes("@") || email.trim().length < 4)
-      e.email = "Informe um e-mail válido.";
-    if (password.length < 6)
-      e.password = "A senha precisa ter ao menos 6 caracteres.";
+    if (mode === "register" && name.trim().length < 2) e.name = "Informe seu nome (ao menos 2 caracteres).";
+    if (!email.includes("@") || email.trim().length < 4) e.email = "Informe um e-mail válido.";
+    if (password.length < 6) e.password = "A senha precisa ter ao menos 6 caracteres.";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -221,17 +182,9 @@ export function AuthModal() {
       }
       setUser(user);
       closeAuth();
-      toast.success(
-        mode === "login"
-          ? "Bem-vindo a bordo!"
-          : "Conta criada! Bem-vindo à Astrofeet.",
-      );
+      toast.success(mode === "login" ? "Bem-vindo a bordo!" : "Conta criada! Bem-vindo à Astrofeet.");
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Algo deu errado. Tente novamente.",
-      );
+      toast.error(err instanceof Error ? err.message : "Algo deu errado. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -259,9 +212,7 @@ export function AuthModal() {
             <>
               <div>
                 <h2 className="text-2xl font-bold text-foreground">Entrar</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Acesse sua conta Astrofeet
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">Acesse sua conta Astrofeet</p>
               </div>
               <Field
                 icon={<Mail className="h-4 w-4" />}
@@ -305,9 +256,7 @@ export function AuthModal() {
             <>
               <div>
                 <h2 className="text-2xl font-bold text-foreground">Criar conta</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Leva menos de um minuto
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">Leva menos de um minuto</p>
               </div>
               <Field
                 icon={<UserIcon className="h-4 w-4" />}
@@ -352,37 +301,26 @@ export function AuthModal() {
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={mode}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          {...fadeUp}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.25 }}
           className="flex flex-col items-center"
         >
           {mode === "login" ? (
             <>
-                            <h3 className="text-3xl font-black tracking-tighter text-white">
-                Bem-vindo de volta!
-              </h3>
+              <h3 className="text-3xl font-black tracking-tighter text-white">Bem-vindo de volta!</h3>
               <p className="mt-2 max-w-[260px] text-sm text-white/70">
                 Acompanhe pedidos, favoritos e pontos em um só lugar.
               </p>
-              <ToggleBrandButton
-                onClick={() => openAuth("register")}
-                label="Criar conta"
-              />
+              <ToggleBrandButton onClick={() => openAuth("register")} label="Criar conta" />
             </>
           ) : (
             <>
-                            <h3 className="text-3xl font-black tracking-tighter text-white">
-                Crie sua conta
-              </h3>
+              <h3 className="text-3xl font-black tracking-tighter text-white">Crie sua conta</h3>
               <p className="mt-2 max-w-[260px] text-sm text-white/70">
                 Ganhe 10% off na primeira compra com o cupom GALAXIA10.
               </p>
-              <ToggleBrandButton
-                onClick={() => openAuth("login")}
-                label="Fazer login"
-              />
+              <ToggleBrandButton onClick={() => openAuth("login")} label="Fazer login" />
             </>
           )}
         </motion.div>
@@ -430,7 +368,7 @@ export function AuthModal() {
               type="button"
               onClick={closeAuth}
               aria-label="Fechar"
-              className="absolute right-4 top-4 z-30 grid h-9 w-9 place-items-center rounded-full bg-white text-foreground shadow-sm transition hover:bg-[var(--surface)]"
+              className="absolute top-4 right-4 z-30 grid h-9 w-9 place-items-center rounded-full bg-white text-foreground shadow-sm transition hover:bg-[var(--surface)]"
             >
               <X className="h-4 w-4" />
             </button>
@@ -438,7 +376,7 @@ export function AuthModal() {
             {isMobile ? (
               /* ---------------- MOBILE: stacked ---------------- */
               <div className="max-h-[88vh] overflow-y-auto">
-                <div className="px-6 pb-2 pt-7">{formContent}</div>
+                <div className="px-6 pt-7 pb-2">{formContent}</div>
 
                 <div className="h-6" />
 
@@ -453,7 +391,7 @@ export function AuthModal() {
               <div className="relative h-[560px]">
                 {/* FORM panel — slides left<->right */}
                 <motion.div
-                  className="absolute bottom-0 top-0 flex w-1/2 items-center"
+                  className="absolute top-0 bottom-0 flex w-1/2 items-center"
                   animate={{ x: mode === "login" ? "0%" : "100%" }}
                   transition={{ type: "spring", stiffness: 220, damping: 28 }}
                 >
@@ -462,14 +400,13 @@ export function AuthModal() {
 
                 {/* BRAND panel — slides right<->left */}
                 <motion.div
-                  className="absolute bottom-0 top-0 w-1/2 overflow-hidden"
+                  className="absolute top-0 bottom-0 w-1/2 overflow-hidden"
                   animate={{ x: mode === "login" ? "100%" : "0%" }}
                   transition={{ type: "spring", stiffness: 220, damping: 28 }}
                 >
                   {brandBg}
                   {brandContent}
                 </motion.div>
-
               </div>
             )}
           </motion.div>

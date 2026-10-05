@@ -8,10 +8,11 @@ import { api } from "@/client/api";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
 import { useRecentStore } from "@/stores/recent";
-import { ProductCard } from "./ProductCard";
+import { ProductCard, cardProduct } from "./ProductCard";
 import { formatPrice } from "@/shared/format";
 import { toast } from "sonner";
 import type { Product } from "@/shared/types";
+import { fadeUp } from "@/components/shared/motion";
 
 const COUPONS = [
   { code: "GALAXIA10", label: "10% off", desc: "na primeira compra" },
@@ -61,22 +62,15 @@ export function HomeView() {
   return (
     <div className="flex flex-col">
       {/* ---------- HERO ---------- */}
-      <section className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pb-14 pt-10 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-16">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          
-        >
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--brand)]">
-            Nova coleção
-          </p>
-          <h1 className="mt-4 text-balance text-5xl font-black leading-[0.95] tracking-tighter sm:text-6xl lg:text-7xl xl:text-8xl">
+      <section className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-10 pb-14 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-16">
+        <motion.div {...fadeUp} transition={{ duration: 0.5 }}>
+          <p className="text-xs font-bold tracking-[0.2em] text-[var(--brand)] uppercase">Nova coleção</p>
+          <h1 className="mt-4 text-5xl leading-[0.95] font-black tracking-tighter text-balance sm:text-6xl lg:text-7xl xl:text-8xl">
             Feito para andar mais longe.
           </h1>
-          <p className="mt-6 max-w-md text-pretty text-lg text-muted-foreground">
-            Tênis de corrida, casual e skate com design próprio, conforto para o
-            dia inteiro e entrega para todo o Brasil.
+          <p className="mt-6 max-w-md text-lg text-pretty text-muted-foreground">
+            Tênis de corrida, casual e skate com design próprio, conforto para o dia inteiro e entrega para todo o
+            Brasil.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <button
@@ -112,7 +106,6 @@ export function HomeView() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
-          
         >
           {hero ? (
             <div className="group relative aspect-[4/3] overflow-hidden rounded-3xl bg-[var(--surface)] sm:aspect-square lg:aspect-[4/5]">
@@ -129,7 +122,7 @@ export function HomeView() {
               </button>
               <div className="absolute inset-x-4 bottom-4 flex items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-lg sm:inset-x-6 sm:bottom-6">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
                     {hero.badge ?? "Em destaque"}
                   </p>
                   <p className="truncate font-bold">{hero.name}</p>
@@ -176,11 +169,7 @@ export function HomeView() {
 
       {/* ---------- LANÇAMENTOS ---------- */}
       {newest && newest.length > 0 && (
-        <Section
-          title="Lançamentos"
-          action={() => navigate("products", { sort: "newest" })}
-          actionLabel="Ver todos"
-        >
+        <Section title="Lançamentos" action={() => navigate("products", { sort: "newest" })} actionLabel="Ver todos">
           <div className={`grid grid-cols-2 gap-x-4 gap-y-8 ${colsLg(Math.min(newest.length, 4), 4)}`}>
             {newest.slice(0, 4).map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
@@ -194,10 +183,8 @@ export function HomeView() {
         <div className="overflow-hidden rounded-3xl bg-foreground text-background">
           <div className="grid gap-8 p-8 sm:p-12 lg:grid-cols-[1.2fr_1fr] lg:items-center">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/60">
-                Oferta da semana
-              </p>
-              <h2 className="mt-3 max-w-lg text-4xl font-black leading-[1.05] tracking-tighter sm:text-5xl">
+              <p className="text-xs font-bold tracking-[0.2em] text-white/60 uppercase">Oferta da semana</p>
+              <h2 className="mt-3 max-w-lg text-4xl leading-[1.05] font-black tracking-tighter sm:text-5xl">
                 Frete grátis em compras acima de R$300.
               </h2>
               <button
@@ -276,27 +263,9 @@ export function HomeView() {
           actionIcon={<Trash2 className="h-4 w-4" />}
         >
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
-            {recent.slice(0, 4).map((r, i) => {
-              const product: Product = {
-                id: r.id,
-                slug: r.slug,
-                name: r.name,
-                brand: r.brand,
-                category: "",
-                price: r.price,
-                description: "",
-                images: [r.image],
-                sizes: [],
-                stock: 0,
-                rating: 0,
-                accent: r.accent,
-                badge: null,
-                featured: false,
-                bestSeller: false,
-                createdAt: r.viewedAt,
-              };
-              return <ProductCard key={r.id} product={product} index={i} />;
-            })}
+            {recent.slice(0, 4).map((r, i) => (
+              <ProductCard key={r.id} product={cardProduct(r)} index={i} />
+            ))}
           </div>
         </Section>
       )}
@@ -305,9 +274,7 @@ export function HomeView() {
       <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6">
         <div className="grid gap-6 rounded-3xl bg-[var(--surface)] p-8 sm:p-12 lg:grid-cols-2 lg:items-center">
           <div>
-            <h2 className="text-3xl font-black tracking-tighter sm:text-4xl">
-              Receba os lançamentos primeiro.
-            </h2>
+            <h2 className="text-3xl font-black tracking-tighter sm:text-4xl">Receba os lançamentos primeiro.</h2>
             <p className="mt-2 max-w-md text-muted-foreground">
               Novidades, reposições e ofertas exclusivas direto no seu e-mail. Sem spam.
             </p>

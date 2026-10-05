@@ -1,0 +1,6 @@
+.next
+node_modules
+public
+docs
+*.lock
+package-lock.json

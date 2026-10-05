@@ -19,13 +19,30 @@ const BADGES: Record<string, { label: string; className: string }> = {
   "Mais vendido": { label: "Mais vendido", className: "bg-foreground text-background" },
 };
 
-export function ProductCard({
-  product,
-  index = 0,
-}: {
-  product: Product;
-  index?: number;
-}) {
+/** Monta um Product a partir de um item resumido guardado no navegador (favoritos, vistos). */
+export const cardProduct = (i: {
+  id: string;
+  slug: string;
+  name: string;
+  brand: string;
+  price: number;
+  image: string;
+  accent: string;
+}): Product => ({
+  ...i,
+  images: [i.image],
+  category: "",
+  description: "",
+  sizes: [],
+  stock: 0,
+  rating: 0,
+  badge: null,
+  featured: false,
+  bestSeller: false,
+  createdAt: "",
+});
+
+export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const navigate = useUIStore((s) => s.navigate);
   const openQuickView = useUIStore((s) => s.openQuickView);
   const add = useCartStore((s) => s.add);
@@ -38,8 +55,9 @@ export function ProductCard({
 
   function quickAdd(e: React.MouseEvent) {
     e.stopPropagation();
-    const size = product.sizes[Math.floor(product.sizes.length / 2)] ?? product.sizes[0];
-    if (!size) return;
+    const size = product.sizes[Math.floor(product.sizes.length / 2)];
+    // Itens resumidos (favoritos, vistos recentemente) não trazem tamanhos: abre a escolha.
+    if (size === undefined) return openQuickView(product.id);
     add(product, size, 1);
     toast.success(`${product.name} adicionado ao carrinho`);
   }
@@ -49,11 +67,7 @@ export function ProductCard({
     toggleWishlist(product);
     setHeartBump(true);
     setTimeout(() => setHeartBump(false), 450);
-    toast.success(
-      inWishlist
-        ? `${product.name} saiu da sua lista`
-        : `${product.name} salvo na lista de desejos`,
-    );
+    toast.success(inWishlist ? `${product.name} saiu da sua lista` : `${product.name} salvo na lista de desejos`);
   }
 
   function toggleCompare(e: React.MouseEvent) {
@@ -63,11 +77,7 @@ export function ProductCard({
       return;
     }
     toggleCompareId(product.id);
-    toast.success(
-      inCompare
-        ? `${product.name} saiu da comparação`
-        : `${product.name} adicionado à comparação`,
-    );
+    toast.success(inCompare ? `${product.name} saiu da comparação` : `${product.name} adicionado à comparação`);
   }
 
   function handleQuickView(e: React.MouseEvent) {
@@ -76,7 +86,7 @@ export function ProductCard({
   }
 
   const badge = product.badge
-    ? BADGES[product.badge] ?? { label: product.badge, className: "bg-white text-foreground" }
+    ? (BADGES[product.badge] ?? { label: product.badge, className: "bg-white text-foreground" })
     : null;
   const iconBtn =
     "flex h-9 w-9 items-center justify-center rounded-full bg-white text-foreground shadow-sm transition hover:scale-105";
@@ -92,14 +102,14 @@ export function ProductCard({
     >
       {/* Foto */}
       <div className="relative aspect-square overflow-hidden rounded-2xl bg-[var(--surface)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {}
         <img
           src={product.images[0]}
           alt={product.name}
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
           loading="lazy"
         />
-        <div className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1">
+        <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1">
           {badge && (
             <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold shadow-sm", badge.className)}>
               {badge.label}
@@ -111,14 +121,12 @@ export function ProductCard({
             </span>
           )}
         </div>
-        <div className="absolute right-2.5 top-2.5 flex flex-col gap-1.5">
+        <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5">
           <button
             onClick={toggleHeart}
             className={cn(iconBtn, inWishlist && "text-[var(--hot)]")}
             aria-label={
-              inWishlist
-                ? `Remover ${product.name} da lista de desejos`
-                : `Salvar ${product.name} na lista de desejos`
+              inWishlist ? `Remover ${product.name} da lista de desejos` : `Salvar ${product.name} na lista de desejos`
             }
             aria-pressed={inWishlist}
           >
@@ -128,7 +136,7 @@ export function ProductCard({
             onClick={toggleCompare}
             className={cn(
               iconBtn,
-              "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100",
+              "opacity-100 focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
               inCompare && "bg-foreground text-background sm:opacity-100",
             )}
             aria-label={inCompare ? `Remover ${product.name} da comparação` : `Comparar ${product.name}`}
@@ -138,7 +146,7 @@ export function ProductCard({
           </button>
         </div>
         {/* Ações rápidas (desktop: aparecem no hover) */}
-        <div className="absolute inset-x-2.5 bottom-2.5 hidden translate-y-2 gap-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 sm:flex">
+        <div className="absolute inset-x-2.5 bottom-2.5 hidden translate-y-2 gap-2 opacity-0 transition-all duration-300 group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100 sm:flex">
           <button
             onClick={quickAdd}
             className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground text-sm font-bold text-background transition hover:bg-foreground/85"
@@ -168,9 +176,7 @@ export function ProductCard({
             </span>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
-          {[product.category, product.brand].filter(Boolean).join(" · ")}
-        </p>
+        <p className="text-sm text-muted-foreground">{[product.category, product.brand].filter(Boolean).join(" · ")}</p>
         <p className="mt-1.5 font-bold">{formatPrice(product.price)}</p>
         <p className="text-xs text-muted-foreground">ou 10x de {formatPrice(product.price / 10)}</p>
       </div>

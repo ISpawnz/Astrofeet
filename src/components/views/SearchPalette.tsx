@@ -16,16 +16,7 @@ import { useCartStore } from "@/stores/cart";
 import { api } from "@/client/api";
 import { formatPrice } from "@/shared/format";
 import type { Product } from "@/shared/types";
-import {
-  Search,
-  Heart,
-  ShoppingBag,
-  Package,
-  Home,
-  Sparkles,
-  TrendingUp,
-  Loader2,
-} from "lucide-react";
+import { Search, Heart, ShoppingBag, Package, Home, Sparkles, TrendingUp, Loader2 } from "lucide-react";
 
 export function SearchPalette() {
   const open = useUIStore((s) => s.searchOpen);
@@ -120,38 +111,23 @@ export function SearchPalette() {
         {!q.trim() && (
           <>
             <CommandGroup heading="Ações rápidas">
-              <CommandItem
-                onSelect={() => go("home")}
-                className="cursor-pointer gap-3"
-              >
+              <CommandItem onSelect={() => go("home")} className="cursor-pointer gap-3">
                 <Home className="h-4 w-4 text-[var(--brand)]" />
                 <span>Início</span>
               </CommandItem>
-              <CommandItem
-                onSelect={() => go("products")}
-                className="cursor-pointer gap-3"
-              >
+              <CommandItem onSelect={() => go("products")} className="cursor-pointer gap-3">
                 <Package className="h-4 w-4 text-[var(--brand)]" />
                 <span>Ver todos os drops</span>
               </CommandItem>
-              <CommandItem
-                onSelect={() => go("products", { sort: "newest" })}
-                className="cursor-pointer gap-3"
-              >
+              <CommandItem onSelect={() => go("products", { sort: "newest" })} className="cursor-pointer gap-3">
                 <Sparkles className="h-4 w-4 text-[var(--ink)]" />
                 <span>Novidades</span>
               </CommandItem>
-              <CommandItem
-                onSelect={() => go("products", { bestSeller: "true" })}
-                className="cursor-pointer gap-3"
-              >
+              <CommandItem onSelect={() => go("products", { bestSeller: "true" })} className="cursor-pointer gap-3">
                 <TrendingUp className="h-4 w-4 text-[var(--success)]" />
                 <span>Mais vendidos</span>
               </CommandItem>
-              <CommandItem
-                onSelect={() => go("wishlist")}
-                className="cursor-pointer gap-3"
-              >
+              <CommandItem onSelect={() => go("wishlist")} className="cursor-pointer gap-3">
                 <Heart className="h-4 w-4 text-[var(--hot)]" />
                 <span>Lista de desejos</span>
                 {wishlistCount > 0 && (
@@ -175,10 +151,7 @@ export function SearchPalette() {
                   </span>
                 )}
               </CommandItem>
-              <CommandItem
-                onSelect={() => go("track-order")}
-                className="cursor-pointer gap-3"
-              >
+              <CommandItem onSelect={() => go("track-order")} className="cursor-pointer gap-3">
                 <Search className="h-4 w-4 text-[var(--ink)]" />
                 <span>Rastrear pedido</span>
               </CommandItem>
@@ -210,12 +183,8 @@ export function SearchPalette() {
                   className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg"
                   style={{ background: `${p.accent}1a` }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.images[0]}
-                    alt={p.name}
-                    className="h-full w-full object-contain p-1"
-                  />
+                  {}
+                  <img src={p.images[0]} alt={p.name} className="h-full w-full object-contain p-1" />
                 </span>
                 <div className="flex-1">
                   <p className="text-sm font-semibold">{p.name}</p>
@@ -223,9 +192,7 @@ export function SearchPalette() {
                     {p.brand} · {p.category}
                   </p>
                 </div>
-                <span className="text-sm font-bold">
-                  {formatPrice(p.price)}
-                </span>
+                <span className="text-sm font-bold">{formatPrice(p.price)}</span>
               </CommandItem>
             ))}
             {results.length > 0 && (

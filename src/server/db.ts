@@ -1,567 +1,218 @@
-// Astrofeet data layer — JSON-backed store that mirrors the Prisma Client API
-// surface used by this app (findUnique / findMany / findFirst / create / update
-// / delete / upsert / count / aggregate, with where operators, orderBy, include,
-// and increment/decrement). It self-seeds on first run.
-//
-// This keeps the app fully runnable without external database binaries, while
-// the repository surface stays 1:1 with Prisma so swapping to a real DB later
-// is a drop-in change.
+// Banco em arquivo JSON com uma API no formato do Prisma Client (findUnique /
+// findFirst / findMany / create / update / delete / count), com operadores de
+// where, orderBy, take e include de reviews. Semeia sozinho na primeira carga.
+// Roda sem binários externos; trocar por Prisma de verdade é mudar só este arquivo.
 
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { hashPassword, verifyPassword } from "@/server/crypto";
-import {
-  SEED_USERS,
-  SEED_PRODUCTS,
-  SEED_REVIEWS,
-  SEED_COUPONS,
-  type SeedProduct,
-} from "@/server/seed-data";
+import { SEED_USERS, SEED_PRODUCTS, SEED_REVIEWS, SEED_COUPONS } from "@/server/seed-data";
+
+// Registros são JSON dinâmico; `any` evita centenas de casts nas rotas.
+
+type Row = Record<string, any>;
+type Where = Record<string, unknown>;
+type Include = { reviews?: { orderBy?: Record<string, string>; select?: Record<string, boolean> } };
+const COLLECTIONS = ["users", "products", "orders", "reviews", "coupons", "addresses", "notifications"] as const;
+type DBShape = Record<(typeof COLLECTIONS)[number], Row[]>;
 
 // O servidor "standalone" muda o cwd; em produção aponte para um volume persistente
 // fora do build com ASTROFEET_DB_PATH.
-const DB_PATH = path.resolve(process.env.ASTROFEET_DB_PATH || path.join(process.cwd(), "db/astrofeet.json"));
-
-interface DBShape {
-  users: Record<string, unknown>[];
-  products: Record<string, unknown>[];
-  orders: Record<string, unknown>[];
-  reviews: Record<string, unknown>[];
-  coupons: Record<string, unknown>[];
-  addresses: Record<string, unknown>[];
-  notifications: Record<string, unknown>[];
-}
-
+const DB_PATH = path.resolve(
+  /* turbopackIgnore: true */ process.env.ASTROFEET_DB_PATH ||
+    path.join(/* turbopackIgnore: true */ process.cwd(), "db/astrofeet.json"),
+);
 const DATE_FIELDS = new Set(["createdAt", "updatedAt", "sentAt"]);
+const isProd = process.env.NODE_ENV === "production";
 
-// ---------- low-level load / persist ----------
-// Use globalThis so the cache survives module reloads (Turbopack HMR can
-// otherwise give each route module its own _db instance, causing data divergence).
-const _global = globalThis as unknown as { __astrofeet_db?: DBShape | null; __astrofeet_write_chain?: Promise<void> };
-let _db: DBShape | null = _global.__astrofeet_db ?? null;
-let _writeChain: Promise<void> = _global.__astrofeet_write_chain ?? Promise.resolve();
+// ---------- carga / persistência ----------
+// globalThis: o cache sobrevive ao HMR (senão cada rota teria sua própria cópia).
+const g = globalThis as unknown as { __astrofeet_db?: DBShape; __astrofeet_writes?: Promise<void> };
+const genId = () => crypto.randomUUID();
+const stamp = (data: Row, now = new Date()) => ({ id: genId(), createdAt: now, updatedAt: now, ...data });
 
-function _persistGlobal() {
-  _global.__astrofeet_db = _db;
-  _global.__astrofeet_write_chain = _writeChain;
+function hydrateDates(rec: Row): Row {
+  for (const k of Object.keys(rec)) if (DATE_FIELDS.has(k) && typeof rec[k] === "string") rec[k] = new Date(rec[k]);
+  return rec;
 }
 
-function load(): DBShape {
-  if (_db) return _db;
-  try {
-    if (fs.existsSync(DB_PATH)) {
-      const raw = fs.readFileSync(DB_PATH, "utf8");
-      const parsed = JSON.parse(raw) as DBShape;
-      _db = {
-        users: parsed.users ?? [],
-        products: parsed.products ?? [],
-        orders: parsed.orders ?? [],
-        reviews: parsed.reviews ?? [],
-        coupons: parsed.coupons ?? [],
-        addresses: parsed.addresses ?? [],
-        notifications: parsed.notifications ?? [],
-      };
-      hydrateDates(_db);
-      // Auto-migrate: ensure products have sizeStock, and coupons are seeded
-      // if the collection is empty (preserves users/orders/reviews).
-      let migrated = false;
-      // Backfill sizeStock from seed data for products that lack it (by slug).
-      const seedBySlug = new Map(SEED_PRODUCTS.map((p) => [p.slug, p]));
-      for (const p of _db.products) {
-        if (p.sizeStock === undefined) {
-          p.sizeStock = "{}";
-          migrated = true;
-        }
-        const slug = p.slug as string;
-        const seed = seedBySlug.get(slug);
-        const current = (() => {
-          try {
-            return JSON.parse((p.sizeStock as string) || "{}");
-          } catch {
-            return {};
-          }
-        })();
-        if (
-          seed &&
-          seed.sizeStock &&
-          Object.keys(current).length === 0
-        ) {
-          p.sizeStock = seed.sizeStock;
-          migrated = true;
-        }
-      }
-      if (_db.coupons.length === 0) {
-        const now = new Date();
-        for (const c of SEED_COUPONS) {
-          _db.coupons.push({
-            id: genId(),
-            code: c.code,
-            type: c.type,
-            value: c.value,
-            minSubtotal: c.minSubtotal,
-            active: c.active,
-            description: c.description,
-            expiresAt: c.expiresAt,
-            createdAt: now,
-            updatedAt: now,
-          });
-        }
-        migrated = true;
-      }
-      if (migrated) persistSync(_db);
-      warnDemoCredentials(_db);
-      _persistGlobal();
-      return _db;
-    }
-  } catch (e) {
-    console.error("[db] failed to read store, reseeding:", e);
-  }
-  _db = seed();
-  persistSync(_db);
-  _persistGlobal();
-  return _db;
-}
-
-function hydrateDates(db: DBShape) {
-  for (const coll of Object.values(db)) {
-    for (const rec of coll) {
-      for (const k of Object.keys(rec)) {
-        if (DATE_FIELDS.has(k) && typeof rec[k] === "string") {
-          rec[k] = new Date(rec[k] as string);
-        }
-      }
-    }
-  }
-}
-
-function persistSync(db: DBShape) {
+function write(db: DBShape) {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), "utf8");
 }
 
-function persist(): Promise<void> {
-  const db = _db!;
-  _writeChain = _writeChain.then(() => {
+function persist() {
+  const db = load();
+  g.__astrofeet_writes = (g.__astrofeet_writes ?? Promise.resolve()).then(() => {
     try {
-      persistSync(db);
+      write(db);
     } catch (e) {
       console.error("[db] persist failed:", e);
     }
   });
-  _persistGlobal();
-  return _writeChain;
+  return g.__astrofeet_writes;
 }
 
-// ---------- seeding ----------
-function genId(): string {
-  return crypto.randomUUID();
-}
-
-// Em desenvolvimento semeamos contas de demonstração. Em produção NUNCA:
-// senhas públicas (admin123) seriam uma porta aberta. O primeiro admin vem de
-// ASTROFEET_ADMIN_EMAIL / ASTROFEET_ADMIN_PASSWORD (mín. 12 caracteres).
+// Dev: contas de demonstração. Produção: NUNCA (admin123 seria uma porta aberta);
+// o primeiro admin vem de ASTROFEET_ADMIN_EMAIL / ASTROFEET_ADMIN_PASSWORD (>= 12).
 function seedUsers() {
-  if (process.env.NODE_ENV !== "production") return SEED_USERS;
+  if (!isProd) return SEED_USERS;
   const email = process.env.ASTROFEET_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.ASTROFEET_ADMIN_PASSWORD;
-  if (!email || !password || password.length < 12) {
-    console.warn(
-      "[db] produção sem ASTROFEET_ADMIN_EMAIL/ASTROFEET_ADMIN_PASSWORD (>=12 chars): nenhum admin criado.",
-    );
-    return [];
-  }
-  return [{ email, name: "Administrador", password, role: "admin" as const }];
-}
-
-function warnDemoCredentials(db: DBShape) {
-  if (process.env.NODE_ENV !== "production") return;
-  for (const u of SEED_USERS) {
-    const rec = db.users.find((x) => x.email === u.email);
-    if (rec && verifyPassword(u.password, String(rec.passwordHash))) {
-      console.error(
-        `[SEGURANÇA] A conta ${u.email} usa a senha de demonstração. Troque ou remova antes de expor o app.`,
-      );
-    }
-  }
+  if (email && password && password.length >= 12)
+    return [{ email, name: "Administrador", password, role: "admin" as const }];
+  console.warn("[db] produção sem ASTROFEET_ADMIN_EMAIL/ASTROFEET_ADMIN_PASSWORD (>=12 chars): nenhum admin criado.");
+  return [];
 }
 
 function seed(): DBShape {
-  const now = new Date();
-  const db: DBShape = { users: [], products: [], orders: [], reviews: [], coupons: [], addresses: [], notifications: [] };
-
-  for (const u of seedUsers()) {
-    db.users.push({
-      id: genId(),
-      email: u.email,
-      name: u.name,
-      passwordHash: hashPassword(u.password),
-      role: u.role,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
-
-  const slugToId = new Map<string, string>();
-  for (const p of SEED_PRODUCTS) {
-    const id = genId();
-    slugToId.set(p.slug, id);
-    db.products.push({
-      id,
-      slug: p.slug,
-      name: p.name,
-      brand: p.brand,
-      category: p.category,
-      price: p.price,
-      description: p.description,
-      images: p.images,
-      sizes: p.sizes,
-      stock: p.stock,
-      sizeStock: p.sizeStock ?? "{}",
-      rating: p.rating,
-      accent: p.accent,
-      badge: p.badge,
-      featured: p.featured,
-      bestSeller: p.bestSeller,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
-
-  for (const r of SEED_REVIEWS) {
-    const productId = slugToId.get(r.slug);
-    if (!productId) continue;
-    db.reviews.push({
-      id: genId(),
-      productId,
-      userId: null,
-      authorName: r.authorName,
-      rating: r.rating,
-      comment: r.comment,
-      createdAt: now,
-    });
-  }
-
-  for (const c of SEED_COUPONS) {
-    db.coupons.push({
-      id: genId(),
-      code: c.code,
-      type: c.type,
-      value: c.value,
-      minSubtotal: c.minSubtotal,
-      active: c.active,
-      description: c.description,
-      expiresAt: c.expiresAt,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
-
+  const db = Object.fromEntries(COLLECTIONS.map((c) => [c, []])) as unknown as DBShape;
+  db.users = seedUsers().map(({ password, ...u }) => stamp({ ...u, passwordHash: hashPassword(password) }));
+  db.products = SEED_PRODUCTS.map((p) => stamp(p));
+  const idBySlug = new Map(db.products.map((p) => [p.slug, p.id]));
+  db.reviews = SEED_REVIEWS.filter((r) => idBySlug.has(r.slug)).map(({ slug, ...r }) =>
+    stamp({ ...r, productId: idBySlug.get(slug), userId: null }),
+  );
+  db.coupons = SEED_COUPONS.map((c) => stamp(c));
   return db;
 }
 
-// ---------- query engine ----------
-type Cond = unknown;
-// Registros do store são JSON dinâmico (espelham o Prisma Client); `any` evita centenas de casts.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Record_ = Record<string, any>;
-
-function toComparable(v: unknown): unknown {
-  if (v instanceof Date) return v.getTime();
-  return v;
-}
-
-function matchOp(recordVal: unknown, cond: Record<string, unknown>): boolean {
-  const rv = toComparable(recordVal);
-  for (const [op, target] of Object.entries(cond)) {
-    const tv = target instanceof Date ? target.getTime() : target;
-    switch (op) {
-      case "equals":
-        if (rv !== tv) return false;
-        break;
-      case "gte":
-        if (!(typeof rv === "number" && typeof tv === "number" && rv >= tv))
-          return false;
-        break;
-      case "lte":
-        if (!(typeof rv === "number" && typeof tv === "number" && rv <= tv))
-          return false;
-        break;
-      case "gt":
-        if (!(typeof rv === "number" && typeof tv === "number" && rv > tv))
-          return false;
-        break;
-      case "lt":
-        if (!(typeof rv === "number" && typeof tv === "number" && rv < tv))
-          return false;
-        break;
-      case "contains": {
-        const s = String(rv ?? "").toLowerCase();
-        if (!s.includes(String(tv).toLowerCase())) return false;
-        break;
-      }
-      case "startsWith": {
-        const s = String(rv ?? "").toLowerCase();
-        if (!s.startsWith(String(tv).toLowerCase())) return false;
-        break;
-      }
-      case "in": {
-        if (!Array.isArray(tv) || !tv.includes(rv)) return false;
-        break;
-      }
-      case "not":
-        if (rv === tv) return false;
-        break;
-      default:
-        // unknown operator — treat as equality fallback
-        if (rv !== tv) return false;
-    }
+function load(): DBShape {
+  if (g.__astrofeet_db) return g.__astrofeet_db;
+  let db: DBShape;
+  try {
+    const raw = JSON.parse(fs.readFileSync(DB_PATH, "utf8")) as Partial<DBShape>;
+    db = Object.fromEntries(COLLECTIONS.map((c) => [c, (raw[c] ?? []).map(hydrateDates)])) as DBShape;
+    // Migrações leves: estoque por tamanho vindo do seed e cupons padrão.
+    const seedBySlug = new Map(SEED_PRODUCTS.map((p) => [p.slug, p]));
+    for (const p of db.products)
+      if (!p.sizeStock || p.sizeStock === "{}") p.sizeStock = seedBySlug.get(p.slug)?.sizeStock ?? "{}";
+    if (!db.coupons.length) db.coupons = SEED_COUPONS.map((c) => stamp(c));
+    if (isProd)
+      for (const u of SEED_USERS)
+        if (db.users.some((x) => x.email === u.email && verifyPassword(u.password, String(x.passwordHash))))
+          console.error(
+            `[SEGURANÇA] A conta ${u.email} usa a senha de demonstração. Troque ou remova antes de expor o app.`,
+          );
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== "ENOENT")
+      console.error("[db] falha ao ler o banco, semeando de novo:", e);
+    db = seed();
   }
-  return true;
+  write(db);
+  return (g.__astrofeet_db = db);
 }
 
-function matchWhere(rec: Record_, where: Cond): boolean {
-  if (!where || typeof where !== "object") return true;
-  const w = where as Record<string, unknown>;
-  for (const [key, val] of Object.entries(w)) {
-    if (key === "OR") {
-      if (!Array.isArray(val)) return false;
-      if (!val.some((sub) => matchWhere(rec, sub))) return false;
-      continue;
-    }
-    if (key === "AND") {
-      if (!Array.isArray(val)) return false;
-      if (!val.every((sub) => matchWhere(rec, sub))) return false;
-      continue;
-    }
-    if (key === "NOT") {
-      if (matchWhere(rec, val)) return false;
-      continue;
-    }
-    const rv = rec[key];
-    if (val !== null && typeof val === "object" && !(val instanceof Date)) {
-      if (!matchOp(rv, val as Record<string, unknown>)) return false;
-    } else {
-      const a = toComparable(rv);
-      const b = val instanceof Date ? val.getTime() : val;
-      if (a !== b) return false;
-    }
-  }
-  return true;
-}
+// ---------- consulta ----------
+const cmp = (v: unknown) => (v instanceof Date ? v.getTime() : v);
+const lower = (v: unknown) => String(v ?? "").toLowerCase();
 
-function sortRecords(records: Record_[], orderBy?: Record<string, string>): Record_[] {
-  if (!orderBy) return records;
-  const [field, dir] = Object.entries(orderBy)[0];
-  const sorted = [...records].sort((a, b) => {
-    const av = toComparable(a[field]);
-    const bv = toComparable(b[field]);
-    if (av === bv) return 0;
-    if (typeof av === "number" && typeof bv === "number") {
-      return av - bv;
-    }
-    return String(av).localeCompare(String(bv));
+const OPS: Record<string, (rv: unknown, tv: unknown) => boolean> = {
+  equals: (a, b) => a === b,
+  not: (a, b) => a !== b,
+  in: (a, b) => Array.isArray(b) && b.includes(a),
+  contains: (a, b) => lower(a).includes(lower(b)),
+  gt: (a, b) => (a as number) > (b as number),
+  gte: (a, b) => (a as number) >= (b as number),
+  lt: (a, b) => (a as number) < (b as number),
+  lte: (a, b) => (a as number) <= (b as number),
+};
+
+function matches(rec: Row, where: Where = {}): boolean {
+  return Object.entries(where).every(([key, cond]) => {
+    if (key === "OR") return (cond as Where[]).some((w) => matches(rec, w));
+    const rv = cmp(rec[key]);
+    if (cond === null || typeof cond !== "object" || cond instanceof Date) return rv === cmp(cond);
+    return Object.entries(cond).every(([op, tv]) => (OPS[op] ?? OPS.equals)(rv, cmp(tv)));
   });
-  return dir === "desc" ? sorted.reverse() : sorted;
 }
 
-function clone<T>(rec: T): T {
-  return JSON.parse(
-    JSON.stringify(rec, (_k, v) => (v instanceof Date ? v.toISOString() : v)),
-  ) as T;
+function sortBy(rows: Row[], orderBy?: Record<string, string>): Row[] {
+  if (!orderBy) return rows;
+  const [field, dir] = Object.entries(orderBy)[0];
+  const sign = dir === "desc" ? -1 : 1;
+  return [...rows].sort((a, b) => {
+    const [x, y] = [cmp(a[field]), cmp(b[field])];
+    return sign * (typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y)));
+  });
 }
 
-// Convert ISO strings back to Date for date fields on the cloned output so
-// consumers see Date objects (matches Prisma behaviour).
-function withDates<T extends Record_>(rec: T): T {
-  const out: Record_ = { ...rec };
-  for (const k of Object.keys(out)) {
-    if (DATE_FIELDS.has(k) && typeof out[k] === "string") {
-      out[k] = new Date(out[k] as string);
-    }
-  }
-  return out as T;
-}
-
-// Apply include relations (only reviews on product supported here).
-function applyInclude(
-  rec: Record_,
-  include?: Record<string, unknown>,
-): Record_ {
-  if (!include) return rec;
-  const out: Record_ = { ...rec };
-  if (include.reviews && typeof include.reviews === "object") {
-    const opts = include.reviews as Record<string, unknown>;
-    let related = (out.reviews as Record_[]) ?? load().reviews.filter((r) => r.productId === rec.id);
-    related = load().reviews.filter((r) => r.productId === rec.id);
-    related = sortRecords(related, opts.orderBy as Record<string, string>);
-    if (opts.select) {
-      const sel = opts.select as Record<string, boolean>;
-      related = related.map((r) => {
-        const proj: Record_ = {};
-        for (const k of Object.keys(sel)) if (sel[k]) proj[k] = r[k];
-        return proj;
-      });
-    }
-    out.reviews = related;
+// Cópia profunda (o chamador nunca altera o banco por referência), com datas preservadas.
+function output(rec: Row, include?: Include): Row {
+  const out = hydrateDates(JSON.parse(JSON.stringify(rec)));
+  if (include?.reviews) {
+    const { orderBy, select } = include.reviews;
+    out.reviews = sortBy(
+      load().reviews.filter((r) => r.productId === rec.id),
+      orderBy,
+    ).map((r) => (select ? Object.fromEntries(Object.keys(select).map((k) => [k, r[k]])) : output(r)));
   }
   return out;
 }
 
-// ---------- model factory ----------
-interface ModelAPI {
-  findUnique(args?: { where?: Record<string, unknown>; include?: Record<string, unknown> }): Promise<Record_ | null>;
-  findFirst(args?: { where?: Cond; include?: Record<string, unknown> }): Promise<Record_ | null>;
-  findMany(args?: { where?: Cond; orderBy?: Record<string, string>; include?: Record<string, unknown>; take?: number; skip?: number }): Promise<Record_[]>;
-  create(args: { data: Record_; include?: Record<string, unknown> }): Promise<Record_>;
-  update(args: { where: Record<string, unknown>; data: Record_; include?: Record<string, unknown> }): Promise<Record_>;
-  delete(args: { where: Record<string, unknown> }): Promise<Record_>;
-  upsert(args: { where: Record<string, unknown>; update?: Record_; create: Record_ | (() => Record_); include?: Record<string, unknown> }): Promise<Record_>;
-  count(args?: { where?: Cond }): Promise<number>;
-  aggregate(args: { where?: Cond; _avg?: Record<string, true>; _sum?: Record<string, true> }): Promise<Record<string, any>>;
+function notFound(): never {
+  throw Object.assign(new Error("Record not found"), { code: "P2025" });
 }
 
-function createModel(collName: keyof DBShape): ModelAPI {
-  function coll(): Record_[] {
-    return load()[collName];
-  }
+function model(name: keyof DBShape) {
+  const rows = () => load()[name];
+  const indexOf = (where: Where) => {
+    const i = rows().findIndex((r) => matches(r, where));
+    return i < 0 ? notFound() : i;
+  };
+  const findFirst = async (a: { where?: Where; include?: Include } = {}) => {
+    const rec = rows().find((r) => matches(r, a.where));
+    return rec ? output(rec, a.include) : null;
+  };
   return {
-    async findUnique(args) {
-      const rec = coll().find((r) => matchWhere(r, args?.where ?? {}));
-      if (!rec) return null;
-      return withDates(applyInclude(clone(rec), args?.include));
+    findUnique: findFirst,
+    findFirst,
+    async findMany(a: { where?: Where; orderBy?: Record<string, string>; include?: Include; take?: number } = {}) {
+      return sortBy(
+        rows().filter((r) => matches(r, a.where)),
+        a.orderBy,
+      )
+        .slice(0, a.take)
+        .map((r) => output(r, a.include));
     },
-    async findFirst(args) {
-      const rec = coll().find((r) => matchWhere(r, args?.where ?? {}));
-      if (!rec) return null;
-      return withDates(applyInclude(clone(rec), args?.include));
+    async count(a: { where?: Where } = {}) {
+      return rows().filter((r) => matches(r, a.where)).length;
     },
-    async findMany(args) {
-      let records = coll().filter((r) => matchWhere(r, args?.where ?? {}));
-      records = sortRecords(records, args?.orderBy);
-      if (args?.skip || args?.take !== undefined)
-        records = records.slice(args.skip ?? 0, args.take !== undefined ? (args.skip ?? 0) + args.take : undefined);
-      return records.map((r) =>
-        withDates(applyInclude(clone(r), args?.include)),
-      );
-    },
-    async create(args) {
-      const now = new Date();
-      const data = typeof args.data === "function" ? (args.data as () => Record_)() : args.data;
-      const rec: Record_ = {
-        id: genId(),
-        createdAt: now,
-        updatedAt: now,
-        ...data,
-      };
-      // ensure date fields are Date objects
-      for (const k of Object.keys(rec)) {
-        if (DATE_FIELDS.has(k) && typeof rec[k] === "string") {
-          rec[k] = new Date(rec[k] as string);
-        }
-      }
-      coll().push(rec);
+    async create(a: { data: Row }) {
+      const rec = hydrateDates(stamp(a.data));
+      rows().push(rec);
       await persist();
-      return withDates(applyInclude(clone(rec), args.include));
+      return output(rec);
     },
-    async update(args) {
-      const idx = coll().findIndex((r) => matchWhere(r, args.where));
-      if (idx < 0) {
-        const e = new Error("Record not found") as Error & { code?: string };
-        e.code = "P2025";
-        throw e;
-      }
-      const rec = coll()[idx];
-      for (const [k, v] of Object.entries(args.data)) {
-        if (v !== null && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date)) {
-          const ops = v as Record<string, number>;
-          if ("decrement" in ops) {
-            rec[k] = (Number(rec[k] ?? 0) - Number(ops.decrement)) as unknown;
-          } else if ("increment" in ops) {
-            rec[k] = (Number(rec[k] ?? 0) + Number(ops.increment)) as unknown;
-          } else if ("set" in ops) {
-            rec[k] = ops.set as unknown;
-          } else {
-            rec[k] = v as unknown;
-          }
-        } else {
-          rec[k] = v as unknown;
-        }
+    /** `data` aceita valores ou { increment | decrement: n }. */
+    async update(a: { where: Where; data: Row; include?: Include }) {
+      const rec = rows()[indexOf(a.where)];
+      for (const [k, v] of Object.entries(a.data)) {
+        if (v && typeof v === "object" && ("increment" in v || "decrement" in v))
+          rec[k] = Number(rec[k] ?? 0) + Number(v.increment ?? 0) - Number(v.decrement ?? 0);
+        else rec[k] = v;
       }
       rec.updatedAt = new Date();
       await persist();
-      return withDates(applyInclude(clone(rec), args.include));
+      return output(rec, a.include);
     },
-    async delete(args) {
-      const idx = coll().findIndex((r) => matchWhere(r, args.where));
-      if (idx < 0) {
-        const e = new Error("Record not found") as Error & { code?: string };
-        e.code = "P2025";
-        throw e;
-      }
-      const [removed] = coll().splice(idx, 1);
-      // cascade delete reviews for products
-      if (collName === "products") {
-        load().reviews = load().reviews.filter((r) => r.productId !== removed.id);
-      }
+    async delete(a: { where: Where }) {
+      const [removed] = rows().splice(indexOf(a.where), 1);
+      if (name === "products") load().reviews = load().reviews.filter((r) => r.productId !== removed.id);
       await persist();
-      return withDates(clone(removed));
-    },
-    async upsert(args) {
-      const existing = coll().find((r) => matchWhere(r, args.where));
-      if (existing) {
-        if (args.update && Object.keys(args.update).length > 0) {
-          for (const [k, v] of Object.entries(args.update)) {
-            existing[k] = v as unknown;
-          }
-          existing.updatedAt = new Date();
-          await persist();
-        }
-        return withDates(applyInclude(clone(existing), args.include));
-      }
-      const createData =
-        typeof args.create === "function" ? (args.create as () => Record_)() : args.create;
-      return this.create({ data: createData, include: args.include });
-    },
-    async count(args) {
-      return coll().filter((r) => matchWhere(r, args?.where ?? {})).length;
-    },
-    async aggregate(args) {
-      const records = coll().filter((r) => matchWhere(r, args?.where ?? {}));
-      const result: Record<string, unknown> = {};
-      if (args._avg) {
-        const avg: Record<string, number | null> = {};
-        for (const k of Object.keys(args._avg)) {
-          const vals = records.map((r) => Number(r[k])).filter((n) => Number.isFinite(n));
-          avg[k] = vals.length ? vals.reduce((s, n) => s + n, 0) / vals.length : null;
-        }
-        result._avg = avg;
-      }
-      if (args._sum) {
-        const sum: Record<string, number> = {};
-        for (const k of Object.keys(args._sum)) {
-          sum[k] = records.reduce((s, r) => s + Number(r[k] ?? 0), 0);
-        }
-        result._sum = sum;
-      }
-      return result;
+      return output(removed);
     },
   };
 }
 
 export const db = {
-  user: createModel("users"),
-  product: createModel("products"),
-  order: createModel("orders"),
-  review: createModel("reviews"),
-  coupon: createModel("coupons"),
-  address: createModel("addresses"),
-  notification: createModel("notifications"),
-  async $disconnect() {
-    /* no-op */
-  },
+  user: model("users"),
+  product: model("products"),
+  order: model("orders"),
+  review: model("reviews"),
+  coupon: model("coupons"),
+  address: model("addresses"),
+  notification: model("notifications"),
 };
-
-// Keep the SeedProduct type referenced for downstream typing.
-export type { SeedProduct };

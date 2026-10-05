@@ -1,75 +1,23 @@
-import { NextRequest } from "next/server";
-import { db } from "@/server/db";
+import { z } from "zod";
 import { requireAdmin } from "@/server/auth";
-import { serializeOrder } from "@/server/serialize";
-import { HttpError, handleApiError, ok } from "@/server/http";
-import { sendEmailNotification, buildOrderStatusBody } from "@/server/notifications";
+import { body, route } from "@/server/http";
+import { setOrderStatus, StatusInput } from "@/server/orders";
 
 export const runtime = "nodejs";
 
-const VALID = ["created", "paid", "shipped", "delivered", "cancelled"];
+const Bulk = z.object({
+  orderIds: z.array(z.string()).min(1, "Selecione ao menos um pedido.").max(200),
+  status: StatusInput,
+});
 
-// POST /api/admin/bulk-status
-// Body: { orderIds: string[], status: string }
-// Updates multiple orders' status at once and queues notifications.
-export async function POST(req: NextRequest) {
-  try {
-    await requireAdmin();
-    const body = await req.json().catch(() => ({}));
-    const orderIds = Array.isArray(body.orderIds) ? body.orderIds : [];
-    const status = String(body.status ?? "");
-
-    if (orderIds.length === 0)
-      throw new HttpError("Selecione ao menos um pedido.", 400);
-    if (!VALID.includes(status))
-      throw new HttpError("Status inválido.", 400);
-
-    const results: { id: string; code: string; success: boolean }[] = [];
-    for (const id of orderIds) {
-      try {
-        const existing = await db.order.findUnique({ where: { id } });
-        if (!existing) {
-          results.push({ id, code: "?", success: false });
-          continue;
-        }
-        const previousStatus = existing.status as string;
-        const updated = await db.order.update({
-          where: { id },
-          data: { status },
-        });
-        const serialized = serializeOrder(updated);
-
-        // Queue status-update notification if status actually changed
-        if (previousStatus !== status) {
-          try {
-            await sendEmailNotification({
-              type: "order_status",
-              to: serialized.customer.email,
-              subject: `Pedido ${serialized.code} · status atualizado`,
-              body: buildOrderStatusBody({
-                code: serialized.code,
-                customerName: serialized.customer.name,
-                newStatus: status,
-              }),
-              orderId: updated.id,
-            });
-          } catch {
-            // Non-fatal
-          }
-        }
-        results.push({ id, code: updated.code, success: true });
-      } catch {
-        results.push({ id, code: "?", success: false });
-      }
-    }
-
-    const successCount = results.filter((r) => r.success).length;
-    return ok({
-      updated: successCount,
-      total: orderIds.length,
-      results,
-    });
-  } catch (e) {
-    return handleApiError(e);
+// POST /api/admin/bulk-status — muda o status de vários pedidos de uma vez.
+export const POST = route(async (req) => {
+  await requireAdmin();
+  const { orderIds, status } = await body(req, Bulk);
+  const results: { id: string; code: string; success: boolean }[] = [];
+  for (const id of orderIds) {
+    const order = await setOrderStatus(id, status).catch(() => null);
+    results.push({ id, code: order?.code ?? "?", success: !!order });
   }
-}
+  return { updated: results.filter((r) => r.success).length, total: orderIds.length, results };
+});
