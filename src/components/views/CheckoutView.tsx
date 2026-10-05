@@ -23,7 +23,7 @@ import { useCartStore } from "@/stores/cart";
 import { useUIStore } from "@/stores/ui";
 import { useAuthStore } from "@/stores/auth";
 import { useCheckoutStore } from "@/stores/checkout";
-import { api } from "@/lib/client";
+import { api } from "@/client/api";
 import {
   formatPrice,
   maskCEP,
@@ -31,10 +31,10 @@ import {
   maskCVV,
   maskExpiry,
   maskPhone,
-} from "@/lib/format";
+} from "@/shared/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Address } from "@/lib/types";
+import type { Address } from "@/shared/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

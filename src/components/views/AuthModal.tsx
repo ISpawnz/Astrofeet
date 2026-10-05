@@ -19,8 +19,8 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 import { useAuthStore } from "@/stores/auth";
-import { api } from "@/lib/client";
-import type { PublicUser } from "@/lib/types";
+import { api } from "@/client/api";
+import type { PublicUser } from "@/shared/types";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";

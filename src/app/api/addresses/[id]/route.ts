@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
-import { serializeAddress } from "@/lib/serialize";
-import { HttpError, handleApiError, ok } from "@/lib/api";
+import { db } from "@/server/db";
+import { getCurrentUser } from "@/server/auth";
+import { serializeAddress } from "@/server/serialize";
+import { HttpError, handleApiError, ok } from "@/server/http";
 
 export const runtime = "nodejs";
 

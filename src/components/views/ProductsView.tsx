@@ -12,9 +12,9 @@ import {
   PackageSearch,
   Compass,
 } from "lucide-react";
-import { api } from "@/lib/client";
+import { api } from "@/client/api";
 import { useUIStore } from "@/stores/ui";
-import { formatPrice } from "@/lib/format";
+import { formatPrice } from "@/shared/format";
 import { cn } from "@/lib/utils";
 import { ProductCard } from "./ProductCard";
 import { Button } from "@/components/ui/button";

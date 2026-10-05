@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
-import { serializeProduct } from "@/lib/serialize";
-import { HttpError, handleApiError, ok } from "@/lib/api";
-import type { Product } from "@/lib/types";
+import { db } from "@/server/db";
+import { requireAdmin } from "@/server/auth";
+import { serializeProduct } from "@/server/serialize";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import type { Product } from "@/shared/types";
 
 export const runtime = "nodejs";
 
@@ -69,6 +69,14 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/** Só caminhos locais (/...) ou https://. Bloqueia javascript:, data:, http:. */
+function cleanImages(list: unknown[]): string[] {
+  return list
+    .map((v) => String(v ?? "").trim())
+    .filter((v) => v.length <= 500 && (/^\/(?!\/)/.test(v) || /^https:\/\//i.test(v)))
+    .slice(0, 12);
+}
+
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
@@ -91,8 +99,8 @@ export async function POST(req: NextRequest) {
         .replace(/(^-|-$)/g, "") ||
       name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
-    const images = Array.isArray(body.images)
-      ? body.images.filter(Boolean)
+    const images = Array.isArray(body.images) && body.images.length
+      ? cleanImages(body.images)
       : ["/products/placeholder.svg"];
     const sizes = Array.isArray(body.sizes)
       ? body.sizes.map((s) => Number(s)).filter((n) => Number.isFinite(n))

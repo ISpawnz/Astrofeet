@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Toaster as Sonner } from "sonner";
 import { useAuthStore } from "@/stores/auth";
-import { api } from "@/lib/client";
+import { api } from "@/client/api";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(

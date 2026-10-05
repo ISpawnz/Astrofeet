@@ -54,17 +54,17 @@ import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 import { useWishlistStore } from "@/stores/wishlist";
 import { useCartStore } from "@/stores/cart";
-import { api } from "@/lib/client";
+import { api } from "@/client/api";
 import {
   formatPrice,
   formatDate,
   orderStatusLabel,
   orderStatusColor,
   maskCEP,
-} from "@/lib/format";
+} from "@/shared/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Order, PublicUser, Address, Notification, NotificationType, Product } from "@/lib/types";
+import type { Order, PublicUser, Address, Notification, NotificationType, Product } from "@/shared/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";

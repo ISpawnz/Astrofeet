@@ -3,14 +3,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Flame, Rocket, ShieldCheck, Clock, Trash2 } from "lucide-react";
-import { api } from "@/lib/client";
+import { api } from "@/client/api";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
 import { useRecentStore } from "@/stores/recent";
 import { ProductCard } from "./ProductCard";
-import { formatPrice } from "@/lib/format";
+import { formatPrice } from "@/shared/format";
 import { toast } from "sonner";
-import type { Product } from "@/lib/types";
+import type { Product } from "@/shared/types";
 
 export function HomeView() {
   const navigate = useUIStore((s) => s.navigate);
@@ -169,7 +169,7 @@ export function HomeView() {
           action={() => navigate("products")}
           actionLabel="Ver todos"
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${colsLg(drops.length, 3)}`}>
             {drops.map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
@@ -274,7 +274,7 @@ export function HomeView() {
           action={() => navigate("products", { sort: "newest" })}
           actionLabel="Ver novidades"
         >
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className={`grid grid-cols-2 gap-4 ${colsLg(Math.min(newest.length, 4), 4)}`}>
             {newest.slice(0, 4).map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
@@ -291,7 +291,7 @@ export function HomeView() {
           action={() => navigate("products", { bestSeller: "true" })}
           actionLabel="Ver mais vendidos"
         >
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className={`grid grid-cols-2 gap-4 ${colsLg(Math.min(bestSellers.length, 4), 4)}`}>
             {bestSellers.slice(0, 4).map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
@@ -423,6 +423,13 @@ export function HomeView() {
       </section>
     </div>
   );
+}
+
+// Colunas no desktop = nº de itens (até o máximo), para a última linha nunca
+// ficar com um buraco. Classes estáticas para o Tailwind enxergá-las.
+function colsLg(count: number, max: 3 | 4): string {
+  const n = Math.max(1, Math.min(count, max));
+  return n === 1 ? "lg:grid-cols-1" : n === 2 ? "lg:grid-cols-2" : n === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4";
 }
 
 function Section({

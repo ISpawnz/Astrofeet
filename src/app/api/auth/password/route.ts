@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser, setSessionCookie } from "@/lib/auth";
-import { verifyPassword, hashPassword } from "@/lib/crypto";
-import { HttpError, handleApiError, ok } from "@/lib/api";
-import { rateLimit } from "@/lib/rate-limit";
-import type { Role } from "@/lib/types";
+import { db } from "@/server/db";
+import { getCurrentUser, setSessionCookie } from "@/server/auth";
+import { verifyPassword, hashPassword } from "@/server/crypto";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import { rateLimit } from "@/server/rate-limit";
+import type { Role } from "@/shared/types";
 
 export const runtime = "nodejs";
 

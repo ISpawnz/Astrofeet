@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { hashPassword, setSessionCookie } from "@/lib/auth";
-import { HttpError, handleApiError, ok } from "@/lib/api";
-import { rateLimit } from "@/lib/rate-limit";
-import { sendEmailNotification } from "@/lib/notifications";
-import type { Role } from "@/lib/types";
+import { db } from "@/server/db";
+import { hashPassword, setSessionCookie } from "@/server/auth";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import { rateLimit } from "@/server/rate-limit";
+import { sendEmailNotification } from "@/server/notifications";
+import type { Role } from "@/shared/types";
 
 export const runtime = "nodejs";
 

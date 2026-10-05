@@ -1,8 +1,11 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
-import { HttpError, handleApiError, ok } from "@/lib/api";
-import { sendEmailNotification } from "@/lib/notifications";
+import { db } from "@/server/db";
+import { getCurrentUser } from "@/server/auth";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import { sendEmailNotification } from "@/server/notifications";
+import { withLock } from "@/server/lock";
+import { rateLimit } from "@/server/rate-limit";
+import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
@@ -22,11 +25,22 @@ function parsePoints(stored: string | undefined): number {
 // POST /api/loyalty/redeem — redeem points for a discount coupon
 export async function POST(req: NextRequest) {
   try {
+    rateLimit(req, "loyalty:redeem", 10, 15 * 60 * 1000);
     const user = await getCurrentUser();
     if (!user) throw new HttpError("Não autenticado.", 401);
+    // Serializado por usuário: impede gastar os mesmos pontos em requisições paralelas.
+    return await withLock(`points:${user.id}`, () => redeem(req, user));
+  } catch (e) {
+    return handleApiError(e);
+  }
+}
+
+async function redeem(req: NextRequest, user: { id: string; email: string; name: string }) {
+  try {
 
     const body = await req.json().catch(() => ({}));
     const pointsToRedeem = Math.floor(Number(body.points ?? 0));
+    if (!Number.isFinite(pointsToRedeem)) throw new HttpError("Quantidade inválida.", 400);
 
     if (pointsToRedeem < MIN_REDEEM_POINTS)
       throw new HttpError(`Mínimo de ${MIN_REDEEM_POINTS} pontos para resgatar.`, 400);
@@ -46,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     // Create a fixed-amount coupon
     const discount = Number((pointsToRedeem * POINTS_TO_BRL_RATE).toFixed(2));
-    const code = `STARS${pointsToRedeem}-${Date.now().toString().slice(-4)}`;
+    const code = `STARS${pointsToRedeem}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
     const coupon = await db.coupon.create({
       data: {
         code,
@@ -54,6 +68,7 @@ export async function POST(req: NextRequest) {
         value: discount,
         minSubtotal: 0,
         active: true,
+        maxUses: 1, // cupom de resgate vale para um único pedido
         description: `Resgate de ${pointsToRedeem} pontos estelares`,
         expiresAt: null,
       },

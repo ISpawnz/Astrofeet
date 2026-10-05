@@ -13,9 +13,9 @@ import {
 import { useUIStore } from "@/stores/ui";
 import { useWishlistStore } from "@/stores/wishlist";
 import { useCartStore } from "@/stores/cart";
-import { api } from "@/lib/client";
-import { formatPrice } from "@/lib/format";
-import type { Product } from "@/lib/types";
+import { api } from "@/client/api";
+import { formatPrice } from "@/shared/format";
+import type { Product } from "@/shared/types";
 import {
   Search,
   Rocket,

@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { Product } from "@/lib/types";
+import type { Product } from "@/shared/types";
 
 interface WishlistItem {
   id: string;

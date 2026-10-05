@@ -1,12 +1,14 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
-import { HttpError, handleApiError } from "@/lib/api";
-import type { Order } from "@/lib/types";
+import { db } from "@/server/db";
+import { getCurrentUser } from "@/server/auth";
+import { HttpError, handleApiError } from "@/server/http";
+import type { Order } from "@/shared/types";
 
 export const runtime = "nodejs";
 
 function escapeCsv(value: string): string {
+  // Neutraliza "CSV injection": células iniciadas por = + - @ viram fórmulas no Excel.
+  if (/^[=+\-@\t\r]/.test(value)) value = `'${value}`;
   if (value.includes(",") || value.includes('"') || value.includes("\n")) {
     return `"${value.replace(/"/g, '""')}"`;
   }

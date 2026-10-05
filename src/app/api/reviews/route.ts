@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
-import { serializeReview } from "@/lib/serialize";
-import { HttpError, handleApiError, ok } from "@/lib/api";
+import { db } from "@/server/db";
+import { getCurrentUser } from "@/server/auth";
+import { serializeReview } from "@/server/serialize";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import { rateLimit } from "@/server/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -23,15 +24,18 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    rateLimit(req, "reviews:create", 8, 15 * 60 * 1000);
     const user = await getCurrentUser();
     const body = await req.json().catch(() => ({}));
     const productId = String(body.productId ?? "");
     const rating = Math.round(Number(body.rating));
     const comment = String(body.comment ?? "").trim();
-    const authorName =
-      String(body.authorName ?? "").trim() ||
+    // Usuário logado: o nome vem da sessão (não dá para se passar por outra pessoa).
+    const authorName = (
       user?.name ||
-      "Explorador anônimo";
+      String(body.authorName ?? "").trim() ||
+      "Explorador anônimo"
+    ).slice(0, 60);
 
     if (!productId) throw new HttpError("Produto inválido.", 400);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5)

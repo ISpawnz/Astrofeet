@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser, requireAdmin } from "@/lib/auth";
-import { serializeNotification } from "@/lib/serialize";
-import { HttpError, handleApiError, ok } from "@/lib/api";
-import type { NotificationType } from "@/lib/types";
+import { db } from "@/server/db";
+import { getCurrentUser, requireAdmin } from "@/server/auth";
+import { serializeNotification } from "@/server/serialize";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import type { NotificationType } from "@/shared/types";
 
 export const runtime = "nodejs";
 

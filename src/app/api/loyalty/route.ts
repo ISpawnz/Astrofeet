@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
-import { HttpError, handleApiError, ok } from "@/lib/api";
-import { sendEmailNotification } from "@/lib/notifications";
+import { db } from "@/server/db";
+import { getCurrentUser } from "@/server/auth";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import { sendEmailNotification } from "@/server/notifications";
 
 export const runtime = "nodejs";
 

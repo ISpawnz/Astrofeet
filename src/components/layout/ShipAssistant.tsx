@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Rocket, X, Send, Sparkles } from "lucide-react";
-import { api } from "@/lib/client";
+import { api } from "@/client/api";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui";
 

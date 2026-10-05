@@ -3,12 +3,12 @@
 import { motion } from "framer-motion";
 import { ShoppingCart, Star, Heart, GitCompare, Eye } from "lucide-react";
 import { useState } from "react";
-import type { Product } from "@/lib/types";
+import type { Product } from "@/shared/types";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
 import { useWishlistStore } from "@/stores/wishlist";
 import { useCompareStore } from "@/stores/compare";
-import { formatPrice } from "@/lib/format";
+import { formatPrice } from "@/shared/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -110,7 +110,7 @@ export function ProductCard({
           {product.badge && (
             <span
               className={cn(
-                "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide backdrop-blur",
+                "rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide backdrop-blur",
                 BADGE_STYLES[product.badge] ??
                   "bg-white/10 text-white border-white/20",
               )}
@@ -119,7 +119,7 @@ export function ProductCard({
             </span>
           )}
           {product.stock <= 5 && product.stock > 0 && (
-            <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-300">
+            <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold uppercase text-amber-300">
               Últimas {product.stock}
             </span>
           )}
@@ -197,12 +197,12 @@ export function ProductCard({
         <div className="mt-2 flex items-end justify-between">
           <div>
             <p className="text-lg font-bold">{formatPrice(product.price)}</p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               ou 10x de {formatPrice(product.price / 10)}
             </p>
           </div>
           <span
-            className="rounded-full px-2 py-1 text-[10px] font-medium"
+            className="rounded-full px-2 py-1 text-[11px] font-medium"
             style={{
               color: product.accent,
               background: `${product.accent}1a`,
