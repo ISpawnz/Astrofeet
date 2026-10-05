@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { serializeProduct } from "@/lib/serialize";
-import { handleApiError, ok } from "@/lib/api";
+import { db } from "@/server/db";
+import { serializeProduct } from "@/server/serialize";
+import { handleApiError, ok } from "@/server/http";
 
 export const runtime = "nodejs";
 
@@ -67,7 +67,7 @@ async function relatedFor(product: Record<string, unknown>) {
   }
 
   // Compute reviewCount for each
-  const products = [];
+  const products: ReturnType<typeof serializeProduct>[] = [];
   for (const p of merged) {
     const reviewCount = await db.review.count({
       where: { productId: p.id },

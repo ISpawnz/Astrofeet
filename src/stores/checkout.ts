@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { Order } from "@/lib/types";
+import type { Order } from "@/shared/types";
 
 interface CheckoutState {
   lastOrder: Order | null;

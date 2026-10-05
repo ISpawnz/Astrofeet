@@ -1,7 +1,7 @@
-import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
-import { serializeOrder } from "@/lib/serialize";
-import { handleApiError, ok } from "@/lib/api";
+import { db } from "@/server/db";
+import { requireAdmin } from "@/server/auth";
+import { serializeOrder } from "@/server/serialize";
+import { handleApiError, ok } from "@/server/http";
 
 export const runtime = "nodejs";
 

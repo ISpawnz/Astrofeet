@@ -17,11 +17,11 @@ import {
 } from "lucide-react";
 import { useCheckoutStore } from "@/stores/checkout";
 import { useUIStore } from "@/stores/ui";
-import { formatPrice, orderStatusLabel } from "@/lib/format";
+import { formatPrice, orderStatusLabel } from "@/shared/format";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import type { Order } from "@/lib/types";
+import type { Order } from "@/shared/types";
 
 const STEPS: { key: Order["status"]; label: string }[] = [
   { key: "created", label: "Recebido" },

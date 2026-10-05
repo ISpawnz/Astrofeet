@@ -21,11 +21,11 @@ import {
 } from "@/components/ui/dialog";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
-import { api } from "@/lib/client";
-import { formatPrice } from "@/lib/format";
+import { api } from "@/client/api";
+import { formatPrice } from "@/shared/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Product } from "@/lib/types";
+import type { Product } from "@/shared/types";
 
 export function QuickViewModal() {
   const quickViewProductId = useUIStore((s) => s.quickViewProductId);

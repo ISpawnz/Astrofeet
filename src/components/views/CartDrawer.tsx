@@ -3,7 +3,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useCartStore } from "@/stores/cart";
 import { useUIStore } from "@/stores/ui";
-import { formatPrice } from "@/lib/format";
+import { formatPrice } from "@/shared/format";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 

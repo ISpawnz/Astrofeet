@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { serializeOrder } from "@/lib/serialize";
-import { HttpError, handleApiError, ok } from "@/lib/api";
+import { db } from "@/server/db";
+import { serializeOrder } from "@/server/serialize";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import { rateLimit } from "@/server/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -9,30 +10,26 @@ export const runtime = "nodejs";
 // Only returns a trimmed public shape (no internal id leaks beyond what's needed).
 export async function GET(req: NextRequest) {
   try {
+    rateLimit(req, "orders:track", 20, 10 * 60 * 1000);
     const url = new URL(req.url);
     const code = (url.searchParams.get("code") || "").trim().toUpperCase();
     const email = (url.searchParams.get("email") || "").trim().toLowerCase();
 
-    if (!code) throw new HttpError("Informe o código do pedido.", 400);
+    // Código + e-mail são obrigatórios: sem o e-mail, qualquer pessoa que
+    // adivinhasse um código veria nome e cidade do cliente.
+    if (!code || !email)
+      throw new HttpError("Informe o código do pedido e o e-mail da compra.", 400);
 
     const order = await db.order.findFirst({ where: { code } });
-    if (!order) throw new HttpError("Pedido não encontrado.", 404);
-
-    // If email provided, it must match (light verification for non-authed lookup).
-    if (email) {
-      let customer = { email: "" };
-      try {
-        customer = JSON.parse(order.customer as string);
-      } catch {
-        /* noop */
-      }
-      if ((customer as { email: string }).email.toLowerCase() !== email) {
-        throw new HttpError(
-          "O e-mail informado não corresponde a este pedido.",
-          403,
-        );
-      }
+    let orderEmail = "";
+    try {
+      orderEmail = String(JSON.parse((order?.customer as string) || "{}").email ?? "").toLowerCase();
+    } catch {
+      /* noop */
     }
+    // Mesma resposta para "não existe" e "e-mail não confere" (sem enumeração).
+    if (!order || orderEmail !== email)
+      throw new HttpError("Pedido não encontrado para este código e e-mail.", 404);
 
     const full = serializeOrder(order);
     return ok({

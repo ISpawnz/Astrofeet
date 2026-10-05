@@ -1,11 +1,14 @@
+import crypto from "node:crypto";
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser, requireAdmin } from "@/lib/auth";
-import { serializeOrder } from "@/lib/serialize";
-import { HttpError, handleApiError, ok } from "@/lib/api";
-import { rateLimit } from "@/lib/rate-limit";
-import { sendEmailNotification, buildOrderConfirmationBody } from "@/lib/notifications";
-import type { OrderLineItem, Order } from "@/lib/types";
+import { db } from "@/server/db";
+import { getCurrentUser, requireAdmin } from "@/server/auth";
+import { serializeOrder } from "@/server/serialize";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import { rateLimit } from "@/server/rate-limit";
+import { withLock } from "@/server/lock";
+import { resolveCoupon } from "@/server/coupons";
+import { sendEmailNotification, buildOrderConfirmationBody } from "@/server/notifications";
+import type { OrderLineItem, Order } from "@/shared/types";
 
 export const runtime = "nodejs";
 
@@ -44,53 +47,12 @@ export async function GET(req: NextRequest) {
   }
 }
 
-interface ResolvedCoupon {
-  code: string;
-  type: "percent" | "fixed";
-  value: number;
-  description: string;
-  discount: number;
+// Serializado: checagem de estoque + baixa + cupom precisam ser atômicos.
+export function POST(req: NextRequest) {
+  return withLock("checkout", () => createOrder(req));
 }
 
-async function resolveCoupon(
-  code: string | undefined,
-  subtotal: number,
-): Promise<ResolvedCoupon | null> {
-  if (!code) return null;
-  const upper = code.trim().toUpperCase();
-  if (!upper) return null;
-  const coupon = await db.coupon.findFirst({
-    where: { code: upper, active: true },
-  });
-  if (!coupon) throw new HttpError("Cupom inválido ou expirado.", 400);
-  if (coupon.expiresAt) {
-    const exp = new Date(coupon.expiresAt as string);
-    if (exp.getTime() < Date.now())
-      throw new HttpError("Este cupom expirou.", 400);
-  }
-  if (subtotal < (coupon.minSubtotal as number)) {
-    throw new HttpError(
-      `Cupom válido apenas para pedidos acima de R$${(coupon.minSubtotal as number).toFixed(2).replace(".", ",")}.`,
-      400,
-    );
-  }
-  let discount = 0;
-  if (coupon.type === "percent") {
-    discount = Number(((subtotal * (coupon.value as number)) / 100).toFixed(2));
-  } else {
-    discount = Number((coupon.value as number).toFixed(2));
-  }
-  discount = Math.min(discount, subtotal);
-  return {
-    code: coupon.code as string,
-    type: coupon.type as "percent" | "fixed",
-    value: coupon.value as number,
-    description: coupon.description as string,
-    discount,
-  };
-}
-
-export async function POST(req: NextRequest) {
+async function createOrder(req: NextRequest) {
   try {
     rateLimit(req, "orders:create", 30, 15 * 60 * 1000);
     const user = await getCurrentUser();
@@ -189,7 +151,7 @@ export async function POST(req: NextRequest) {
 
     // Coupon — backend validates + computes discount
     const couponCode = body.couponCode ? String(body.couponCode) : undefined;
-    const coupon = await resolveCoupon(couponCode, subtotal);
+    const { coupon } = await resolveCoupon(couponCode, subtotal);
     const discount = coupon?.discount ?? 0;
     const afterDiscount = Number((subtotal - discount).toFixed(2));
 
@@ -200,7 +162,17 @@ export async function POST(req: NextRequest) {
     const customer = body.customer as Order["customer"];
     const address = body.address as Order["address"];
     const payment = body.payment as Order["payment"];
-    if (!customer?.name || !customer?.email?.includes("@"))
+    const short = (v: unknown, max = 120) => String(v ?? "").trim().slice(0, max);
+    if (customer) {
+      customer.name = short(customer.name);
+      customer.email = short(customer.email, 160).toLowerCase();
+      customer.phone = short(customer.phone, 30);
+    }
+    if (address) {
+      for (const k of ["cep", "street", "number", "complement", "district", "city", "state"] as const)
+        address[k] = short(address[k], 120);
+    }
+    if (!customer?.name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email ?? ""))
       throw new HttpError("Dados de contato incompletos.", 400);
     if (
       !address?.cep ||
@@ -210,10 +182,16 @@ export async function POST(req: NextRequest) {
       !address?.state
     )
       throw new HttpError("Endereço de entrega incompleto.", 400);
-    if (!payment?.method)
+    if (!payment?.method || !["pix", "boleto", "card", "credit", "cartao"].includes(String(payment.method)))
       throw new HttpError("Selecione a forma de pagamento.", 400);
+    if (payment.cardLast4 !== undefined && !/^\d{4}$/.test(String(payment.cardLast4)))
+      payment.cardLast4 = undefined;
 
-    const code = `AST-${Date.now().toString().slice(-6)}`;
+    // Código imprevisível (não sequencial) + garantia de unicidade.
+    let code = "";
+    do {
+      code = `AST-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+    } while (await db.order.findFirst({ where: { code } }));
 
     const order = await db.order.create({
       data: {

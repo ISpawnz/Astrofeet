@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { PublicUser } from "@/lib/types";
+import type { PublicUser } from "@/shared/types";
 
 interface AuthState {
   user: PublicUser | null;

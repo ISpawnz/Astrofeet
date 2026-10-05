@@ -18,6 +18,8 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     
     // React rules
     "react-hooks/exhaustive-deps": "off",
+    // Padrão antigo (setState em effect) usado em várias telas; fica como aviso até migrar.
+    "react-hooks/set-state-in-effect": "warn",
     "react-hooks/purity": "off",
     "react/no-unescaped-entities": "off",
     "react/display-name": "off",
@@ -42,6 +44,37 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "no-undef": "off",
     "no-unreachable": "off",
     "no-useless-escape": "off",
+  },
+}, {
+  // ---- Fronteira backend / frontend -------------------------------------
+  // O código de navegador nunca pode importar o servidor (segredos, banco,
+  // hashing). Só conversa com ele via HTTP (src/client/api.ts).
+  files: [
+    "src/components/**/*.{ts,tsx}",
+    "src/stores/**/*.{ts,tsx}",
+    "src/hooks/**/*.{ts,tsx}",
+    "src/client/**/*.{ts,tsx}",
+    "src/app/page.tsx",
+    "src/app/layout.tsx",
+  ],
+  rules: {
+    "no-restricted-imports": ["error", {
+      patterns: [{
+        group: ["@/server/*", "**/server/*", "server-only"],
+        message: "Frontend não pode importar código de src/server. Use src/client/api.ts (HTTP) ou src/shared (tipos/formatação).",
+      }],
+    }],
+  },
+}, {
+  // O servidor não conhece UI nem estado de cliente.
+  files: ["src/server/**/*.{ts,tsx}", "src/app/api/**/*.ts"],
+  rules: {
+    "no-restricted-imports": ["error", {
+      patterns: [{
+        group: ["@/components/*", "@/stores/*", "@/hooks/*", "@/client/*"],
+        message: "Backend não pode importar código de UI/cliente. Compartilhe apenas via src/shared.",
+      }],
+    }],
   },
 }, {
   ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills"]

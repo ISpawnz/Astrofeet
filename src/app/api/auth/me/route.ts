@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser, setSessionCookie } from "@/lib/auth";
-import { HttpError, handleApiError, ok } from "@/lib/api";
-import type { Role } from "@/lib/types";
+import { db } from "@/server/db";
+import { getCurrentUser, setSessionCookie } from "@/server/auth";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import type { Role } from "@/shared/types";
 
 export const runtime = "nodejs";
 

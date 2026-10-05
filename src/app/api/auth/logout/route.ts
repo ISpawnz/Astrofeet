@@ -1,5 +1,5 @@
-import { clearSessionCookie } from "@/lib/auth";
-import { ok } from "@/lib/api";
+import { clearSessionCookie } from "@/server/auth";
+import { ok } from "@/server/http";
 
 export const runtime = "nodejs";
 

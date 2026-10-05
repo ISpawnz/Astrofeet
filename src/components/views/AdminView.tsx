@@ -49,7 +49,7 @@ import {
   Trophy,
   Filter,
 } from "lucide-react";
-import { api } from "@/lib/client";
+import { api } from "@/client/api";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 import type {
@@ -59,14 +59,14 @@ import type {
   Coupon,
   Notification,
   NotificationType,
-} from "@/lib/types";
+} from "@/shared/types";
 import {
   formatPrice,
   formatDate,
   formatShortDate,
   orderStatusLabel,
   orderStatusColor,
-} from "@/lib/format";
+} from "@/shared/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 

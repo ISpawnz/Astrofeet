@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
-import { serializeProduct, serializeReview } from "@/lib/serialize";
-import { HttpError, handleApiError, ok } from "@/lib/api";
-import { sendEmailNotification } from "@/lib/notifications";
-import type { Product } from "@/lib/types";
+import { db } from "@/server/db";
+import { requireAdmin } from "@/server/auth";
+import { serializeProduct, serializeReview } from "@/server/serialize";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import { sendEmailNotification } from "@/server/notifications";
+import type { Product } from "@/shared/types";
 
 export const runtime = "nodejs";
 
@@ -69,7 +69,12 @@ export async function PUT(
     if (typeof body.price === "number" && body.price > 0) data.price = body.price;
     if (typeof body.description === "string") data.description = body.description;
     if (Array.isArray(body.images))
-      data.images = JSON.stringify(body.images.filter(Boolean));
+      data.images = JSON.stringify(
+        body.images
+          .map((v) => String(v ?? "").trim())
+          .filter((v) => v.length <= 500 && (/^\/(?!\/)/.test(v) || /^https:\/\//i.test(v)))
+          .slice(0, 12),
+      );
     if (Array.isArray(body.sizes))
       data.sizes = JSON.stringify(body.sizes.map((s) => Number(s)));
     if (typeof body.stock === "number") data.stock = body.stock;

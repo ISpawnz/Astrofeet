@@ -21,13 +21,13 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 import { useCheckoutStore } from "@/stores/checkout";
-import { api } from "@/lib/client";
+import { api } from "@/client/api";
 import {
   formatPrice,
   formatDate,
   orderStatusLabel,
   orderStatusColor,
-} from "@/lib/format";
+} from "@/shared/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -430,15 +430,16 @@ export function TrackOrderView() {
       setError("Digite o código do seu pedido.");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Informe o e-mail usado na compra para consultar o pedido.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setNotFound(false);
     setResult(null);
     try {
-      const data = await api.trackOrder(
-        normalized,
-        email.trim() ? email.trim() : undefined,
-      );
+      const data = await api.trackOrder(normalized, email.trim());
       setResult(data.order);
       toast.success("Pedido localizado!");
     } catch (err) {
@@ -510,11 +511,13 @@ export function TrackOrderView() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="track-email-input" className="text-xs uppercase tracking-wider text-muted-foreground">
-              E-mail (opcional, para validar)
+              E-mail da compra
             </Label>
             <Input
               id="track-email-input"
               type="email"
+              required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="voce@email.com"

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
-import { HttpError, handleApiError, ok } from "@/lib/api";
+import { db } from "@/server/db";
+import { getCurrentUser } from "@/server/auth";
+import { HttpError, handleApiError, ok } from "@/server/http";
 
 export const runtime = "nodejs";
 

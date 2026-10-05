@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
-import { serializeOrder } from "@/lib/serialize";
-import { HttpError, handleApiError, ok } from "@/lib/api";
-import { sendEmailNotification, buildOrderStatusBody } from "@/lib/notifications";
+import { db } from "@/server/db";
+import { requireAdmin } from "@/server/auth";
+import { serializeOrder } from "@/server/serialize";
+import { HttpError, handleApiError, ok } from "@/server/http";
+import { sendEmailNotification, buildOrderStatusBody } from "@/server/notifications";
 
 export const runtime = "nodejs";
 

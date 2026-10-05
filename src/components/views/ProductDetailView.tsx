@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -25,9 +26,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { api } from "@/lib/client";
-import { formatPrice, formatShortDate } from "@/lib/format";
-import type { Product, Review } from "@/lib/types";
+import { api } from "@/client/api";
+import { formatPrice, formatShortDate } from "@/shared/format";
+import type { Product, Review } from "@/shared/types";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
 import { useAuthStore } from "@/stores/auth";
@@ -510,6 +511,17 @@ function Info({
   const [size, setSize] = useState<number | null>(null);
   const [qty, setQty] = useState(1);
 
+  // Barra de compra fixa no mobile: aparece quando o CTA principal sai da tela.
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const [ctaVisible, setCtaVisible] = useState(true);
+  useEffect(() => {
+    const el = ctaRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setCtaVisible(e.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   // Per-size-aware max quantity (fall back to global stock when sizeStock absent).
   const sizeStockMap = product.sizeStock ?? {};
   const selectedSizeStock =
@@ -759,7 +771,7 @@ function Info({
       </div>
 
       {/* CTAs */}
-      <div className="grid gap-2.5 sm:grid-cols-[1fr_auto]">
+      <div ref={ctaRef} className="grid gap-2.5 sm:grid-cols-[1fr_auto]">
         <Button
           onClick={handleAdd}
           disabled={soldOut}
@@ -782,6 +794,45 @@ function Info({
 
       {/* Trust row */}
       <TrustRow />
+
+      {typeof document !== "undefined" &&
+        createPortal(
+          <div
+            aria-hidden={ctaVisible || soldOut}
+            className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0a0e1f]/95 px-4 py-3 pr-24 backdrop-blur-xl transition-transform duration-300 md:hidden ${
+              ctaVisible || soldOut ? "pointer-events-none translate-y-full" : "translate-y-0"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11px] text-muted-foreground">{product.name}</p>
+                <p className="whitespace-nowrap text-base font-bold">{formatPrice(product.price)}</p>
+              </div>
+              <Button
+                tabIndex={ctaVisible || soldOut ? -1 : 0}
+                onClick={() => {
+                  if (size === null) {
+                    ctaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    toast.error("Selecione um tamanho para continuar.");
+                    return;
+                  }
+                  handleAdd();
+                }}
+                className="h-11 shrink-0 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-4 text-sm font-bold text-black hover:opacity-90"
+              >
+                {size === null ? (
+                  "Escolher tamanho"
+                ) : (
+                  <>
+                    <ShoppingCart className="mr-1.5 h-4 w-4" />
+                    Adicionar
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>,
+          document.body,
+        )}
     </motion.div>
   );
 }
@@ -1292,6 +1343,11 @@ export function ProductDetailView() {
 
   const product = data?.product;
   const reviews = data?.reviews ?? [];
+
+  // Título da aba com o nome do produto (histórico e compartilhamento mais claros).
+  useEffect(() => {
+    if (product) document.title = `${product.name} · Astrofeet`;
+  }, [product]);
 
   // Track recently viewed (client-only, after product loads)
   useEffect(() => {

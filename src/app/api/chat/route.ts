@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
-import { handleApiError, ok, HttpError } from "@/lib/api";
-import { rateLimit } from "@/lib/rate-limit";
+import { handleApiError, ok, HttpError } from "@/server/http";
+import { rateLimit } from "@/server/rate-limit";
 
 export const runtime = "nodejs";
 
