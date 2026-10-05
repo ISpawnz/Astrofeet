@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
         stock: Number(body.stock ?? 0) || 0,
         sizeStock: JSON.stringify(sizeStock),
         rating: Number(body.rating ?? 4.5) || 4.5,
-        accent: String(body.accent ?? "#34e7ff"),
+        accent: String(body.accent ?? "#cc3d0a"),
         badge: body.badge ? String(body.badge) : null,
         featured: Boolean(body.featured),
         bestSeller: Boolean(body.bestSeller),

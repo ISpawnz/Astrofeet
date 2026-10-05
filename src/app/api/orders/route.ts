@@ -285,7 +285,7 @@ async function createOrder(req: NextRequest) {
               ? `Desconto: ${coupon.value}% off → R$${discount.toFixed(2).replace(".", ",")}`
               : `Desconto: R$${discount.toFixed(2).replace(".", ",")}`,
             "",
-            "Obrigado por explorar a galáxia com a Astrofeet! 🚀",
+            "Obrigado por comprar na Astrofeet!",
             "— Equipe Astrofeet",
           ].join("\n"),
           orderId: order.id,

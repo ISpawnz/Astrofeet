@@ -36,13 +36,13 @@ interface WishlistItem {
 
 function WishlistCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-3">
-      <Skeleton className="aspect-square w-full rounded-2xl bg-white/5" />
+    <div className="overflow-hidden rounded-3xl border border-black/10 bg-black/[0.02] p-3">
+      <Skeleton className="aspect-square w-full rounded-2xl bg-black/[0.03]" />
       <div className="space-y-2 px-2 pb-1 pt-3">
-        <Skeleton className="h-3 w-1/3 rounded bg-white/5" />
-        <Skeleton className="h-4 w-3/4 rounded bg-white/5" />
-        <Skeleton className="h-5 w-1/2 rounded bg-white/5" />
-        <Skeleton className="h-9 w-full rounded-full bg-white/5" />
+        <Skeleton className="h-3 w-1/3 rounded bg-black/[0.03]" />
+        <Skeleton className="h-4 w-3/4 rounded bg-black/[0.03]" />
+        <Skeleton className="h-5 w-1/2 rounded bg-black/[0.03]" />
+        <Skeleton className="h-9 w-full rounded-full bg-black/[0.03]" />
       </div>
     </div>
   );
@@ -58,10 +58,8 @@ function EmptyState() {
       className="glass mx-auto flex max-w-xl flex-col items-center gap-5 rounded-3xl p-10 text-center sm:p-14"
     >
       <div className="relative flex h-28 w-28 items-center justify-center">
-        <div className="absolute inset-0 rounded-full bg-[var(--neon-magenta)]/15 blur-3xl" />
-        <div className="absolute inset-0 animate-spin-slow rounded-full border-2 border-dashed border-[var(--neon-magenta)]/30" />
-        <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5">
-          <Heart className="h-10 w-10 text-[var(--neon-magenta)]" />
+        <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-black/10 bg-black/[0.03]">
+          <Heart className="h-10 w-10 text-[var(--hot)]" />
         </div>
       </div>
       <div className="space-y-2">
@@ -73,7 +71,7 @@ function EmptyState() {
       </div>
       <Button
         onClick={() => navigate("products")}
-        className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black hover:opacity-90"
+        className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-bold text-white hover:opacity-90"
       >
         <Compass className="h-4 w-4" />
         Explorar drops
@@ -107,23 +105,15 @@ function WishlistCard({
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.3) }}
       exit={{ opacity: 0, x: -40, scale: 0.85, transition: { duration: 0.28 } }}
-      className="group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-sm transition-colors hover:border-white/20"
+      className="group relative flex flex-col overflow-hidden rounded-3xl border border-black/10 bg-black/[0.02] p-3 backdrop-blur-sm transition-colors hover:border-black/15"
     >
       {/* Accent glow halo */}
-      <div
-        className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-30"
-        style={{ background: item.accent }}
-      />
 
       {/* Image */}
       <div
         onClick={() => navigate("product", { id: item.slug })}
-        className="relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-b from-white/5 to-transparent"
+        className="relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-[var(--surface)]"
       >
-        <div
-          className="absolute left-1/2 top-1/2 h-3/4 w-3/4 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-40 blur-3xl transition-transform duration-700 group-hover:scale-110"
-          style={{ background: item.accent }}
-        />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={item.image}
@@ -138,7 +128,7 @@ function WishlistCard({
             e.stopPropagation();
             onRemove(item.id);
           }}
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/40 text-muted-foreground backdrop-blur-md transition hover:border-rose-500/40 hover:bg-rose-500/15 hover:text-rose-300"
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-black/40 text-muted-foreground backdrop-blur-md transition hover:border-rose-500/40 hover:bg-rose-500/15 hover:text-rose-700"
           aria-label={`Remover ${item.name} da lista de desejos`}
         >
           <X className="h-4 w-4" />
@@ -152,7 +142,7 @@ function WishlistCard({
         </p>
         <h3
           onClick={() => navigate("product", { id: item.slug })}
-          className="mt-1 line-clamp-1 cursor-pointer font-semibold transition-colors hover:text-[var(--neon-cyan)]"
+          className="mt-1 line-clamp-1 cursor-pointer font-semibold transition-colors hover:text-[var(--brand)]"
         >
           {item.name}
         </h3>
@@ -177,7 +167,7 @@ function WishlistCard({
         <Button
           onClick={() => onAddToCart(item)}
           disabled={isLoading}
-          className="mt-3 h-9 w-full rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] text-sm font-bold text-black hover:opacity-90 disabled:opacity-60"
+          className="mt-3 h-9 w-full rounded-full bg-[var(--brand)] text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
         >
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -259,7 +249,7 @@ export function WishlistView() {
         className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
       >
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-[var(--neon-magenta)]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-[var(--hot)]">
             <Sparkles className="h-3.5 w-3.5" />
             Sua coleção
           </div>
@@ -267,19 +257,19 @@ export function WishlistView() {
             <span className="text-gradient-neon">Lista de desejos</span>
           </h1>
           <p className="max-w-xl text-sm text-muted-foreground">
-            Os sneakers que você guardou para orbitar depois.
+            Os tênis que você salvou para depois.
           </p>
         </div>
 
         {hydrated && items.length > 0 && (
-          <div className="inline-flex items-center gap-2 self-start rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold sm:self-auto">
-            <Heart className="h-4 w-4 fill-[var(--neon-magenta)] text-[var(--neon-magenta)]" />
+          <div className="inline-flex items-center gap-2 self-start rounded-full border border-black/10 bg-black/[0.03] px-4 py-2 text-sm font-semibold sm:self-auto">
+            <Heart className="h-4 w-4 fill-[var(--hot)] text-[var(--hot)]" />
             {count()} {count() === 1 ? "item" : "itens"}
           </div>
         )}
       </motion.header>
 
-      <Separator className="my-8 bg-white/10" />
+      <Separator className="my-8 bg-black/[0.06]" />
 
       {/* ---------- Hydration guard ---------- */}
       {!hydrated ? (
@@ -321,7 +311,7 @@ export function WishlistView() {
             <Button
               onClick={handleClear}
               variant="ghost"
-              className="rounded-full px-6 py-3 text-sm font-semibold text-rose-300/90 transition hover:bg-rose-500/10 hover:text-rose-200"
+              className="rounded-full px-6 py-3 text-sm font-semibold text-rose-700/90 transition hover:bg-rose-500/10 hover:text-rose-700"
             >
               <Trash2 className="h-4 w-4" />
               Limpar lista
@@ -329,7 +319,7 @@ export function WishlistView() {
             <Button
               onClick={() => navigate("products")}
               variant="outline"
-              className="rounded-full border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold backdrop-blur transition hover:bg-white/10"
+              className="rounded-full border-black/15 bg-black/[0.03] px-6 py-3 text-sm font-semibold backdrop-blur transition hover:bg-black/[0.06]"
             >
               <Compass className="h-4 w-4" />
               Explorar mais drops

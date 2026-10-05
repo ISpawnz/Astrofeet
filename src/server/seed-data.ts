@@ -75,8 +75,8 @@ export interface SeedOrder {
 // Passwords (scrypt hashes). Generated lazily by the store via hashPassword.
 // Here we only store the plaintext intended for seed; the store hashes them.
 export const SEED_USERS: { email: string; name: string; password: string; role: "customer" | "admin" }[] = [
-  { email: "admin@astrofeet.com", name: "Comando Astrofeet", password: "admin123", role: "admin" },
-  { email: "explorador@astrofeet.com", name: "Explorador Astrofeet", password: "explorador123", role: "customer" },
+  { email: "admin@astrofeet.com", name: "Administrador Astrofeet", password: "admin123", role: "admin" },
+  { email: "explorador@astrofeet.com", name: "Cliente Demo", password: "explorador123", role: "customer" },
 ];
 
 const now = () => new Date().toISOString();
@@ -89,7 +89,7 @@ export const SEED_PRODUCTS: Omit<SeedProduct, "id" | "createdAt" | "updatedAt">[
     category: "Corrida",
     price: 279.99,
     description:
-      "Leve, limpo e veloz. O Orion Runner foi feito para quem quer um visual de órbita baixa sem abrir mão do conforto no dia a dia. Cabedal em malha translúcida com acabamento refletivo e entressola responsiva.",
+      "Leve, limpo e veloz. O Orion Runner foi feito para quem quer um visual limpo sem abrir mão do conforto no dia a dia. Cabedal em malha translúcida com acabamento refletivo e entressola responsiva.",
     images: JSON.stringify(["/products/orion-runner.png"]),
     sizes: JSON.stringify([38, 39, 40, 41, 42, 43]),
     stock: 32,
@@ -107,7 +107,7 @@ export const SEED_PRODUCTS: Omit<SeedProduct, "id" | "createdAt" | "updatedAt">[
     category: "Casual",
     price: 349.9,
     description:
-      "Cabedal premium em couro macio, cano alto e presença de vitrine. O Lunar Drift combina clima noturno com conforto de outro planeta. Palmilha com memória de impacto e solado com aderência lunar.",
+      "Cabedal premium em couro macio, cano alto e presença de vitrine. O Lunar Drift combina visual noturno com conforto para o dia inteiro. Palmilha com memória de impacto e solado com aderência lunar.",
     images: JSON.stringify(["/products/lunar-drift.png"]),
     sizes: JSON.stringify([37, 38, 39, 40, 41, 42]),
     stock: 18,
@@ -210,7 +210,7 @@ export const SEED_COUPONS: Omit<SeedCoupon, "id" | "createdAt" | "updatedAt">[] 
     value: 10,
     minSubtotal: 0,
     active: true,
-    description: "10% off em tudo. Bem-vindo à galáxia!",
+    description: "10% off em tudo na primeira compra.",
     expiresAt: null,
   },
   {

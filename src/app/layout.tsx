@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Astrofeet — Sneakers de outro planeta",
+  title: "Astrofeet — Tênis de corrida, casual e skate",
   description:
-    "Sneakers premium com visual de outro planeta. Explore os drops da Astrofeet e encontre seu próximo par para orbitar o estilo.",
+    "Tênis premium de corrida, casual e skate com design próprio. Frete grátis acima de R$300 e troca em 30 dias.",
   keywords: [
     "Astrofeet",
     "tênis",
@@ -25,9 +25,9 @@ export const metadata: Metadata = {
     "tênis premium",
   ],
   openGraph: {
-    title: "Astrofeet — Sneakers de outro planeta",
+    title: "Astrofeet — Tênis de corrida, casual e skate",
     description:
-      "Explore os drops da Astrofeet e encontre seu próximo par para orbitar o estilo.",
+      "Tênis premium com design próprio. Frete grátis acima de R$300 e troca em 30 dias.",
     siteName: "Astrofeet",
     type: "website",
   },

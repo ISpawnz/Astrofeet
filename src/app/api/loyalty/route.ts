@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
         value: discount,
         minSubtotal: 0,
         active: true,
-        description: `Resgate de ${pointsToRedeem} pontos estelares`,
+        description: `Resgate de ${pointsToRedeem} pontos`,
         expiresAt: null,
       },
     });
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
         body: [
           `Olá, ${user.name}!`,
           "",
-          `Você resgatou ${pointsToRedeem} pontos estelares por um cupom de R$${discount.toFixed(2).replace(".", ",")}!`,
+          `Você resgatou ${pointsToRedeem} pontos por um cupom de R$${discount.toFixed(2).replace(".", ",")}!`,
           "",
           `Use o código ${code} no checkout para aplicar o desconto.`,
           "",
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
         code,
         type: "fixed",
         value: discount,
-        description: `Resgate de ${pointsToRedeem} pontos estelares`,
+        description: `Resgate de ${pointsToRedeem} pontos`,
       },
       pointsRemaining: newPoints,
       discount,

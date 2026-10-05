@@ -132,23 +132,23 @@ const STATUS_ORDER: OrderStatus[] = [
   "cancelled",
 ];
 
-const NEON_PALETTE = [
-  "#34e7ff",
-  "#ff5cf0",
-  "#a779ff",
-  "#c6ff5a",
-  "#ff7a3c",
+const CHART_PALETTE = [
+  "#cc3d0a",
+  "#c8102e",
+  "#111111",
+  "#15803d",
+  "#b45309",
 ];
 
 const ALL_SIZES = [36, 37, 38, 39, 40, 41, 42, 43, 44];
 
 const ACCENT_PRESETS: { name: string; value: string }[] = [
-  { name: "Cyan", value: "#34e7ff" },
-  { name: "Magenta", value: "#ff5cf0" },
-  { name: "Violet", value: "#a779ff" },
-  { name: "Lime", value: "#c6ff5a" },
-  { name: "Gold", value: "#ffd24a" },
-  { name: "Orange", value: "#ff7a3c" },
+  { name: "Laranja", value: "#cc3d0a" },
+  { name: "Vermelho", value: "#c8102e" },
+  { name: "Preto", value: "#111111" },
+  { name: "Verde", value: "#15803d" },
+  { name: "Ouro", value: "#a16207" },
+  { name: "Âmbar", value: "#b45309" },
 ];
 
 const BADGE_OPTIONS: { value: string; label: string }[] = [
@@ -205,20 +205,20 @@ function AdminGuard() {
         initial={{ opacity: 0, y: 16, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.4 }}
-        className="glass-strong w-full rounded-3xl border border-white/10 p-8"
+        className="glass-strong w-full rounded-3xl border border-black/10 p-8"
       >
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-700 ring-1 ring-rose-500/30">
           <ShieldAlert className="h-8 w-8" />
         </div>
         <h2 className="text-xl font-bold">Acesso restrito ao painel.</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Esta área é reservada ao comando da Astrofeet. Faça login com uma
+          Esta área é reservada à equipe da Astrofeet. Faça login com uma
           conta de administrador para continuar.
         </p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
           <Button
             onClick={() => openAuth("login")}
-            className="bg-[var(--neon-cyan)] text-black hover:bg-[var(--neon-cyan)]/90"
+            className="bg-[var(--brand)] text-white hover:bg-[var(--brand)]/90"
           >
             <LogIn className="h-4 w-4" />
             Fazer login
@@ -226,7 +226,7 @@ function AdminGuard() {
           <Button
             variant="outline"
             onClick={() => navigate("home")}
-            className="border-white/10 bg-white/5 hover:bg-white/10"
+            className="border-black/10 bg-black/[0.03] hover:bg-black/[0.06]"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar à loja
@@ -255,15 +255,11 @@ function MetricCard({ icon, label, value, accent, index = 0 }: MetricCardProps) 
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: Math.min(index * 0.06, 0.3) }}
-      className="glass relative overflow-hidden rounded-2xl border border-white/10 p-5"
+      className="glass relative overflow-hidden rounded-2xl border border-black/10 p-5"
     >
-      <div
-        className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full opacity-25 blur-2xl"
-        style={{ background: accent }}
-      />
       <div className="relative flex items-start justify-between">
         <div
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-black/10"
           style={{
             color: accent,
             background: `${accent}1f`,
@@ -284,7 +280,7 @@ function MetricCard({ icon, label, value, accent, index = 0 }: MetricCardProps) 
 
 function MetricCardSkeleton() {
   return (
-    <div className="glass rounded-2xl border border-white/10 p-5">
+    <div className="glass rounded-2xl border border-black/10 p-5">
       <Skeleton className="h-11 w-11 rounded-xl" />
       <Skeleton className="mt-4 h-9 w-24" />
       <Skeleton className="mt-2 h-3 w-20" />
@@ -305,9 +301,9 @@ interface MiniStatProps {
 
 function MiniStat({ icon, label, value, accent }: MiniStatProps) {
   return (
-    <div className="glass flex items-center gap-3 rounded-2xl border border-white/10 p-3 sm:p-4">
+    <div className="glass flex items-center gap-3 rounded-2xl border border-black/10 p-3 sm:p-4">
       <div
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-black/10"
         style={{ color: accent, background: `${accent}1f` }}
       >
         {icon}
@@ -368,13 +364,13 @@ function OverviewTab() {
       status: s,
       label: orderStatusLabel(s),
       count: map[s],
-      color: NEON_PALETTE[i % NEON_PALETTE.length],
+      color: CHART_PALETTE[i % CHART_PALETTE.length],
     }));
   }, [data]);
 
   if (isError) {
     return (
-      <div className="glass rounded-2xl border border-white/10 p-8 text-center text-sm text-muted-foreground">
+      <div className="glass rounded-2xl border border-black/10 p-8 text-center text-sm text-muted-foreground">
         Não foi possível carregar os números do painel. Tente novamente em
         instantes.
       </div>
@@ -396,35 +392,35 @@ function OverviewTab() {
               icon={<ShoppingBag className="h-5 w-5" />}
               label="Pedidos hoje"
               value={String(data.ordersToday)}
-              accent="#34e7ff"
+              accent="#cc3d0a"
             />
             <MetricCard
               index={1}
               icon={<TrendingUp className="h-5 w-5" />}
               label="Faturamento"
               value={formatPrice(data.revenue)}
-              accent="#c6ff5a"
+              accent="#15803d"
             />
             <MetricCard
               index={2}
               icon={<Receipt className="h-5 w-5" />}
               label="Ticket médio"
               value={formatPrice(data.ticket)}
-              accent="#a779ff"
+              accent="#111111"
             />
             <MetricCard
               index={3}
               icon={<Package className="h-5 w-5" />}
               label="Produtos ativos"
               value={String(data.totalProducts)}
-              accent="#ff5cf0"
+              accent="#c8102e"
             />
             <MetricCard
               index={4}
               icon={<Users className="h-5 w-5" />}
               label="Clientes"
               value={String(data.totalCustomers)}
-              accent="#a779ff"
+              accent="#111111"
             />
           </>
         )}
@@ -436,14 +432,10 @@ function OverviewTab() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.05 }}
-          className="glass relative overflow-hidden rounded-2xl border border-white/10 p-5"
+          className="glass relative overflow-hidden rounded-2xl border border-black/10 p-5"
         >
-          <div
-            className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-25 blur-2xl"
-            style={{ background: "#34e7ff" }}
-          />
           <div className="relative mb-3 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[var(--neon-cyan)]/15 text-[var(--neon-cyan)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-black/10 bg-[var(--brand)]/15 text-[var(--brand)]">
               <TrendingUp className="h-5 w-5" />
             </div>
             <div>
@@ -476,8 +468,8 @@ function OverviewTab() {
                       x2="0"
                       y2="1"
                     >
-                      <stop offset="0%" stopColor="#34e7ff" />
-                      <stop offset="100%" stopColor="#a779ff" />
+                      <stop offset="0%" stopColor="#cc3d0a" />
+                      <stop offset="100%" stopColor="#111111" />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -505,7 +497,7 @@ function OverviewTab() {
                     width={64}
                   />
                   <Tooltip
-                    cursor={{ fill: "rgba(52,231,255,0.08)" }}
+                    cursor={{ fill: "rgba(204,61,10,0.08)" }}
                     content={({ active, payload }) => {
                       if (!active || !payload || payload.length === 0)
                         return null;
@@ -519,11 +511,11 @@ function OverviewTab() {
                         | undefined;
                       if (!row) return null;
                       return (
-                        <div className="rounded-xl border border-white/10 bg-[rgba(20,18,32,0.95)] px-3 py-2 text-xs shadow-xl backdrop-blur">
-                          <p className="font-semibold text-white">
+                        <div className="rounded-xl border border-black/10 bg-[rgba(20,18,32,0.95)] px-3 py-2 text-xs shadow-xl backdrop-blur">
+                          <p className="font-semibold text-foreground">
                             {row.label} · {formatShortDate(row.date)}
                           </p>
-                          <p className="mt-0.5 text-[var(--neon-cyan)]">
+                          <p className="mt-0.5 text-[var(--brand)]">
                             Faturamento:{" "}
                             <span className="font-semibold">
                               {formatPrice(row.revenue)}
@@ -554,14 +546,10 @@ function OverviewTab() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.12 }}
-          className="glass relative overflow-hidden rounded-2xl border border-white/10 p-5"
+          className="glass relative overflow-hidden rounded-2xl border border-black/10 p-5"
         >
-          <div
-            className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-25 blur-2xl"
-            style={{ background: "#c6ff5a" }}
-          />
           <div className="relative mb-3 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[var(--neon-lime)]/15 text-[var(--neon-lime)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-black/10 bg-[var(--success)]/15 text-[var(--success)]">
               <Trophy className="h-5 w-5" />
             </div>
             <div>
@@ -605,24 +593,24 @@ function OverviewTab() {
                     >
                       <div className="flex items-center justify-between gap-3 text-sm">
                         <span className="flex min-w-0 items-center gap-2">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] font-bold text-muted-foreground">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-black/[0.03] text-[10px] font-bold text-muted-foreground">
                             {i + 1}
                           </span>
                           <span className="line-clamp-1 font-medium">
                             {p.name}
                           </span>
                         </span>
-                        <span className="shrink-0 font-semibold text-[var(--neon-cyan)]">
+                        <span className="shrink-0 font-semibold text-[var(--brand)]">
                           {formatPrice(p.revenue)}
                         </span>
                       </div>
-                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/5">
+                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/[0.03]">
                         <div
                           className="h-full rounded-full"
                           style={{
                             width: `${pct}%`,
                             background:
-                              "linear-gradient(90deg, #34e7ff, #a779ff)",
+                              "#cc3d0a",
                           }}
                         />
                       </div>
@@ -643,7 +631,7 @@ function OverviewTab() {
 
       {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="glass rounded-2xl border border-white/10 p-5">
+        <div className="glass rounded-2xl border border-black/10 p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="font-semibold">Pedidos por status</h3>
@@ -677,7 +665,7 @@ function OverviewTab() {
                     tickLine={false}
                   />
                   <Tooltip
-                    cursor={{ fill: "rgba(52,231,255,0.08)" }}
+                    cursor={{ fill: "rgba(204,61,10,0.08)" }}
                     contentStyle={{
                       background: "rgba(20,18,32,0.92)",
                       border: "1px solid rgba(255,255,255,0.1)",
@@ -690,7 +678,7 @@ function OverviewTab() {
                   <Bar
                     dataKey="count"
                     radius={[6, 6, 0, 0]}
-                    fill="#34e7ff"
+                    fill="#cc3d0a"
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -698,7 +686,7 @@ function OverviewTab() {
           </div>
         </div>
 
-        <div className="glass rounded-2xl border border-white/10 p-5">
+        <div className="glass rounded-2xl border border-black/10 p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="font-semibold">Últimos pedidos</h3>
@@ -767,7 +755,7 @@ function OverviewTab() {
       </div>
 
       {/* Recent orders table */}
-      <div className="glass rounded-2xl border border-white/10 p-5">
+      <div className="glass rounded-2xl border border-black/10 p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="font-semibold">Últimos pedidos</h3>
@@ -776,10 +764,10 @@ function OverviewTab() {
             </p>
           </div>
         </div>
-        <div className="max-h-96 overflow-y-auto rounded-xl border border-white/5">
+        <div className="max-h-96 overflow-y-auto rounded-xl border border-black/5">
           <Table>
             <TableHeader>
-              <TableRow className="border-white/10 hover:bg-transparent">
+              <TableRow className="border-black/10 hover:bg-transparent">
                 <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
                   Código
                 </TableHead>
@@ -800,14 +788,14 @@ function OverviewTab() {
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
-                  <TableRow key={i} className="border-white/5">
+                  <TableRow key={i} className="border-black/5">
                     <TableCell colSpan={5}>
                       <Skeleton className="h-6 w-full" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : !data || data.recent.length === 0 ? (
-                <TableRow className="border-white/5">
+                <TableRow className="border-black/5">
                   <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
                     <Inbox className="mx-auto mb-2 h-8 w-8 opacity-50" />
                     Nenhum pedido recente
@@ -815,8 +803,8 @@ function OverviewTab() {
                 </TableRow>
               ) : (
                 data.recent.slice(0, 6).map((o) => (
-                  <TableRow key={o.id} className="border-white/5">
-                    <TableCell className="font-mono text-xs text-[var(--neon-cyan)]">
+                  <TableRow key={o.id} className="border-black/5">
+                    <TableCell className="font-mono text-xs text-[var(--brand)]">
                       {o.code}
                     </TableCell>
                     <TableCell className="font-medium">
@@ -976,7 +964,7 @@ function OrdersTable() {
 
   if (isError) {
     return (
-      <div className="glass rounded-2xl border border-white/10 p-8 text-center text-sm text-muted-foreground">
+      <div className="glass rounded-2xl border border-black/10 p-8 text-center text-sm text-muted-foreground">
         Não foi possível carregar os pedidos. Tente novamente em instantes.
       </div>
     );
@@ -984,7 +972,7 @@ function OrdersTable() {
 
   return (
     <div className="relative space-y-4">
-      <div className="glass rounded-2xl border border-white/10 p-4 sm:p-5">
+      <div className="glass rounded-2xl border border-black/10 p-4 sm:p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="font-semibold">Todos os pedidos</h3>
@@ -998,13 +986,13 @@ function OrdersTable() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por código ou cliente"
-              className="border-white/10 bg-white/5 pl-9"
+              className="border-black/10 bg-black/[0.03] pl-9"
             />
           </div>
         </div>
 
         {/* Date range filter */}
-        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3 sm:flex-row sm:items-end">
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-black/5 bg-black/[0.02] p-3 sm:flex-row sm:items-end">
           <div className="flex-1">
             <Label className="mb-1.5 flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground">
               <Clock className="h-3 w-3" />
@@ -1015,7 +1003,7 @@ function OrdersTable() {
               value={dateFrom}
               max={dateTo || undefined}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="border-white/10 bg-white/5 text-sm [color-scheme:dark]"
+              className="border-black/10 bg-black/[0.03] text-sm [color-scheme:dark]"
             />
           </div>
           <div className="flex-1">
@@ -1028,7 +1016,7 @@ function OrdersTable() {
               value={dateTo}
               min={dateFrom || undefined}
               onChange={(e) => setDateTo(e.target.value)}
-              className="border-white/10 bg-white/5 text-sm [color-scheme:dark]"
+              className="border-black/10 bg-black/[0.03] text-sm [color-scheme:dark]"
             />
           </div>
           {dateFilterActive && (
@@ -1037,7 +1025,7 @@ function OrdersTable() {
               variant="ghost"
               size="sm"
               onClick={clearDateFilter}
-              className="h-9 shrink-0 border border-white/10 text-xs text-muted-foreground hover:text-foreground"
+              className="h-9 shrink-0 border border-black/10 text-xs text-muted-foreground hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
               Limpar filtro
@@ -1048,10 +1036,10 @@ function OrdersTable() {
           </div>
         </div>
 
-        <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-white/5">
+        <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-black/5">
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-[var(--card)] backdrop-blur">
-              <TableRow className="border-white/10 hover:bg-transparent">
+              <TableRow className="border-black/10 hover:bg-transparent">
                 <TableHead className="w-10 px-3">
                   <Checkbox
                     checked={
@@ -1063,7 +1051,7 @@ function OrdersTable() {
                     }
                     onCheckedChange={(v) => toggleAll(v === true)}
                     aria-label="Selecionar todos os pedidos visíveis"
-                    className="border-white/20 data-[state=checked]:bg-[var(--neon-cyan)] data-[state=checked]:text-black data-[state=checked]:border-[var(--neon-cyan)]"
+                    className="border-black/15 data-[state=checked]:bg-[var(--brand)] data-[state=checked]:text-white data-[state=checked]:border-[var(--brand)]"
                   />
                 </TableHead>
                 <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -1089,14 +1077,14 @@ function OrdersTable() {
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i} className="border-white/5">
+                  <TableRow key={i} className="border-black/5">
                     <TableCell colSpan={7}>
                       <Skeleton className="h-7 w-full" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : filtered.length === 0 ? (
-                <TableRow className="border-white/5">
+                <TableRow className="border-black/5">
                   <TableCell colSpan={7} className="py-12 text-center">
                     <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
                       <Inbox className="h-8 w-8 opacity-50" />
@@ -1113,8 +1101,8 @@ function OrdersTable() {
                     <TableRow
                       key={o.id}
                       className={cn(
-                        "border-white/5 transition-colors",
-                        checked && "bg-[var(--neon-cyan)]/[0.06]",
+                        "border-black/5 transition-colors",
+                        checked && "bg-[var(--brand)]/[0.06]",
                       )}
                     >
                       <TableCell className="px-3">
@@ -1122,10 +1110,10 @@ function OrdersTable() {
                           checked={checked}
                           onCheckedChange={(v) => toggleRow(o.id, v === true)}
                           aria-label={`Selecionar pedido ${o.code}`}
-                          className="border-white/20 data-[state=checked]:bg-[var(--neon-cyan)] data-[state=checked]:text-black data-[state=checked]:border-[var(--neon-cyan)]"
+                          className="border-black/15 data-[state=checked]:bg-[var(--brand)] data-[state=checked]:text-white data-[state=checked]:border-[var(--brand)]"
                         />
                       </TableCell>
-                      <TableCell className="font-mono text-xs text-[var(--neon-cyan)]">
+                      <TableCell className="font-mono text-xs text-[var(--brand)]">
                         {o.code}
                       </TableCell>
                       <TableCell>
@@ -1148,7 +1136,7 @@ function OrdersTable() {
                           >
                             <SelectTrigger
                               size="sm"
-                              className="h-8 w-9 justify-center border-white/10 bg-white/5 px-0"
+                              className="h-8 w-9 justify-center border-black/10 bg-black/[0.03] px-0"
                               aria-label="Alterar status"
                             >
                               {updating === o.id ? (
@@ -1188,9 +1176,9 @@ function OrdersTable() {
           transition={{ duration: 0.25 }}
           className="sticky bottom-4 z-30"
         >
-          <div className="glass-strong flex flex-col gap-3 rounded-2xl border border-[var(--neon-cyan)]/30 p-3 shadow-[0_8px_40px_-12px_rgba(52,231,255,0.35)] sm:flex-row sm:items-center sm:justify-between">
+          <div className="glass-strong flex flex-col gap-3 rounded-2xl border border-[var(--brand)]/30 p-3 shadow-lg sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 items-center rounded-full bg-[var(--neon-cyan)]/15 px-3 text-sm font-bold text-[var(--neon-cyan)]">
+              <div className="flex h-9 items-center rounded-full bg-[var(--brand)]/15 px-3 text-sm font-bold text-[var(--brand)]">
                 {selectedIds.length}
               </div>
               <span className="text-sm font-medium">
@@ -1214,7 +1202,7 @@ function OrdersTable() {
                 onValueChange={(v) => setBulkStatus(v as OrderStatus)}
                 disabled={bulkSubmitting}
               >
-                <SelectTrigger className="h-9 w-full border-white/15 bg-white/5 text-sm sm:w-44">
+                <SelectTrigger className="h-9 w-full border-black/15 bg-black/[0.03] text-sm sm:w-44">
                   <SelectValue placeholder="Novo status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1230,7 +1218,7 @@ function OrdersTable() {
                 type="button"
                 onClick={onBulkUpdate}
                 disabled={bulkSubmitting}
-                className="btn-cosmic h-9 gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 text-sm font-bold text-black hover:opacity-90"
+                className="btn-cosmic h-9 gap-2 rounded-full bg-[var(--brand)] px-5 text-sm font-bold text-white hover:opacity-90"
               >
                 {bulkSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -1244,7 +1232,7 @@ function OrdersTable() {
               <button
                 type="button"
                 onClick={clearSelection}
-                className="inline-flex h-9 items-center justify-center gap-1 rounded-full px-3 text-xs font-medium text-muted-foreground transition hover:bg-white/5 hover:text-foreground sm:hidden"
+                className="inline-flex h-9 items-center justify-center gap-1 rounded-full px-3 text-xs font-medium text-muted-foreground transition hover:bg-black/[0.03] hover:text-foreground sm:hidden"
               >
                 <X className="h-3.5 w-3.5" />
                 Limpar
@@ -1519,9 +1507,9 @@ function ProductFormModal({
         // stock, the backend queues notifications to subscribed explorers.
         if (editing.stock === 0 && stockNum > 0) {
           toast.success(
-            "Produto reabastecido! Os exploradores inscritos serão avisados.",
+            "Produto reabastecido! Os clientes inscritos serão avisados.",
             {
-              icon: <Bell className="h-4 w-4 text-[var(--neon-cyan)]" />,
+              icon: <Bell className="h-4 w-4 text-[var(--brand)]" />,
               duration: 6000,
             },
           );
@@ -1546,7 +1534,7 @@ function ProductFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-strong max-h-[90vh] overflow-y-auto border-white/10 sm:max-w-2xl">
+      <DialogContent className="glass-strong max-h-[90vh] overflow-y-auto border-black/10 sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-gradient-neon text-xl font-black">
             {editing ? "Editar produto" : "Novo produto"}
@@ -1568,7 +1556,7 @@ function ProductFormModal({
                 value={form.name}
                 onChange={(e) => updateName(e.target.value)}
                 placeholder="Orion Runner"
-                className="border-white/10 bg-white/5"
+                className="border-black/10 bg-black/[0.03]"
               />
             </div>
             <div className="space-y-1.5">
@@ -1581,7 +1569,7 @@ function ProductFormModal({
                   update("slug", e.target.value);
                 }}
                 placeholder="orion-runner"
-                className="border-white/10 bg-white/5 font-mono text-sm"
+                className="border-black/10 bg-black/[0.03] font-mono text-sm"
               />
             </div>
             <div className="space-y-1.5">
@@ -1591,7 +1579,7 @@ function ProductFormModal({
                 value={form.brand}
                 onChange={(e) => update("brand", e.target.value)}
                 placeholder="Astrofeet"
-                className="border-white/10 bg-white/5"
+                className="border-black/10 bg-black/[0.03]"
               />
             </div>
             <div className="space-y-1.5">
@@ -1602,7 +1590,7 @@ function ProductFormModal({
               >
                 <SelectTrigger
                   id="p-category"
-                  className="w-full border-white/10 bg-white/5"
+                  className="w-full border-black/10 bg-black/[0.03]"
                 >
                   <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
@@ -1629,7 +1617,7 @@ function ProductFormModal({
                 value={form.price}
                 onChange={(e) => update("price", e.target.value)}
                 placeholder="699.90"
-                className="border-white/10 bg-white/5"
+                className="border-black/10 bg-black/[0.03]"
               />
             </div>
             <div className="space-y-1.5">
@@ -1640,7 +1628,7 @@ function ProductFormModal({
                 min={0}
                 value={form.stock}
                 onChange={(e) => update("stock", e.target.value)}
-                className="border-white/10 bg-white/5"
+                className="border-black/10 bg-black/[0.03]"
               />
             </div>
             <div className="space-y-1.5">
@@ -1653,7 +1641,7 @@ function ProductFormModal({
                 step="0.1"
                 value={form.rating}
                 onChange={(e) => update("rating", e.target.value)}
-                className="border-white/10 bg-white/5"
+                className="border-black/10 bg-black/[0.03]"
               />
             </div>
           </div>
@@ -1675,13 +1663,13 @@ function ProductFormModal({
                         "h-8 w-8 rounded-full border-2 transition-transform",
                         active
                           ? "scale-110 border-white"
-                          : "border-white/20 hover:scale-105",
+                          : "border-black/15 hover:scale-105",
                       )}
                       style={{ background: a.value }}
                     />
                   );
                 })}
-                <label className="relative h-8 w-8 cursor-pointer overflow-hidden rounded-full border-2 border-white/20">
+                <label className="relative h-8 w-8 cursor-pointer overflow-hidden rounded-full border-2 border-black/15">
                   <span
                     className="block h-full w-full"
                     style={{ background: form.accent }}
@@ -1702,7 +1690,7 @@ function ProductFormModal({
                 value={form.badge}
                 onValueChange={(v) => update("badge", v)}
               >
-                <SelectTrigger className="w-full border-white/10 bg-white/5">
+                <SelectTrigger className="w-full border-black/10 bg-black/[0.03]">
                   <SelectValue placeholder="Nenhum" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1734,7 +1722,7 @@ function ProductFormModal({
                     });
                     setForm((f) => ({ ...f, sizeStock: next }));
                   }}
-                  className="text-[11px] font-medium text-[var(--neon-cyan)] transition hover:underline"
+                  className="text-[11px] font-medium text-[var(--brand)] transition hover:underline"
                 >
                   Distribuir estoque
                 </button>
@@ -1751,8 +1739,8 @@ function ProductFormModal({
                     className={cn(
                       "h-9 w-11 rounded-lg border text-sm font-medium transition-colors",
                       active
-                        ? "border-[var(--neon-cyan)] bg-[var(--neon-cyan)]/15 text-[var(--neon-cyan)]"
-                        : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10",
+                        ? "border-[var(--brand)] bg-[var(--brand)]/15 text-[var(--brand)]"
+                        : "border-black/10 bg-black/[0.03] text-muted-foreground hover:bg-black/[0.06]",
                     )}
                   >
                     {s}
@@ -1764,7 +1752,7 @@ function ProductFormModal({
 
           {/* Per-size stock editor */}
           {form.sizes.length > 0 && (
-            <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+            <div className="space-y-2 rounded-2xl border border-black/10 bg-black/[0.02] p-4">
               <div className="flex items-center justify-between">
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                   Estoque por tamanho
@@ -1789,7 +1777,7 @@ function ProductFormModal({
                   return (
                     <div
                       key={s}
-                      className="flex flex-col items-center gap-1 rounded-xl border border-white/5 bg-white/[0.03] p-2"
+                      className="flex flex-col items-center gap-1 rounded-xl border border-black/5 bg-black/[0.02] p-2"
                     >
                       <span className="text-xs font-bold text-muted-foreground">
                         Tam {s}
@@ -1800,12 +1788,12 @@ function ProductFormModal({
                         value={val}
                         onChange={(e) => setSizeStock(s, e.target.value)}
                         className={cn(
-                          "h-9 w-full rounded-lg border bg-white/5 px-2 text-center text-sm font-semibold outline-none transition focus:border-[var(--neon-cyan)]",
+                          "h-9 w-full rounded-lg border bg-black/[0.03] px-2 text-center text-sm font-semibold outline-none transition focus:border-[var(--brand)]",
                           num === 0
-                            ? "border-rose-500/40 text-rose-300"
+                            ? "border-rose-500/40 text-rose-700"
                             : num <= 2
-                              ? "border-amber-500/40 text-amber-300"
-                              : "border-white/10 text-foreground",
+                              ? "border-amber-500/40 text-amber-700"
+                              : "border-black/10 text-foreground",
                         )}
                         placeholder="0"
                       />
@@ -1828,7 +1816,7 @@ function ProductFormModal({
               value={form.description}
               onChange={(e) => update("description", e.target.value)}
               placeholder="Conte a história do drop, materiais e tecnologia..."
-              className="min-h-24 border-white/10 bg-white/5"
+              className="min-h-24 border-black/10 bg-black/[0.03]"
             />
           </div>
 
@@ -1836,15 +1824,15 @@ function ProductFormModal({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
-                <ImageIcon className="h-3.5 w-3.5 text-[var(--neon-cyan)]" />
+                <ImageIcon className="h-3.5 w-3.5 text-[var(--brand)]" />
                 Imagens do produto
               </Label>
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-[11px] font-medium",
                   form.images.length >= MAX_PRODUCT_IMAGES
-                    ? "bg-[var(--neon-magenta)]/15 text-[var(--neon-magenta)]"
-                    : "bg-white/5 text-muted-foreground",
+                    ? "bg-[var(--hot)]/15 text-[var(--hot)]"
+                    : "bg-black/[0.03] text-muted-foreground",
                 )}
               >
                 {form.images.length}/{MAX_PRODUCT_IMAGES}
@@ -1876,11 +1864,11 @@ function ProductFormModal({
               className={cn(
                 "group flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-6 text-center transition",
                 dragging
-                  ? "border-[var(--neon-cyan)] bg-[var(--neon-cyan)]/10"
-                  : "border-white/15 bg-white/[0.02] hover:border-[var(--neon-cyan)]/50 hover:bg-white/[0.04]",
+                  ? "border-[var(--brand)] bg-[var(--brand)]/10"
+                  : "border-black/15 bg-black/[0.02] hover:border-[var(--brand)]/50 hover:bg-black/[0.024]",
               )}
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--neon-cyan)]/10 text-[var(--neon-cyan)] transition group-hover:scale-110">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)] transition group-hover:scale-110">
                 <Upload className="h-5 w-5" />
               </span>
               <span className="text-sm font-medium">
@@ -1914,7 +1902,7 @@ function ProductFormModal({
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.18, delay: i * 0.02 }}
-                    className="group relative aspect-square overflow-hidden rounded-xl border-2 border-white/10 bg-white/5"
+                    className="group relative aspect-square overflow-hidden rounded-xl border-2 border-black/10 bg-black/[0.03]"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -1956,13 +1944,13 @@ function ProductFormModal({
                     }
                   }}
                   placeholder={`/products/${form.slug || "slug"}.png, https://...`}
-                  className="border-white/10 bg-white/5 font-mono text-sm"
+                  className="border-black/10 bg-black/[0.03] font-mono text-sm"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={addUrls}
-                  className="shrink-0 border-white/10 bg-white/5 hover:bg-white/10"
+                  className="shrink-0 border-black/10 bg-black/[0.03] hover:bg-black/[0.06]"
                 >
                   <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">Adicionar</span>
@@ -1975,11 +1963,11 @@ function ProductFormModal({
             </div>
           </div>
 
-          <Separator className="bg-white/5" />
+          <Separator className="bg-black/[0.03]" />
 
           {/* Toggles */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3">
+            <div className="flex items-center justify-between rounded-xl border border-black/10 bg-black/[0.03] p-3">
               <div>
                 <p className="text-sm font-medium">Destaque</p>
                 <p className="text-xs text-muted-foreground">
@@ -1991,7 +1979,7 @@ function ProductFormModal({
                 onCheckedChange={(v) => update("featured", v)}
               />
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3">
+            <div className="flex items-center justify-between rounded-xl border border-black/10 bg-black/[0.03] p-3">
               <div>
                 <p className="text-sm font-medium">Mais vendido</p>
                 <p className="text-xs text-muted-foreground">
@@ -2010,7 +1998,7 @@ function ProductFormModal({
               <Button
                 type="button"
                 variant="outline"
-                className="border-white/10 bg-white/5 hover:bg-white/10"
+                className="border-black/10 bg-black/[0.03] hover:bg-black/[0.06]"
               >
                 Cancelar
               </Button>
@@ -2018,7 +2006,7 @@ function ProductFormModal({
             <Button
               type="submit"
               disabled={saving}
-              className="bg-[var(--neon-cyan)] text-black hover:bg-[var(--neon-cyan)]/90"
+              className="bg-[var(--brand)] text-white hover:bg-[var(--brand)]/90"
             >
               {saving ? (
                 <>
@@ -2128,7 +2116,7 @@ function ProductsTable() {
 
   if (isError) {
     return (
-      <div className="glass rounded-2xl border border-white/10 p-8 text-center text-sm text-muted-foreground">
+      <div className="glass rounded-2xl border border-black/10 p-8 text-center text-sm text-muted-foreground">
         Não foi possível carregar o catálogo. Tente novamente em instantes.
       </div>
     );
@@ -2145,7 +2133,7 @@ function ProductsTable() {
         </div>
         <Button
           onClick={openCreate}
-          className="bg-[var(--neon-cyan)] text-black hover:bg-[var(--neon-cyan)]/90"
+          className="bg-[var(--brand)] text-white hover:bg-[var(--brand)]/90"
         >
           <Plus className="h-4 w-4" />
           Novo produto
@@ -2153,7 +2141,7 @@ function ProductsTable() {
       </div>
 
       {/* Search + filters */}
-      <div className="glass rounded-2xl border border-white/10 p-3 sm:p-4">
+      <div className="glass rounded-2xl border border-black/10 p-3 sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative w-full lg:max-w-sm">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -2161,12 +2149,12 @@ function ProductsTable() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por nome ou marca..."
-              className="glass rounded-full border-white/10 bg-white/5 pl-10 pr-4"
+              className="glass rounded-full border-black/10 bg-black/[0.03] pl-10 pr-4"
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="glass h-9 w-[150px] rounded-full border-white/10 bg-white/5 text-sm">
+              <SelectTrigger className="glass h-9 w-[150px] rounded-full border-black/10 bg-black/[0.03] text-sm">
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
@@ -2179,7 +2167,7 @@ function ProductsTable() {
               </SelectContent>
             </Select>
             <Select value={brandFilter} onValueChange={setBrandFilter}>
-              <SelectTrigger className="glass h-9 w-[160px] rounded-full border-white/10 bg-white/5 text-sm">
+              <SelectTrigger className="glass h-9 w-[160px] rounded-full border-black/10 bg-black/[0.03] text-sm">
                 <SelectValue placeholder="Marca" />
               </SelectTrigger>
               <SelectContent>
@@ -2197,13 +2185,13 @@ function ProductsTable() {
                 variant="ghost"
                 size="sm"
                 onClick={clearFilters}
-                className="h-9 shrink-0 rounded-full border border-white/10 text-xs text-muted-foreground hover:text-foreground"
+                className="h-9 shrink-0 rounded-full border border-black/10 text-xs text-muted-foreground hover:text-foreground"
               >
                 <X className="h-3.5 w-3.5" />
                 Limpar filtros
               </Button>
             )}
-            <div className="ml-1 hidden items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-muted-foreground sm:flex">
+            <div className="ml-1 hidden items-center gap-1 rounded-full border border-black/10 bg-black/[0.03] px-3 py-1.5 text-xs text-muted-foreground sm:flex">
               <Filter className="h-3 w-3" />
               {filtered.length} produto{filtered.length === 1 ? "" : "s"}
             </div>
@@ -2214,11 +2202,11 @@ function ProductsTable() {
         </div>
       </div>
 
-      <div className="glass rounded-2xl border border-white/10 p-3 sm:p-4">
-        <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-white/5">
+      <div className="glass rounded-2xl border border-black/10 p-3 sm:p-4">
+        <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-black/5">
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-[var(--card)] backdrop-blur">
-              <TableRow className="border-white/10 hover:bg-transparent">
+              <TableRow className="border-black/10 hover:bg-transparent">
                 <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
                   Produto
                 </TableHead>
@@ -2245,14 +2233,14 @@ function ProductsTable() {
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
-                  <TableRow key={i} className="border-white/5">
+                  <TableRow key={i} className="border-black/5">
                     <TableCell colSpan={7}>
                       <Skeleton className="h-10 w-full" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : !data || data.length === 0 ? (
-                <TableRow className="border-white/5">
+                <TableRow className="border-black/5">
                   <TableCell colSpan={7} className="py-12 text-center">
                     <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
                       <PackageSearch className="h-10 w-10 opacity-50" />
@@ -2267,7 +2255,7 @@ function ProductsTable() {
                       <Button
                         size="sm"
                         onClick={openCreate}
-                        className="bg-[var(--neon-cyan)] text-black hover:bg-[var(--neon-cyan)]/90"
+                        className="bg-[var(--brand)] text-white hover:bg-[var(--brand)]/90"
                       >
                         <Plus className="h-4 w-4" />
                         Novo produto
@@ -2276,7 +2264,7 @@ function ProductsTable() {
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow className="border-white/5">
+                <TableRow className="border-black/5">
                   <TableCell colSpan={7} className="py-12 text-center">
                     <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
                       <PackageSearch className="h-10 w-10 opacity-50" />
@@ -2292,7 +2280,7 @@ function ProductsTable() {
                         size="sm"
                         variant="outline"
                         onClick={clearFilters}
-                        className="border-white/10 bg-white/5 hover:bg-white/10"
+                        className="border-black/10 bg-black/[0.03] hover:bg-black/[0.06]"
                       >
                         <X className="h-4 w-4" />
                         Limpar filtros
@@ -2302,11 +2290,11 @@ function ProductsTable() {
                 </TableRow>
               ) : (
                 filtered.map((p) => (
-                  <TableRow key={p.id} className="border-white/5">
+                  <TableRow key={p.id} className="border-black/5">
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div
-                          className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/5"
+                          className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-black/10 bg-black/[0.03]"
                           style={{
                             boxShadow: `inset 0 0 18px ${p.accent}33`,
                           }}
@@ -2347,9 +2335,9 @@ function ProductsTable() {
                           className={cn(
                             "text-sm",
                             p.stock === 0
-                              ? "text-rose-300"
+                              ? "text-rose-700"
                               : p.stock <= 5
-                                ? "text-amber-300"
+                                ? "text-amber-700"
                                 : "text-foreground",
                           )}
                         >
@@ -2357,14 +2345,14 @@ function ProductsTable() {
                         </span>
                         {p.stock === 0 && (
                           <span
-                            title="Produto esgotado — exploradores podem estar inscritos para alerta"
-                            aria-label="Produto esgotado — exploradores podem estar inscritos para alerta"
-                            className="relative flex h-5 w-5 items-center justify-center rounded-full bg-[var(--neon-magenta)]/15 text-[var(--neon-magenta)]"
+                            title="Produto esgotado — clientes podem estar inscritos para alerta"
+                            aria-label="Produto esgotado — clientes podem estar inscritos para alerta"
+                            className="relative flex h-5 w-5 items-center justify-center rounded-full bg-[var(--hot)]/15 text-[var(--hot)]"
                           >
                             <Bell className="h-3 w-3" />
                             <span className="absolute -right-0.5 -top-0.5 flex h-2 w-2">
-                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--neon-magenta)] opacity-75" />
-                              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--neon-magenta)]" />
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--hot)] opacity-75" />
+                              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--hot)]" />
                             </span>
                           </span>
                         )}
@@ -2374,7 +2362,7 @@ function ProductsTable() {
                       {p.badge ? (
                         <Badge
                           variant="outline"
-                          className="rounded-full border-white/15 bg-white/5 text-[10px]"
+                          className="rounded-full border-black/15 bg-black/[0.03] text-[10px]"
                         >
                           {p.badge}
                         </Badge>
@@ -2385,16 +2373,16 @@ function ProductsTable() {
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {p.featured && (
-                          <span className="rounded-md bg-[var(--neon-cyan)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--neon-cyan)]">
+                          <span className="rounded-md bg-[var(--brand)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--brand)]">
                             Destaque
                           </span>
                         )}
                         {p.bestSeller && (
-                          <span className="rounded-md bg-[var(--neon-lime)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--neon-lime)]">
+                          <span className="rounded-md bg-[var(--success)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--success)]">
                             Top
                           </span>
                         )}
-                        <span className="flex items-center gap-0.5 text-[11px] text-amber-300">
+                        <span className="flex items-center gap-0.5 text-[11px] text-amber-700">
                           <Star className="h-3 w-3 fill-current" />
                           {p.rating.toFixed(1)}
                         </span>
@@ -2405,7 +2393,7 @@ function ProductsTable() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8 hover:bg-white/10"
+                          className="h-8 w-8 hover:bg-black/[0.06]"
                           onClick={() => openEdit(p)}
                           aria-label={`Editar ${p.name}`}
                         >
@@ -2414,7 +2402,7 @@ function ProductsTable() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8 text-rose-300 hover:bg-rose-500/10"
+                          className="h-8 w-8 text-rose-700 hover:bg-rose-500/10"
                           onClick={() => setDeleteTarget(p)}
                           aria-label={`Remover ${p.name}`}
                         >
@@ -2442,7 +2430,7 @@ function ProductsTable() {
           if (!v) setDeleteTarget(null);
         }}
       >
-        <AlertDialogContent className="glass-strong border-white/10">
+        <AlertDialogContent className="glass-strong border-black/10">
           <AlertDialogHeader>
             <AlertDialogTitle>Remover produto?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -2453,7 +2441,7 @@ function ProductsTable() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel
-              className="border-white/10 bg-white/5 hover:bg-white/10"
+              className="border-black/10 bg-black/[0.03] hover:bg-black/[0.06]"
               disabled={deleting}
             >
               Cancelar
@@ -2638,7 +2626,7 @@ function CouponFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-strong max-h-[90vh] overflow-y-auto border-white/10 sm:max-w-xl">
+      <DialogContent className="glass-strong max-h-[90vh] overflow-y-auto border-black/10 sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="text-gradient-neon text-xl font-black">
             {editing ? "Editar cupom" : "Novo cupom"}
@@ -2661,7 +2649,7 @@ function CouponFormModal({
                 onChange={(e) => onCodeChange(e.target.value)}
                 placeholder="ASTRO10"
                 className={cn(
-                  "border-white/10 bg-white/5 font-mono uppercase tracking-wider",
+                  "border-black/10 bg-black/[0.03] font-mono uppercase tracking-wider",
                   errors.code &&
                     "border-rose-500/60 focus-visible:ring-rose-500/40",
                 )}
@@ -2670,7 +2658,7 @@ function CouponFormModal({
                 3 a 20 caracteres entre A-Z e 0-9.
               </p>
               {errors.code && (
-                <p className="text-xs text-rose-300">{errors.code}</p>
+                <p className="text-xs text-rose-700">{errors.code}</p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -2683,7 +2671,7 @@ function CouponFormModal({
               >
                 <SelectTrigger
                   id="c-type"
-                  className="w-full border-white/10 bg-white/5"
+                  className="w-full border-black/10 bg-black/[0.03]"
                 >
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
@@ -2716,7 +2704,7 @@ function CouponFormModal({
                   onChange={(e) => update("value", e.target.value)}
                   placeholder={form.type === "percent" ? "10" : "50.00"}
                   className={cn(
-                    "border-white/10 bg-white/5",
+                    "border-black/10 bg-black/[0.03]",
                     form.type === "fixed" && "pl-10",
                     form.type === "percent" && "pr-9",
                     errors.value &&
@@ -2730,7 +2718,7 @@ function CouponFormModal({
                 )}
               </div>
               {errors.value && (
-                <p className="text-xs text-rose-300">{errors.value}</p>
+                <p className="text-xs text-rose-700">{errors.value}</p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -2743,7 +2731,7 @@ function CouponFormModal({
                 value={form.minSubtotal}
                 onChange={(e) => update("minSubtotal", e.target.value)}
                 placeholder="0"
-                className="border-white/10 bg-white/5"
+                className="border-black/10 bg-black/[0.03]"
               />
               <p className="text-xs text-muted-foreground">
                 Use 0 para liberar em qualquer compra.
@@ -2760,13 +2748,13 @@ function CouponFormModal({
               onChange={(e) => update("description", e.target.value)}
               placeholder="10% off no carrinho inteiro"
               className={cn(
-                "border-white/10 bg-white/5",
+                "border-black/10 bg-black/[0.03]",
                 errors.description &&
                   "border-rose-500/60 focus-visible:ring-rose-500/40",
               )}
             />
             {errors.description && (
-              <p className="text-xs text-rose-300">{errors.description}</p>
+              <p className="text-xs text-rose-700">{errors.description}</p>
             )}
           </div>
 
@@ -2779,13 +2767,13 @@ function CouponFormModal({
                 type="date"
                 value={form.expiresAt}
                 onChange={(e) => update("expiresAt", e.target.value)}
-                className="border-white/10 bg-white/5"
+                className="border-black/10 bg-black/[0.03]"
               />
               <p className="text-xs text-muted-foreground">
                 Sem data = válido por tempo indeterminado.
               </p>
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3">
+            <div className="flex items-center justify-between rounded-xl border border-black/10 bg-black/[0.03] p-3">
               <div>
                 <p className="text-sm font-medium">Ativo</p>
                 <p className="text-xs text-muted-foreground">
@@ -2804,7 +2792,7 @@ function CouponFormModal({
               <Button
                 type="button"
                 variant="outline"
-                className="border-white/10 bg-white/5 hover:bg-white/10"
+                className="border-black/10 bg-black/[0.03] hover:bg-black/[0.06]"
               >
                 Cancelar
               </Button>
@@ -2812,7 +2800,7 @@ function CouponFormModal({
             <Button
               type="submit"
               disabled={saving}
-              className="bg-[var(--neon-cyan)] text-black hover:bg-[var(--neon-cyan)]/90"
+              className="bg-[var(--brand)] text-white hover:bg-[var(--brand)]/90"
             >
               {saving ? (
                 <>
@@ -2922,7 +2910,7 @@ function CouponsTab() {
         </div>
         <Button
           onClick={openCreate}
-          className="bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] text-black hover:opacity-90"
+          className="bg-[var(--brand)] text-white hover:opacity-90"
         >
           <Plus className="h-4 w-4" />
           Novo cupom
@@ -2935,7 +2923,7 @@ function CouponsTab() {
             icon={<Ticket className="h-4 w-4" />}
             label="Cupons ativos"
             value={String(data.filter((c) => c.active).length)}
-            accent="#34e7ff"
+            accent="#cc3d0a"
           />
           <MiniStat
             icon={<Receipt className="h-4 w-4" />}
@@ -2943,7 +2931,7 @@ function CouponsTab() {
             value={String(
               data.reduce((acc, c) => acc + (c.usageCount ?? 0), 0),
             )}
-            accent="#ff5cf0"
+            accent="#c8102e"
           />
           <MiniStat
             icon={<TrendingUp className="h-4 w-4" />}
@@ -2951,30 +2939,30 @@ function CouponsTab() {
             value={formatPrice(
               data.reduce((acc, c) => acc + (c.totalDiscount ?? 0), 0),
             )}
-            accent="#c6ff5a"
+            accent="#15803d"
           />
         </div>
       )}
 
       {isError ? (
-        <div className="glass rounded-2xl border border-white/10 p-8 text-center text-sm text-muted-foreground">
+        <div className="glass rounded-2xl border border-black/10 p-8 text-center text-sm text-muted-foreground">
           <p className="mb-4">
             Não foi possível carregar os cupons. Tente novamente em instantes.
           </p>
           <Button
             onClick={() => refetch()}
             variant="outline"
-            className="border-white/10 bg-white/5 hover:bg-white/10"
+            className="border-black/10 bg-black/[0.03] hover:bg-black/[0.06]"
           >
             Tentar novamente
           </Button>
         </div>
       ) : (
-        <div className="glass rounded-2xl border border-white/10 p-3 sm:p-4">
-          <div className="max-h-[28rem] max-w-full overflow-y-auto overflow-x-auto rounded-xl border border-white/5">
+        <div className="glass rounded-2xl border border-black/10 p-3 sm:p-4">
+          <div className="max-h-[28rem] max-w-full overflow-y-auto overflow-x-auto rounded-xl border border-black/5">
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-[var(--card)] backdrop-blur">
-                <TableRow className="border-white/10 hover:bg-transparent">
+                <TableRow className="border-black/10 hover:bg-transparent">
                   <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">
                     Código
                   </TableHead>
@@ -3010,17 +2998,17 @@ function CouponsTab() {
               <TableBody>
                 {isLoading ? (
                   Array.from({ length: 4 }).map((_, i) => (
-                    <TableRow key={i} className="border-white/5">
+                    <TableRow key={i} className="border-black/5">
                       <TableCell colSpan={10}>
                         <Skeleton className="h-9 w-full" />
                       </TableCell>
                     </TableRow>
                   ))
                 ) : !data || data.length === 0 ? (
-                  <TableRow className="border-white/5">
+                  <TableRow className="border-black/5">
                     <TableCell colSpan={10} className="py-12 text-center">
                       <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-black/[0.03] ring-1 ring-black/10">
                           <Ticket className="h-6 w-6 opacity-60" />
                         </div>
                         <div>
@@ -3034,7 +3022,7 @@ function CouponsTab() {
                         <Button
                           size="sm"
                           onClick={openCreate}
-                          className="bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] text-black hover:opacity-90"
+                          className="bg-[var(--brand)] text-white hover:opacity-90"
                         >
                           <Plus className="h-4 w-4" />
                           Criar primeiro cupom
@@ -3052,13 +3040,13 @@ function CouponsTab() {
                         duration: 0.3,
                         delay: Math.min(i * 0.04, 0.3),
                       }}
-                      className="border-b border-white/5 transition-colors hover:bg-white/[0.03]"
+                      className="border-b border-black/5 transition-colors hover:bg-black/[0.02]"
                     >
                       <TableCell>
                         <button
                           type="button"
                           onClick={() => onCopy(c)}
-                          className="group inline-flex items-center gap-1.5 font-mono text-sm font-semibold text-[var(--neon-cyan)] transition-colors hover:text-[var(--neon-cyan)]/80"
+                          className="group inline-flex items-center gap-1.5 font-mono text-sm font-semibold text-[var(--brand)] transition-colors hover:text-[var(--brand)]/80"
                           title="Copiar código"
                           aria-label={`Copiar cupom ${c.code}`}
                         >
@@ -3090,14 +3078,14 @@ function CouponsTab() {
                         {c.active ? (
                           <Badge
                             variant="outline"
-                            className="rounded-full border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300"
+                            className="rounded-full border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"
                           >
                             Ativo
                           </Badge>
                         ) : (
                           <Badge
                             variant="outline"
-                            className="rounded-full border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground"
+                            className="rounded-full border-black/10 bg-black/[0.03] px-2 py-0.5 text-[11px] font-semibold text-muted-foreground"
                           >
                             Inativo
                           </Badge>
@@ -3107,7 +3095,7 @@ function CouponsTab() {
                         {(c.usageCount ?? 0) > 0 ? (
                           <Badge
                             variant="outline"
-                            className="rounded-full border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 text-[11px] font-semibold text-cyan-300"
+                            className="rounded-full border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 text-[11px] font-semibold text-cyan-700"
                           >
                             {c.usageCount}
                           </Badge>
@@ -3117,7 +3105,7 @@ function CouponsTab() {
                       </TableCell>
                       <TableCell>
                         {(c.totalDiscount ?? 0) > 0 ? (
-                          <span className="text-sm font-semibold text-emerald-300">
+                          <span className="text-sm font-semibold text-emerald-700">
                             {formatPrice(c.totalDiscount ?? 0)}
                           </span>
                         ) : (
@@ -3133,9 +3121,9 @@ function CouponsTab() {
                             size="icon"
                             variant="ghost"
                             className={cn(
-                              "h-8 w-8 hover:bg-white/10",
+                              "h-8 w-8 hover:bg-black/[0.06]",
                               c.active
-                                ? "text-emerald-300"
+                                ? "text-emerald-700"
                                 : "text-muted-foreground",
                             )}
                             onClick={() => onToggle(c)}
@@ -3156,7 +3144,7 @@ function CouponsTab() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 hover:bg-white/10"
+                            className="h-8 w-8 hover:bg-black/[0.06]"
                             onClick={() => openEdit(c)}
                             aria-label={`Editar ${c.code}`}
                           >
@@ -3165,7 +3153,7 @@ function CouponsTab() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-rose-300 hover:bg-rose-500/10"
+                            className="h-8 w-8 text-rose-700 hover:bg-rose-500/10"
                             onClick={() => setDeleteTarget(c)}
                             aria-label={`Remover ${c.code}`}
                           >
@@ -3194,7 +3182,7 @@ function CouponsTab() {
           if (!v) setDeleteTarget(null);
         }}
       >
-        <AlertDialogContent className="glass-strong border-white/10">
+        <AlertDialogContent className="glass-strong border-black/10">
           <AlertDialogHeader>
             <AlertDialogTitle>Remover cupom?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -3205,7 +3193,7 @@ function CouponsTab() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel
-              className="border-white/10 bg-white/5 hover:bg-white/10"
+              className="border-black/10 bg-black/[0.03] hover:bg-black/[0.06]"
               disabled={deleting}
             >
               Cancelar
@@ -3241,10 +3229,10 @@ const NOTIFICATION_META: Record<
   NotificationType,
   { Icon: NotificationIcon; color: string }
 > = {
-  order_created: { Icon: Package, color: "#34e7ff" },
-  order_status: { Icon: Truck, color: "#a779ff" },
-  coupon_applied: { Icon: Ticket, color: "#ff5cf0" },
-  welcome: { Icon: Sparkles, color: "#c6ff5a" },
+  order_created: { Icon: Package, color: "#cc3d0a" },
+  order_status: { Icon: Truck, color: "#111111" },
+  coupon_applied: { Icon: Ticket, color: "#c8102e" },
+  welcome: { Icon: Sparkles, color: "#15803d" },
 };
 
 function NotificationStatusBadge({
@@ -3259,15 +3247,15 @@ function NotificationStatusBadge({
     sent: {
       label: "Enviado",
       className:
-        "border-emerald-500/30 bg-emerald-500/15 text-emerald-300",
+        "border-emerald-500/30 bg-emerald-500/15 text-emerald-700",
     },
     queued: {
       label: "Na fila",
-      className: "border-amber-500/30 bg-amber-500/15 text-amber-300",
+      className: "border-amber-500/30 bg-amber-500/15 text-amber-700",
     },
     failed: {
       label: "Falhou",
-      className: "border-rose-500/30 bg-rose-500/15 text-rose-300",
+      className: "border-rose-500/30 bg-rose-500/15 text-rose-700",
     },
   };
   const s = map[status] ?? map.sent;
@@ -3313,7 +3301,7 @@ function NotificationsTab() {
           }
           variant="outline"
           disabled={isFetching}
-          className="border-white/10 bg-white/5 hover:bg-white/10"
+          className="border-black/10 bg-black/[0.03] hover:bg-black/[0.06]"
         >
           <RefreshCw
             className={cn("h-4 w-4", isFetching && "animate-spin")}
@@ -3323,7 +3311,7 @@ function NotificationsTab() {
       </div>
 
       {isError ? (
-        <div className="glass rounded-2xl border border-white/10 p-8 text-center text-sm text-muted-foreground">
+        <div className="glass rounded-2xl border border-black/10 p-8 text-center text-sm text-muted-foreground">
           <p className="mb-4">
             Não foi possível carregar as notificações. Tente novamente em
             instantes.
@@ -3331,7 +3319,7 @@ function NotificationsTab() {
           <Button
             onClick={() => refetch()}
             variant="outline"
-            className="border-white/10 bg-white/5 hover:bg-white/10"
+            className="border-black/10 bg-black/[0.03] hover:bg-black/[0.06]"
           >
             Tentar novamente
           </Button>
@@ -3343,8 +3331,8 @@ function NotificationsTab() {
           ))}
         </div>
       ) : !data || data.length === 0 ? (
-        <div className="glass rounded-2xl border border-white/10 p-10 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
+        <div className="glass rounded-2xl border border-black/10 p-10 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-black/[0.03] ring-1 ring-black/10">
             <Bell className="h-7 w-7 opacity-60" />
           </div>
           <p className="font-medium text-foreground">
@@ -3377,10 +3365,10 @@ function NotificationsTab() {
                       setExpandedId(open ? n.id : null)
                     }
                   >
-                    <div className="glass rounded-2xl border border-white/10 p-4 transition-colors hover:bg-white/[0.03]">
+                    <div className="glass rounded-2xl border border-black/10 p-4 transition-colors hover:bg-black/[0.02]">
                       <div className="flex items-start gap-3">
                         <div
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-black/10"
                           style={{
                             color: meta.color,
                             background: `${meta.color}1f`,
@@ -3393,7 +3381,7 @@ function NotificationsTab() {
                             <CollapsibleTrigger asChild>
                               <button
                                 type="button"
-                                className="text-left text-sm font-medium leading-tight transition-colors hover:text-[var(--neon-cyan)]"
+                                className="text-left text-sm font-medium leading-tight transition-colors hover:text-[var(--brand)]"
                               >
                                 {n.subject}
                               </button>
@@ -3415,7 +3403,7 @@ function NotificationsTab() {
                                 onClick={() =>
                                   toast(`Pedido ${n.orderId}`)
                                 }
-                                className="inline-flex items-center gap-1 text-[var(--neon-cyan)] transition-colors hover:underline"
+                                className="inline-flex items-center gap-1 text-[var(--brand)] transition-colors hover:underline"
                               >
                                 <Package className="h-3 w-3" />
                                 Ver pedido
@@ -3427,7 +3415,7 @@ function NotificationsTab() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 shrink-0 hover:bg-white/10"
+                            className="h-8 w-8 shrink-0 hover:bg-black/[0.06]"
                             aria-label={isOpen ? "Recolher" : "Expandir"}
                           >
                             <ChevronDown
@@ -3474,7 +3462,7 @@ export function AdminView() {
   if (!hydrated) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-md items-center justify-center px-4">
-        <div className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-5 py-4 text-sm text-muted-foreground">
+        <div className="glass flex items-center gap-3 rounded-2xl border border-black/10 px-5 py-4 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           Carregando painel...
         </div>
@@ -3496,11 +3484,11 @@ export function AdminView() {
         className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
       >
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-[var(--neon-cyan)]">
-            Astrofeet · Comando
+          <p className="text-xs uppercase tracking-[0.25em] text-[var(--brand)]">
+            Astrofeet · Admin
           </p>
           <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">
-            <span className="text-gradient-neon">Painel do Comando</span>
+            <span className="text-gradient-neon">Painel administrativo</span>
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Conectado como{" "}
@@ -3510,7 +3498,7 @@ export function AdminView() {
         <Button
           variant="outline"
           onClick={() => navigate("home")}
-          className="w-fit border-white/10 bg-white/5 hover:bg-white/10"
+          className="w-fit border-black/10 bg-black/[0.03] hover:bg-black/[0.06]"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar à loja
@@ -3519,35 +3507,35 @@ export function AdminView() {
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab} className="gap-5">
-        <TabsList className="glass h-auto w-full justify-start gap-1 rounded-xl border border-white/10 p-1 sm:w-auto">
+        <TabsList className="glass h-auto w-full justify-start gap-1 rounded-xl border border-black/10 p-1 sm:w-auto">
           <TabsTrigger
             value="overview"
-            className="data-[state=active]:bg-[var(--neon-cyan)]/15 data-[state=active]:text-[var(--neon-cyan)] rounded-lg px-4 py-2"
+            className="data-[state=active]:bg-[var(--brand)]/15 data-[state=active]:text-[var(--brand)] rounded-lg px-4 py-2"
           >
             Visão geral
           </TabsTrigger>
           <TabsTrigger
             value="orders"
-            className="data-[state=active]:bg-[var(--neon-cyan)]/15 data-[state=active]:text-[var(--neon-cyan)] rounded-lg px-4 py-2"
+            className="data-[state=active]:bg-[var(--brand)]/15 data-[state=active]:text-[var(--brand)] rounded-lg px-4 py-2"
           >
             Pedidos
           </TabsTrigger>
           <TabsTrigger
             value="products"
-            className="data-[state=active]:bg-[var(--neon-cyan)]/15 data-[state=active]:text-[var(--neon-cyan)] rounded-lg px-4 py-2"
+            className="data-[state=active]:bg-[var(--brand)]/15 data-[state=active]:text-[var(--brand)] rounded-lg px-4 py-2"
           >
             Produtos
           </TabsTrigger>
           <TabsTrigger
             value="cupons"
-            className="data-[state=active]:bg-[var(--neon-cyan)]/15 data-[state=active]:text-[var(--neon-cyan)] rounded-lg px-4 py-2"
+            className="data-[state=active]:bg-[var(--brand)]/15 data-[state=active]:text-[var(--brand)] rounded-lg px-4 py-2"
           >
             <Ticket className="h-4 w-4" />
             Cupons
           </TabsTrigger>
           <TabsTrigger
             value="notificacoes"
-            className="data-[state=active]:bg-[var(--neon-cyan)]/15 data-[state=active]:text-[var(--neon-cyan)] rounded-lg px-4 py-2"
+            className="data-[state=active]:bg-[var(--brand)]/15 data-[state=active]:text-[var(--brand)] rounded-lg px-4 py-2"
           >
             <Bell className="h-4 w-4" />
             Notificações

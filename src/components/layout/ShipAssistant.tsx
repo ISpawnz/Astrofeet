@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Rocket, X, Send, Sparkles } from "lucide-react";
+import { MessageCircle, X, Send, Sparkles } from "lucide-react";
 import { api } from "@/client/api";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui";
@@ -19,7 +19,7 @@ const QUICK = [
 const WELCOME: Msg = {
   role: "assistant",
   content:
-    "Olá, explorador! 🚀 Eu sou a Nave. Posso te ajudar com pedido, entrega, escolha de produto e mais. O que você precisa?",
+    "Olá! Sou o assistente da Astrofeet. Posso ajudar com pedidos, entrega, trocas e escolha de tamanho. Como posso ajudar?",
 };
 
 export function ShipAssistant() {
@@ -57,7 +57,7 @@ export function ShipAssistant() {
         {
           role: "assistant",
           content:
-            "Tive um problema para responder agora, mas pode tentar de novo! 🚀",
+            "Tive um problema para responder agora, mas pode tentar de novo!",
         },
       ]);
     } finally {
@@ -77,15 +77,14 @@ export function ShipAssistant() {
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.95 }}
       >
-        <span className="absolute inset-0 rounded-full bg-[var(--neon-cyan)] opacity-25 blur-xl" />
-        <span className="absolute inset-0 rounded-full border border-[var(--neon-cyan)]/50" />
-        <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[var(--neon-cyan)] to-[var(--neon-violet)] text-black shadow-[0_0_25px_var(--neon-cyan)]">
-          {open ? <X className="h-6 w-6" /> : <Rocket className="h-6 w-6" />}
+        <span className="absolute inset-0 rounded-full border border-[var(--brand)]/50" />
+        <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand)] text-white">
+          {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
         </span>
         {!open && (
           <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--neon-magenta)] opacity-75" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--neon-magenta)]" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--hot)] opacity-75" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--hot)]" />
           </span>
         )}
       </motion.button>
@@ -100,17 +99,17 @@ export function ShipAssistant() {
             className="gradient-border-animated fixed bottom-24 right-5 z-50 flex h-[30rem] w-[min(22rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-3xl glass-strong shadow-2xl"
           >
             {/* Header */}
-            <div className="flex items-center gap-3 border-b border-white/10 bg-gradient-to-r from-[var(--neon-cyan)]/10 to-[var(--neon-magenta)]/10 p-4">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[var(--neon-cyan)] to-[var(--neon-violet)] text-black">
-                <Rocket className="h-5 w-5" />
+            <div className="flex items-center gap-3 border-b border-black/10 bg-[var(--surface)] p-4">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-white">
+                <MessageCircle className="h-5 w-5" />
               </span>
               <div className="flex-1">
-                <p className="text-sm font-bold leading-tight">Nave</p>
+                <p className="text-sm font-bold leading-tight">Assistente Astrofeet</p>
                 <p className="text-xs text-muted-foreground">
-                  Sua guia pela galáxia
+                  Respostas na hora, 24h
                 </p>
               </div>
-              <Sparkles className="h-4 w-4 text-[var(--neon-cyan)]" />
+              <Sparkles className="h-4 w-4 text-[var(--brand)]" />
             </div>
 
             {/* Messages */}
@@ -130,8 +129,8 @@ export function ShipAssistant() {
                     className={cn(
                       "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
                       m.role === "user"
-                        ? "rounded-br-sm bg-[var(--neon-cyan)] text-black"
-                        : "rounded-bl-sm bg-white/5 text-foreground",
+                        ? "rounded-br-sm bg-[var(--brand)] text-white"
+                        : "rounded-bl-sm bg-black/[0.03] text-foreground",
                     )}
                   >
                     {m.content}
@@ -140,7 +139,7 @@ export function ShipAssistant() {
               ))}
               {loading && (
                 <div className="flex justify-start">
-                  <div className="flex gap-1 rounded-2xl rounded-bl-sm bg-white/5 px-3 py-3">
+                  <div className="flex gap-1 rounded-2xl rounded-bl-sm bg-black/[0.03] px-3 py-3">
                     <Dot delay="0s" />
                     <Dot delay="0.15s" />
                     <Dot delay="0.3s" />
@@ -156,7 +155,7 @@ export function ShipAssistant() {
                   <button
                     key={q}
                     onClick={() => send(q)}
-                    className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-foreground/80 transition hover:border-[var(--neon-cyan)]/50 hover:text-foreground"
+                    className="rounded-full border border-black/10 bg-black/[0.03] px-2.5 py-1 text-xs text-foreground/80 transition hover:border-[var(--brand)]/50 hover:text-foreground"
                   >
                     {q}
                   </button>
@@ -170,18 +169,18 @@ export function ShipAssistant() {
                 e.preventDefault();
                 send(input);
               }}
-              className="flex items-center gap-2 border-t border-white/10 p-3"
+              className="flex items-center gap-2 border-t border-black/10 p-3"
             >
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Pergunte à Nave..."
-                className="h-10 flex-1 rounded-full border border-white/10 bg-white/5 px-4 text-sm outline-none placeholder:text-muted-foreground focus:border-[var(--neon-cyan)]"
+                placeholder="Pergunte ao assistente..."
+                className="h-10 flex-1 rounded-full border border-black/10 bg-black/[0.03] px-4 text-sm outline-none placeholder:text-muted-foreground focus:border-[var(--brand)]"
               />
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--neon-cyan)] text-black transition hover:opacity-90 disabled:opacity-40"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-white transition hover:opacity-90 disabled:opacity-40"
                 aria-label="Enviar"
               >
                 <Send className="h-4 w-4" />

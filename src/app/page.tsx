@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { GalaxyBackground } from "@/components/layout/GalaxyBackground";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
@@ -19,11 +18,11 @@ function ViewSkeleton() {
       aria-label="Carregando"
       className="mx-auto w-full max-w-6xl animate-pulse space-y-4 px-4 py-16"
     >
-      <div className="h-8 w-1/3 rounded-lg bg-white/10" />
-      <div className="h-4 w-1/2 rounded bg-white/5" />
+      <div className="h-8 w-1/3 rounded-lg bg-black/[0.06]" />
+      <div className="h-4 w-1/2 rounded bg-black/[0.03]" />
       <div className="grid gap-4 pt-6 sm:grid-cols-2 lg:grid-cols-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-64 rounded-2xl bg-white/5" />
+          <div key={i} className="h-64 rounded-2xl bg-black/[0.03]" />
         ))}
       </div>
     </div>
@@ -63,12 +62,11 @@ export default function Page() {
     <div className="relative flex min-h-screen flex-col">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-[var(--neon-cyan)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-black"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-[var(--brand)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
       >
         Pular para o conteúdo
       </a>
       <RouterSync />
-      <GalaxyBackground />
       <ScrollProgress />
       <Header />
       <main id="main-content" tabIndex={-1} className="flex-1 outline-none">

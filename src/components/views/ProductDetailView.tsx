@@ -48,14 +48,6 @@ import { ProductCard } from "./ProductCard";
 
 const FREE_SHIPPING_THRESHOLD = 300;
 
-const BADGE_STYLES: Record<string, string> = {
-  Novo:
-    "bg-[var(--neon-cyan)]/15 text-[var(--neon-cyan)] border-[var(--neon-cyan)]/40",
-  "Drop limitado":
-    "bg-[var(--neon-magenta)]/15 text-[var(--neon-magenta)] border-[var(--neon-magenta)]/40",
-  "Mais vendido":
-    "bg-[var(--neon-lime)]/15 text-[var(--neon-lime)] border-[var(--neon-lime)]/40",
-};
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -78,8 +70,8 @@ function Stars({
           style={{ width: size, height: size }}
           className={cn(
             n <= Math.round(value)
-              ? "fill-amber-400 text-amber-400"
-              : "fill-transparent text-white/20",
+              ? "fill-amber-400 text-amber-700"
+              : "fill-transparent text-black/15",
           )}
         />
       ))}
@@ -98,9 +90,9 @@ function TrustRow() {
       {items.map((it) => (
         <div
           key={it.title}
-          className="flex flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-center"
+          className="flex flex-col items-center gap-1.5 rounded-2xl border border-black/10 bg-black/[0.02] p-3 text-center"
         >
-          <it.icon className="h-5 w-5 text-[var(--neon-cyan)]" />
+          <it.icon className="h-5 w-5 text-[var(--brand)]" />
           <p className="text-xs font-semibold leading-tight">{it.title}</p>
           <p className="text-[10px] text-muted-foreground leading-tight">
             {it.sub}
@@ -200,23 +192,15 @@ function StockAlertBanner({ product }: { product: Product }) {
       className="glass relative overflow-hidden rounded-2xl border border-amber-500/30 p-4"
     >
       {/* Amber/violet accent glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-30 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(circle, var(--neon-violet), transparent 70%)",
-        }}
-      />
 
       <div className="relative flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 ring-1 ring-inset ring-amber-500/30">
-          <Bell className="h-5 w-5 text-amber-400" />
+          <Bell className="h-5 w-5 text-amber-700" />
         </div>
 
         <div className="min-w-0 flex-1 space-y-3">
           <div>
-            <p className="text-sm font-bold text-rose-400">Produto esgotado</p>
+            <p className="text-sm font-bold text-rose-700">Produto esgotado</p>
             <p className="text-xs text-muted-foreground">
               Avise-me quando voltar ao estoque
             </p>
@@ -224,7 +208,7 @@ function StockAlertBanner({ product }: { product: Product }) {
 
           {isSubscribed ? (
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--neon-lime)]/40 bg-[var(--neon-lime)]/15 px-3 py-1 text-xs font-bold text-[var(--neon-lime)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--success)]/40 bg-[var(--success)]/15 px-3 py-1 text-xs font-bold text-[var(--success)]">
                 <Check className="h-3.5 w-3.5" />
                 Inscrito
               </span>
@@ -234,7 +218,7 @@ function StockAlertBanner({ product }: { product: Product }) {
                 size="sm"
                 onClick={handleUnsubscribe}
                 disabled={unsubscribing}
-                className="h-8 gap-1.5 rounded-full border-white/10 px-3 text-xs font-medium text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                className="h-8 gap-1.5 rounded-full border-black/10 px-3 text-xs font-medium text-muted-foreground hover:bg-black/[0.03] hover:text-foreground"
               >
                 {unsubscribing ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -253,7 +237,7 @@ function StockAlertBanner({ product }: { product: Product }) {
                 type="button"
                 size="sm"
                 onClick={() => openAuth("login")}
-                className="h-8 gap-1.5 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-3 text-xs font-bold text-black hover:opacity-90"
+                className="h-8 gap-1.5 rounded-full bg-[var(--brand)] px-3 text-xs font-bold text-white hover:opacity-90"
               >
                 Entrar
               </Button>
@@ -269,13 +253,13 @@ function StockAlertBanner({ product }: { product: Product }) {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
                 aria-label="Seu e-mail"
-                className="h-9 rounded-full border-white/10 bg-white/[0.03] text-sm"
+                className="h-9 rounded-full border-black/10 bg-black/[0.02] text-sm"
               />
               <Button
                 type="submit"
                 size="sm"
                 disabled={submitting}
-                className="h-9 shrink-0 gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-[var(--neon-violet)] px-5 text-sm font-bold text-black hover:opacity-90"
+                className="h-9 shrink-0 gap-1.5 rounded-full bg-[var(--brand)] px-5 text-sm font-bold text-white hover:opacity-90"
               >
                 {submitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -340,7 +324,7 @@ function LowStockHint({
 
   if (isSubscribed) {
     return (
-      <p className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--neon-lime)]">
+      <p className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--success)]">
         <Check className="h-3.5 w-3.5" />
         Alerta ativo para este sneaker.
       </p>
@@ -348,7 +332,7 @@ function LowStockHint({
   }
 
   return (
-    <p className="inline-flex flex-wrap items-center gap-1.5 text-xs text-amber-300">
+    <p className="inline-flex flex-wrap items-center gap-1.5 text-xs text-amber-700">
       <span>
         Estoque baixo neste tamanho — apenas {count}{" "}
         unidade{count === 1 ? "" : "s"}.
@@ -416,15 +400,8 @@ function Gallery({ product }: { product: Product }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative aspect-square overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent"
+        className="relative aspect-square overflow-hidden rounded-3xl bg-[var(--surface)]"
       >
-        {/* Accent radial glow behind product */}
-        <div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-3/4 w-3/4 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-40 blur-3xl"
-          style={{ background: product.accent }}
-        />
-        {/* Subtle ring overlay */}
-        <div className="pointer-events-none absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/5" />
 
         <AnimatePresence mode="wait">
           <motion.img
@@ -435,7 +412,7 @@ function Gallery({ product }: { product: Product }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="animate-astro-float relative h-full w-full object-contain p-8 hover:scale-105 transition-transform duration-500"
+            className="relative h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
           />
         </AnimatePresence>
 
@@ -444,16 +421,19 @@ function Gallery({ product }: { product: Product }) {
           {product.badge && (
             <span
               className={cn(
-                "rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide backdrop-blur",
-                BADGE_STYLES[product.badge] ??
-                  "bg-white/10 text-white border-white/20",
+                "rounded-full px-3 py-1 text-xs font-bold shadow-sm",
+                product.badge === "Drop limitado"
+                  ? "bg-[var(--hot)] text-white"
+                  : product.badge === "Mais vendido"
+                    ? "bg-foreground text-background"
+                    : "bg-white text-foreground",
               )}
             >
-              {product.badge}
+              {product.badge === "Drop limitado" ? "Edição limitada" : product.badge}
             </span>
           )}
           {product.stock <= 5 && product.stock > 0 && (
-            <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase text-amber-300 backdrop-blur">
+            <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase text-amber-700 backdrop-blur">
               Últimas {product.stock}
             </span>
           )}
@@ -469,10 +449,10 @@ function Gallery({ product }: { product: Product }) {
               onClick={() => setCurrentImage(i)}
               aria-label={`Ver ângulo ${angleLabels[i % angleLabels.length]}`}
               className={cn(
-                "relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-white/[0.03] p-1 transition-all duration-200",
+                "relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-black/[0.02] p-1 transition-all duration-200",
                 currentImage === i
-                  ? "border-[var(--neon-cyan)] shadow-[0_0_14px_var(--neon-cyan)]"
-                  : "border-white/10 hover:border-white/30",
+                  ? "border-[var(--brand)]"
+                  : "border-black/10 hover:border-black/25",
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -594,8 +574,8 @@ function Info({
           className={cn(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all hover:scale-110",
             inWishlist
-              ? "border-[var(--neon-magenta)]/50 bg-[var(--neon-magenta)]/20 text-[var(--neon-magenta)]"
-              : "border-white/10 bg-white/5 text-foreground/70 hover:text-foreground",
+              ? "border-[var(--hot)]/50 bg-[var(--hot)]/20 text-[var(--hot)]"
+              : "border-black/10 bg-black/[0.03] text-foreground/70 hover:text-foreground",
           )}
           aria-label={
             inWishlist ? "Remover da lista de desejos" : "Salvar na lista de desejos"
@@ -636,21 +616,21 @@ function Info({
         <p
           className={cn(
             "text-xs font-medium",
-            freeShipping ? "text-[var(--neon-lime)]" : "text-muted-foreground",
+            freeShipping ? "text-[var(--success)]" : "text-muted-foreground",
           )}
         >
           {freeShipping
-            ? "🚀 Frete grátis acima de R$300 — liberado!"
+            ? "Frete grátis para este produto"
             : "Frete grátis em pedidos acima de R$300"}
         </p>
       </div>
 
-      <Separator className="bg-white/10" />
+      <Separator className="bg-black/[0.06]" />
 
       {/* Short description */}
       <p className="text-sm leading-relaxed text-muted-foreground">
         {product.description.split("\n")[0]?.slice(0, 220) ??
-          "Modelo exclusivo Astrofeet, feito para quem anda entre estrelas."}
+          "Modelo exclusivo Astrofeet."}
       </p>
 
       {/* Size selector */}
@@ -659,7 +639,7 @@ function Info({
           <label className="text-sm font-semibold">Tamanho</label>
           <button
             onClick={openSizeGuide}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--neon-cyan)] transition hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--brand)] transition hover:underline"
           >
             <Ruler className="h-3.5 w-3.5" />
             Guia de medidas
@@ -692,26 +672,18 @@ function Info({
                   "relative h-12 min-w-14 rounded-xl border px-3 text-sm font-bold transition",
                   soldOut && "cursor-not-allowed opacity-40 line-through",
                   isSelected && !soldOut
-                    ? "border-transparent text-black"
+                    ? "border-foreground bg-foreground text-background"
                     : lowStock
-                      ? "border-amber-500/40 bg-amber-500/5 text-amber-200 hover:border-amber-500/60"
-                      : "border-white/10 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.06]",
+                      ? "border-amber-500/40 bg-amber-500/5 text-amber-700 hover:border-amber-500/60"
+                      : "border-black/10 bg-black/[0.02] hover:border-black/25 hover:bg-black/[0.036]",
                 )}
-                style={
-                  isSelected && !soldOut
-                    ? {
-                        background: product.accent,
-                        boxShadow: `0 0 18px ${product.accent}66`,
-                      }
-                    : undefined
-                }
               >
                 {s}
                 {isSelected && !soldOut && (
-                  <Check className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-black p-0.5 text-white" />
+                  <Check className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[var(--brand)] p-0.5 text-white" />
                 )}
                 {!isSelected && lowStock && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-500/80 px-1 text-[8px] font-bold text-black">
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-500/80 px-1 text-[8px] font-bold text-foreground">
                     {effectiveStock} rest.
                   </span>
                 )}
@@ -732,12 +704,12 @@ function Info({
 
       {/* Quantity + Stock */}
       <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
+        <div className="flex items-center gap-1 rounded-full border border-black/10 bg-black/[0.02] p-1">
           <button
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             disabled={qty <= 1}
             aria-label="Diminuir quantidade"
-            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/10 disabled:opacity-40"
+            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-black/[0.06] disabled:opacity-40"
           >
             <Minus className="h-4 w-4" />
           </button>
@@ -746,24 +718,24 @@ function Info({
             onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
             disabled={qty >= maxQty}
             aria-label="Aumentar quantidade"
-            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/10 disabled:opacity-40"
+            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-black/[0.06] disabled:opacity-40"
           >
             <Plus className="h-4 w-4" />
           </button>
         </div>
 
         {product.stock > 5 ? (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
             Em estoque
           </span>
         ) : product.stock > 0 ? (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-300">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700">
             <span className="h-2 w-2 rounded-full bg-amber-400" />
             Últimas {product.stock} unidades
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-400">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-700">
             <span className="h-2 w-2 rounded-full bg-rose-400" />
             Esgotado
           </span>
@@ -776,7 +748,7 @@ function Info({
           onClick={handleAdd}
           disabled={soldOut}
           size="lg"
-          className="h-12 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] text-base font-bold text-black transition hover:opacity-90 disabled:opacity-40"
+          className="h-12 rounded-full bg-[var(--brand)] text-base font-bold text-white transition hover:opacity-90 disabled:opacity-40"
         >
           <ShoppingCart className="mr-2 h-5 w-5" />
           Adicionar ao carrinho
@@ -786,7 +758,7 @@ function Info({
           disabled={soldOut}
           size="lg"
           variant="outline"
-          className="h-12 rounded-full border-white/20 bg-white/[0.03] px-6 text-base font-bold text-white backdrop-blur hover:border-white/40 hover:bg-white/[0.08] disabled:opacity-40"
+          className="h-12 rounded-full border-foreground bg-transparent px-6 text-base font-bold text-foreground hover:bg-foreground hover:text-background disabled:opacity-40"
         >
           Comprar agora
         </Button>
@@ -799,7 +771,7 @@ function Info({
         createPortal(
           <div
             aria-hidden={ctaVisible || soldOut}
-            className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0a0e1f]/95 px-4 py-3 pr-24 backdrop-blur-xl transition-transform duration-300 md:hidden ${
+            className={`fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-background px-4 py-3 pr-24 backdrop-blur-xl transition-transform duration-300 md:hidden ${
               ctaVisible || soldOut ? "pointer-events-none translate-y-full" : "translate-y-0"
             }`}
           >
@@ -818,7 +790,7 @@ function Info({
                   }
                   handleAdd();
                 }}
-                className="h-11 shrink-0 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-4 text-sm font-bold text-black hover:opacity-90"
+                className="h-11 shrink-0 rounded-full bg-[var(--brand)] px-4 text-sm font-bold text-white hover:opacity-90"
               >
                 {size === null ? (
                   "Escolher tamanho"
@@ -867,8 +839,8 @@ function InteractiveStars({
             className={cn(
               "h-7 w-7 transition-colors",
               n <= display
-                ? "fill-amber-400 text-amber-400"
-                : "fill-transparent text-white/20 hover:text-white/40",
+                ? "fill-amber-400 text-amber-700"
+                : "fill-transparent text-black/15 hover:text-muted-foreground",
             )}
           />
         </button>
@@ -979,7 +951,7 @@ function ReviewsSection({
           <h2 className="text-2xl font-black sm:text-3xl">Avaliações</h2>
           <Badge
             variant="secondary"
-            className="border-white/10 bg-white/5 text-muted-foreground"
+            className="border-black/10 bg-black/[0.03] text-muted-foreground"
           >
             {reviews.length}{" "}
             {reviews.length === 1 ? "comentário" : "comentários"}
@@ -991,7 +963,7 @@ function ReviewsSection({
           !showForm && (
             <Button
               onClick={() => setShowForm(true)}
-              className="gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 font-bold text-black hover:opacity-90"
+              className="gap-2 rounded-full bg-[var(--brand)] px-5 font-bold text-white hover:opacity-90"
             >
               <Pencil className="h-4 w-4" />
               Escrever avaliação
@@ -1002,7 +974,7 @@ function ReviewsSection({
             Faça{" "}
             <button
               onClick={() => openAuth("login")}
-              className="font-semibold text-[var(--neon-cyan)] underline-offset-2 hover:underline"
+              className="font-semibold text-[var(--brand)] underline-offset-2 hover:underline"
             >
               login
             </button>{" "}
@@ -1018,10 +990,10 @@ function ReviewsSection({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="glass rounded-2xl border border-white/10 p-6 text-center sm:p-8"
+            className="glass rounded-2xl border border-black/10 p-6 text-center sm:p-8"
           >
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]">
-              <Star className="h-7 w-7 fill-amber-400 text-amber-400" />
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-black/10 bg-black/[0.02]">
+              <Star className="h-7 w-7 fill-amber-400 text-amber-700" />
             </div>
             <p className="font-semibold text-foreground">
               Ainda não há avaliações. Seja o primeiro a avaliar!
@@ -1032,7 +1004,7 @@ function ReviewsSection({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="glass rounded-2xl border border-white/10 p-4 sm:p-6"
+            className="glass rounded-2xl border border-black/10 p-4 sm:p-6"
           >
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
               {/* Left column — average rating */}
@@ -1041,7 +1013,7 @@ function ReviewsSection({
                   <span className="text-gradient-animated text-5xl font-black leading-none sm:text-6xl">
                     {avgRating.toFixed(1)}
                   </span>
-                  <Star className="h-6 w-6 self-center fill-amber-400 text-amber-400" />
+                  <Star className="h-6 w-6 self-center fill-amber-400 text-amber-700" />
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
                   {reviews.length}{" "}
@@ -1057,14 +1029,14 @@ function ReviewsSection({
                     className="flex items-center gap-3 text-xs"
                   >
                     <div className="flex w-8 shrink-0 items-center gap-1">
-                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-700" />
                       <span className="font-semibold text-foreground">
                         {stars}
                       </span>
                     </div>
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/[0.06]">
                       <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)]"
+                        className="h-full rounded-full bg-[var(--brand)]"
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
                         transition={{ duration: 0.6, delay: 0.08 * idx }}
@@ -1092,12 +1064,12 @@ function ReviewsSection({
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.3 }}
-                    className="rounded-3xl border border-white/10 bg-white/[0.03] p-4"
+                    className="rounded-3xl border border-black/10 bg-black/[0.02] p-4"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <div
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-black"
+                          className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-foreground"
                           style={{ background: product.accent }}
                         >
                           {r.authorName.charAt(0).toUpperCase()}
@@ -1134,7 +1106,7 @@ function ReviewsSection({
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
             onSubmit={submit}
-            className="glass overflow-hidden rounded-3xl border border-white/10 p-6"
+            className="glass overflow-hidden rounded-3xl border border-black/10 p-6"
           >
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold">Escrever avaliação</h3>
@@ -1172,8 +1144,8 @@ function ReviewsSection({
                       className={cn(
                         "h-8 w-8 transition-colors",
                         n <= displayRating
-                          ? "fill-amber-400 text-amber-400"
-                          : "fill-transparent text-white/20 hover:text-white/40",
+                          ? "fill-amber-400 text-amber-700"
+                          : "fill-transparent text-black/15 hover:text-muted-foreground",
                       )}
                     />
                   </button>
@@ -1195,7 +1167,7 @@ function ReviewsSection({
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
                   placeholder="Como te chamamos?"
-                  className="rounded-xl border-white/10 bg-white/[0.03]"
+                  className="rounded-xl border-black/10 bg-black/[0.02]"
                 />
               </div>
             </div>
@@ -1209,7 +1181,7 @@ function ReviewsSection({
                 onChange={(e) => setComment(e.target.value)}
                 rows={4}
                 placeholder="Conte o que achou deste sneaker..."
-                className="resize-none rounded-xl border-white/10 bg-white/[0.03]"
+                className="resize-none rounded-xl border-black/10 bg-black/[0.02]"
               />
             </div>
 
@@ -1225,7 +1197,7 @@ function ReviewsSection({
               <Button
                 type="submit"
                 disabled={submitting}
-                className="gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 font-bold text-black hover:opacity-90"
+                className="gap-2 rounded-full bg-[var(--brand)] px-6 font-bold text-white hover:opacity-90"
               >
                 {submitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -1277,7 +1249,7 @@ function Related({ productId }: { productId: string }) {
         className="space-y-5"
       >
         <div className="flex items-center gap-3">
-          <Heart className="h-6 w-6 text-[var(--neon-magenta)]" />
+          <Heart className="h-6 w-6 text-[var(--hot)]" />
           <h2 className="text-2xl font-black sm:text-3xl">
             Você também pode gostar
           </h2>
@@ -1298,7 +1270,7 @@ function Related({ productId }: { productId: string }) {
       className="space-y-5"
     >
       <div className="flex items-center gap-3">
-        <Heart className="h-6 w-6 text-[var(--neon-magenta)]" />
+        <Heart className="h-6 w-6 text-[var(--hot)]" />
         <h2 className="text-2xl font-black sm:text-3xl">
           Você também pode gostar
         </h2>
@@ -1368,20 +1340,19 @@ export function ProductDetailView() {
   if (isError || !product) {
     return (
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 pb-20 pt-24 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/5">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-black/[0.03]">
           <Star className="h-9 w-9 text-muted-foreground" />
         </div>
         <h1 className="text-2xl font-black">Produto não encontrado</h1>
         <p className="text-sm text-muted-foreground">
-          O drop que você procura pode ter sido removido ou nunca existiu nesta
-          galáxia.
+          O produto que você procura pode ter sido removido ou não existe.
         </p>
         <Button
           onClick={() => navigate("products")}
-          className="mt-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 font-bold text-black hover:opacity-90"
+          className="mt-2 rounded-full bg-[var(--brand)] px-6 font-bold text-white hover:opacity-90"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar aos drops
+          Ver todos os tênis
         </Button>
       </div>
     );
@@ -1396,7 +1367,7 @@ export function ProductDetailView() {
           onClick={() => navigate("products")}
           className="transition hover:text-foreground"
         >
-          Drops
+          Tênis
         </button>
         <ChevronRight className="h-3 w-3" />
         <button
@@ -1432,7 +1403,7 @@ export function ProductDetailView() {
           </p>
         </div>
 
-        <aside className="glass h-fit rounded-3xl border border-white/10 p-6">
+        <aside className="glass h-fit rounded-3xl border border-black/10 p-6">
           <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
             Especificações
           </h3>
@@ -1441,17 +1412,17 @@ export function ProductDetailView() {
               <dt className="text-muted-foreground">Categoria</dt>
               <dd className="font-medium">{product.category}</dd>
             </div>
-            <Separator className="bg-white/10" />
+            <Separator className="bg-black/[0.06]" />
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Marca</dt>
               <dd className="font-medium">{product.brand}</dd>
             </div>
-            <Separator className="bg-white/10" />
+            <Separator className="bg-black/[0.06]" />
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Tamanhos</dt>
               <dd className="font-medium">{product.sizes.join(" · ")}</dd>
             </div>
-            <Separator className="bg-white/10" />
+            <Separator className="bg-black/[0.06]" />
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Disponibilidade</dt>
               <dd className="font-medium">
@@ -1464,7 +1435,7 @@ export function ProductDetailView() {
         </aside>
       </motion.section>
 
-      <Separator className="my-16 bg-white/10" />
+      <Separator className="my-16 bg-black/[0.06]" />
 
       {/* Reviews */}
       <ReviewsSection product={product} reviews={reviews} />

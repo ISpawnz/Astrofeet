@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   CheckCircle2,
   Copy,
-  Rocket,
+  Truck,
   ArrowRight,
   Home,
   Package,
@@ -65,9 +65,8 @@ export function OrderSuccessView() {
           transition={{ duration: 0.5 }}
           className="glass flex flex-col items-center gap-5 rounded-3xl p-10 sm:p-14"
         >
-          <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-white/5">
-            <div className="absolute inset-0 rounded-full bg-[var(--neon-violet)]/10 blur-2xl" />
-            <Package className="h-11 w-11 text-[var(--neon-violet)]" />
+          <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-black/[0.03]">
+            <Package className="h-11 w-11 text-[var(--ink)]" />
           </div>
           <div>
             <h1 className="text-2xl font-bold sm:text-3xl">
@@ -80,7 +79,7 @@ export function OrderSuccessView() {
           </div>
           <Button
             onClick={() => navigate("home")}
-            className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black hover:opacity-90"
+            className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-bold text-white hover:opacity-90"
           >
             Voltar ao início
             <Home className="h-4 w-4" />
@@ -114,7 +113,7 @@ export function OrderSuccessView() {
   }
 
   function talkToNave() {
-    toast("Fale com a Nave no canto inferior direito 🚀", {
+    toast("Fale com nosso assistente no canto inferior direito", {
       description: "Nosso assistente te ajuda com o acompanhamento.",
     });
   }
@@ -131,11 +130,11 @@ export function OrderSuccessView() {
         {/* floating sparkles */}
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           {[
-            { x: "10%", y: "20%", d: 0, c: "var(--neon-cyan)" },
-            { x: "85%", y: "15%", d: 0.2, c: "var(--neon-magenta)" },
-            { x: "20%", y: "70%", d: 0.4, c: "var(--neon-lime)" },
-            { x: "78%", y: "75%", d: 0.6, c: "var(--neon-violet)" },
-            { x: "50%", y: "5%", d: 0.8, c: "var(--neon-cyan)" },
+            { x: "10%", y: "20%", d: 0, c: "var(--brand)" },
+            { x: "85%", y: "15%", d: 0.2, c: "var(--hot)" },
+            { x: "20%", y: "70%", d: 0.4, c: "var(--success)" },
+            { x: "78%", y: "75%", d: 0.6, c: "var(--ink)" },
+            { x: "50%", y: "5%", d: 0.8, c: "var(--brand)" },
           ].map((s, i) => (
             <motion.span
               key={i}
@@ -164,15 +163,13 @@ export function OrderSuccessView() {
           transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.1 }}
           className="relative flex h-24 w-24 items-center justify-center"
         >
-          <div className="absolute inset-0 rounded-full bg-[var(--neon-lime)]/20 blur-2xl" />
-          <div className="absolute inset-0 animate-spin-slow rounded-full border-2 border-dashed border-[var(--neon-cyan)]/40" />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[var(--neon-lime)] to-[var(--neon-cyan)] text-black">
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-[var(--brand)] text-white">
             <CheckCircle2 className="h-11 w-11" strokeWidth={2.5} />
           </div>
         </motion.div>
 
-        <div className="mt-5 flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-foreground/80">
-          <PartyPopper className="h-3.5 w-3.5 text-[var(--neon-magenta)]" />
+        <div className="mt-5 flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-3 py-1 text-xs text-foreground/80">
+          <PartyPopper className="h-3.5 w-3.5 text-[var(--hot)]" />
           Pedido confirmado
         </div>
         <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
@@ -181,18 +178,18 @@ export function OrderSuccessView() {
         <p className="mt-2 max-w-md text-sm text-muted-foreground">
           Enviamos a confirmação para{" "}
           <strong className="text-foreground">{order.customer.email}</strong>.
-          Seu par já está em preparação para a decolagem.
+          Seu par já está sendo preparado para envio.
         </p>
 
         {/* Code line with copy */}
-        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2">
+        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-4 py-2">
           <span className="text-xs text-muted-foreground">Código do pedido:</span>
-          <span className="font-mono text-sm font-bold tracking-wider text-[var(--neon-cyan)]">
+          <span className="font-mono text-sm font-bold tracking-wider text-[var(--brand)]">
             {order.code}
           </span>
           <button
             onClick={copyCode}
-            className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
+            className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-black/[0.06] hover:text-foreground"
             aria-label="Copiar código do pedido"
           >
             <Copy className="h-3.5 w-3.5" />
@@ -212,12 +209,12 @@ export function OrderSuccessView() {
         </h2>
 
         {isCancelled ? (
-          <div className="flex items-center gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-300">
+          <div className="flex items-center gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-700">
             <Package className="h-5 w-5" />
             <p className="text-sm">
               Este pedido foi{" "}
               <strong>{orderStatusLabel(order.status)}</strong>. Entre em
-              contato com a Nave para mais detalhes.
+              contato com nosso assistente para mais detalhes.
             </p>
           </div>
         ) : (
@@ -236,8 +233,8 @@ export function OrderSuccessView() {
                       className={[
                         "absolute top-4 left-1/2 h-0.5 w-full",
                         i < currentStepIndex
-                          ? "bg-[var(--neon-cyan)]"
-                          : "bg-white/10",
+                          ? "bg-[var(--brand)]"
+                          : "bg-black/[0.06]",
                       ].join(" ")}
                     />
                   )}
@@ -253,8 +250,8 @@ export function OrderSuccessView() {
                     className={[
                       "relative z-10 flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold transition-colors",
                       completed
-                        ? "border-[var(--neon-cyan)] bg-[var(--neon-cyan)] text-black"
-                        : "border-white/15 bg-white/5 text-muted-foreground",
+                        ? "border-[var(--brand)] bg-[var(--brand)] text-white"
+                        : "border-black/15 bg-black/[0.03] text-muted-foreground",
                       current
                         ? "neon-ring-soft"
                         : "",
@@ -291,16 +288,16 @@ export function OrderSuccessView() {
         {/* Items + totals */}
         <div className="glass rounded-3xl p-6">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-            <Package className="h-4 w-4 text-[var(--neon-cyan)]" />
+            <Package className="h-4 w-4 text-[var(--brand)]" />
             Itens do pedido
           </h2>
           <ul className="space-y-3">
             {order.items.map((item) => (
               <li
                 key={`${item.productId}-${item.size}`}
-                className="flex items-start gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3"
+                className="flex items-start gap-3 rounded-2xl border border-black/5 bg-black/[0.02] p-3"
               >
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/5">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-black/[0.03]">
                   <Package className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div className="flex flex-1 flex-col">
@@ -319,7 +316,7 @@ export function OrderSuccessView() {
             ))}
           </ul>
 
-          <Separator className="my-4 bg-white/10" />
+          <Separator className="my-4 bg-black/[0.06]" />
 
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between text-muted-foreground">
@@ -331,7 +328,7 @@ export function OrderSuccessView() {
             <div className="flex justify-between text-muted-foreground">
               <span>Frete</span>
               {order.shipping === 0 ? (
-                <span className="font-semibold text-[var(--neon-lime)]">
+                <span className="font-semibold text-[var(--success)]">
                   Grátis
                 </span>
               ) : (
@@ -340,7 +337,7 @@ export function OrderSuccessView() {
                 </span>
               )}
             </div>
-            <Separator className="my-2 bg-white/10" />
+            <Separator className="my-2 bg-black/[0.06]" />
             <div className="flex items-end justify-between pt-1">
               <span className="text-base font-semibold">Total</span>
               <span className="text-xl font-black text-gradient-neon">
@@ -354,7 +351,7 @@ export function OrderSuccessView() {
         <div className="space-y-6">
           <div className="glass rounded-3xl p-6">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              <MapPin className="h-4 w-4 text-[var(--neon-magenta)]" />
+              <MapPin className="h-4 w-4 text-[var(--hot)]" />
               Endereço de entrega
             </h2>
             <p className="text-sm font-medium text-foreground">
@@ -375,11 +372,11 @@ export function OrderSuccessView() {
 
           <div className="glass rounded-3xl p-6">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              <CreditCard className="h-4 w-4 text-[var(--neon-violet)]" />
+              <CreditCard className="h-4 w-4 text-[var(--ink)]" />
               Pagamento
             </h2>
-            <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-[var(--neon-cyan)]">
+            <div className="flex items-center gap-3 rounded-2xl border border-black/5 bg-black/[0.02] p-3.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/[0.03] text-[var(--brand)]">
                 {pay.icon}
               </span>
               <div className="flex flex-col">
@@ -402,22 +399,22 @@ export function OrderSuccessView() {
       >
         <Button
           onClick={() => navigate("track-order", { code: lastOrder.code })}
-          className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black hover:opacity-90"
+          className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-bold text-white hover:opacity-90"
         >
-          <Rocket className="h-4 w-4" />
+          <Truck className="h-4 w-4" />
           Rastrear pedido
         </Button>
         <Button
           onClick={talkToNave}
           variant="outline"
-          className="rounded-full border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold backdrop-blur transition hover:bg-white/10"
+          className="rounded-full border-black/15 bg-black/[0.03] px-6 py-3 text-sm font-semibold backdrop-blur transition hover:bg-black/[0.06]"
         >
-          Falar com a Nave
+          Falar com o assistente
         </Button>
         <Button
           onClick={() => navigate("products")}
           variant="outline"
-          className="rounded-full border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold backdrop-blur transition hover:bg-white/10"
+          className="rounded-full border-black/15 bg-black/[0.03] px-6 py-3 text-sm font-semibold backdrop-blur transition hover:bg-black/[0.06]"
         >
           Continuar explorando
           <ArrowRight className="h-4 w-4" />
@@ -425,7 +422,7 @@ export function OrderSuccessView() {
         <Button
           onClick={() => navigate("home")}
           variant="ghost"
-          className="rounded-full px-6 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
+          className="rounded-full px-6 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-black/[0.03] hover:text-foreground"
         >
           <Home className="h-4 w-4" />
           Voltar ao início

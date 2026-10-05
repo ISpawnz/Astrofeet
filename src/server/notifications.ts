@@ -62,7 +62,7 @@ export function buildOrderConfirmationBody(order: {
   return [
     `Olá, ${order.customer.name}!`,
     "",
-    `Recebemos seu pedido ${order.code} e já estamos preparando sua caixa estelar.`,
+    `Recebemos seu pedido ${order.code} e já estamos separando os seus itens.`,
     "",
     "ITENS DO PEDIDO:",
     itemLines,
@@ -74,7 +74,7 @@ export function buildOrderConfirmationBody(order: {
     `Entrega: ${order.address.street}, ${order.address.number} — ${order.address.city}/${order.address.state}`,
     `Pagamento: ${order.payment.method === "card" ? `cartão final ${order.payment.cardLast4 ?? "—"}` : order.payment.method}`,
     "",
-    "Obrigado por explorar a galáxia com a Astrofeet. 🚀",
+    "Obrigado por comprar na Astrofeet.",
     "— Equipe Astrofeet",
   ].join("\n");
 }
@@ -96,17 +96,17 @@ export function buildOrderStatusBody(opts: {
   if (opts.newStatus === "shipped") {
     lines.push(
       "",
-      "Seu sneaker acabou de decolar! Em breve ele estará pousando na sua porta.",
+      "Seu pedido foi enviado! Em breve ele chega na sua porta.",
     );
   } else if (opts.newStatus === "delivered") {
     lines.push(
       "",
-      "Seu sneaker chegou! Esperamos que você aproveite cada passo pela galáxia. ✨",
+      "Seu sneaker chegou! Esperamos que você aproveite cada passo.",
     );
   } else if (opts.newStatus === "cancelled") {
     lines.push(
       "",
-      "Seu pedido foi cancelado. Se isso foi um engano, fale com a Nave para reabrir.",
+      "Seu pedido foi cancelado. Se isso foi um engano, fale com nosso assistente para reabrir.",
     );
   } else if (opts.newStatus === "paid") {
     lines.push("", "Recebemos o pagamento. Seu pedido já está em preparação.");

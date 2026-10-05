@@ -7,7 +7,7 @@ import {
   User,
   LogOut,
   Package,
-  Rocket,
+  MessageCircle,
   ChevronDown,
   ChevronRight,
   Heart,
@@ -158,26 +158,26 @@ function HydrationSkeleton() {
       <div className="glass-strong mb-6 rounded-3xl p-6 sm:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Skeleton className="h-16 w-16 rounded-full bg-white/5" />
+            <Skeleton className="h-16 w-16 rounded-full bg-black/[0.03]" />
             <div className="space-y-2">
-              <Skeleton className="h-6 w-40 rounded bg-white/5" />
-              <Skeleton className="h-4 w-56 rounded bg-white/5" />
+              <Skeleton className="h-6 w-40 rounded bg-black/[0.03]" />
+              <Skeleton className="h-4 w-56 rounded bg-black/[0.03]" />
             </div>
           </div>
           <div className="flex gap-3">
-            <Skeleton className="h-9 w-24 rounded-full bg-white/5" />
-            <Skeleton className="h-9 w-24 rounded-full bg-white/5" />
+            <Skeleton className="h-9 w-24 rounded-full bg-black/[0.03]" />
+            <Skeleton className="h-9 w-24 rounded-full bg-black/[0.03]" />
           </div>
         </div>
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <Skeleton className="h-20 rounded-2xl bg-white/5" />
-          <Skeleton className="h-20 rounded-2xl bg-white/5" />
-          <Skeleton className="h-20 rounded-2xl bg-white/5" />
+          <Skeleton className="h-20 rounded-2xl bg-black/[0.03]" />
+          <Skeleton className="h-20 rounded-2xl bg-black/[0.03]" />
+          <Skeleton className="h-20 rounded-2xl bg-black/[0.03]" />
         </div>
       </div>
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 w-full rounded-3xl bg-white/5" />
+          <Skeleton key={i} className="h-32 w-full rounded-3xl bg-black/[0.03]" />
         ))}
       </div>
     </div>
@@ -198,15 +198,13 @@ function NotSignedIn() {
         className="glass flex w-full flex-col items-center gap-6 rounded-3xl p-10 sm:p-14"
       >
         <div className="relative flex h-28 w-28 items-center justify-center">
-          <div className="absolute inset-0 rounded-full bg-[var(--neon-violet)]/15 blur-3xl" />
-          <div className="absolute inset-0 animate-spin-slow rounded-full border-2 border-dashed border-[var(--neon-cyan)]/30" />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5">
-            <User className="h-10 w-10 text-[var(--neon-cyan)]" />
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-black/10 bg-black/[0.03]">
+            <User className="h-10 w-10 text-[var(--brand)]" />
           </div>
         </div>
         <div className="space-y-2">
           <h1 className="text-2xl font-bold sm:text-3xl">
-            Você ainda não entrou na órbita
+            Você ainda não entrou na sua conta
           </h1>
           <p className="mx-auto max-w-md text-sm text-muted-foreground">
             Entre na sua conta para acompanhar seus pedidos, ver seu histórico de
@@ -216,14 +214,14 @@ function NotSignedIn() {
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button
             onClick={() => openAuth("login")}
-            className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black hover:opacity-90"
+            className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-bold text-white hover:opacity-90"
           >
             Entrar / Criar conta
           </Button>
           <Button
             onClick={() => navigate("home")}
             variant="outline"
-            className="rounded-full border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold backdrop-blur transition hover:bg-white/10"
+            className="rounded-full border-black/15 bg-black/[0.03] px-6 py-3 text-sm font-semibold backdrop-blur transition hover:bg-black/[0.06]"
           >
             Voltar ao início
           </Button>
@@ -247,12 +245,7 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <div
-        className="absolute -right-4 -top-4 h-16 w-16 rounded-full opacity-25 blur-2xl"
-        style={{ background: accent }}
-        aria-hidden
-      />
+    <div className="relative overflow-hidden rounded-2xl border border-black/10 bg-black/[0.02] p-4">
       <div className="flex items-center gap-2 text-muted-foreground">
         <span
           className="flex h-7 w-7 items-center justify-center rounded-full"
@@ -288,9 +281,9 @@ function AccountHeader({
   const totalInvested =
     orders?.reduce((sum, o) => sum + (o.total || 0), 0) ?? 0;
 
-  const roleLabel = user.role === "admin" ? "Comando" : "Explorador";
+  const roleLabel = user.role === "admin" ? "Administrador" : "Cliente";
   const roleAccent =
-    user.role === "admin" ? "var(--neon-magenta)" : "var(--neon-cyan)";
+    user.role === "admin" ? "var(--hot)" : "var(--brand)";
 
   async function handleLogout() {
     setLeaving(true);
@@ -300,7 +293,7 @@ function AccountHeader({
       // ignore network errors — we still clear locally
     }
     logout();
-    toast.success("Você saiu da órbita. Até a próxima! 🚀");
+    toast.success("Você saiu da sua conta. Até a próxima!");
     setLeaving(false);
     navigate("home");
   }
@@ -315,8 +308,7 @@ function AccountHeader({
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-4 sm:gap-5">
           <div className="relative flex h-16 w-16 shrink-0 items-center justify-center sm:h-20 sm:w-20">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[var(--neon-cyan)] to-[var(--neon-violet)] opacity-40 blur-xl" />
-            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[var(--neon-cyan)] to-[var(--neon-violet)] text-2xl font-black text-black sm:h-20 sm:w-20 sm:text-3xl">
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[var(--brand)] text-2xl font-black text-white sm:h-20 sm:w-20 sm:text-3xl">
               {getInitial(user.name)}
             </div>
           </div>
@@ -327,7 +319,7 @@ function AccountHeader({
               </h1>
               <Badge
                 variant="outline"
-                className="rounded-full border-white/15 px-2.5 py-0.5 text-[11px] font-semibold"
+                className="rounded-full border-black/15 px-2.5 py-0.5 text-[11px] font-semibold"
                 style={{ color: roleAccent, borderColor: `${roleAccent}55` }}
               >
                 <Sparkles className="mr-1 h-3 w-3" />
@@ -345,12 +337,12 @@ function AccountHeader({
           <Button
             onClick={() => navigate("wishlist")}
             variant="outline"
-            className="rounded-full border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+            className="rounded-full border-black/15 bg-black/[0.03] px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-black/[0.06]"
           >
-            <Heart className="h-4 w-4 text-[var(--neon-magenta)]" />
+            <Heart className="h-4 w-4 text-[var(--hot)]" />
             Ver lista de desejos
             {wishlistCount > 0 && (
-              <span className="ml-1 rounded-full bg-[var(--neon-magenta)] px-1.5 text-[10px] font-bold text-black">
+              <span className="ml-1 rounded-full bg-[var(--hot)] px-1.5 text-[10px] font-bold text-white">
                 {wishlistCount}
               </span>
             )}
@@ -359,7 +351,7 @@ function AccountHeader({
             onClick={handleLogout}
             disabled={leaving}
             variant="ghost"
-            className="rounded-full px-4 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
+            className="rounded-full px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-500/10 hover:text-rose-700"
           >
             <LogOut className="h-4 w-4" />
             {leaving ? "Saindo..." : "Sair"}
@@ -367,26 +359,26 @@ function AccountHeader({
         </div>
       </div>
 
-      <Separator className="my-6 bg-white/10" />
+      <Separator className="my-6 bg-black/[0.06]" />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard
           icon={<Package className="h-4 w-4" />}
           label="Total de pedidos"
           value={orders ? String(totalOrders) : "—"}
-          accent="var(--neon-cyan)"
+          accent="var(--brand)"
         />
         <StatCard
           icon={<Wallet className="h-4 w-4" />}
           label="Total investido"
           value={orders ? formatPrice(totalInvested) : "—"}
-          accent="var(--neon-violet)"
+          accent="var(--ink)"
         />
         <StatCard
           icon={<ShoppingBag className="h-4 w-4" />}
           label="No carrinho"
           value={String(cartCount)}
-          accent="var(--neon-lime)"
+          accent="var(--success)"
         />
       </div>
     </motion.div>
@@ -431,11 +423,11 @@ function OrderCard({
       <div className="p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-              <Package className="h-5 w-5 text-[var(--neon-cyan)]" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-black/10 bg-black/[0.03]">
+              <Package className="h-5 w-5 text-[var(--brand)]" />
             </div>
             <div>
-              <p className="font-mono text-sm font-black tracking-wider text-[var(--neon-cyan)] neon-text sm:text-base">
+              <p className="font-mono text-sm font-black tracking-wider text-[var(--brand)] neon-text sm:text-base">
                 {order.code}
               </p>
               <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -456,7 +448,7 @@ function OrderCard({
         </div>
 
         {/* Items summary */}
-        <div className="mt-4 rounded-2xl border border-white/5 bg-white/[0.03] p-3.5">
+        <div className="mt-4 rounded-2xl border border-black/5 bg-black/[0.02] p-3.5">
           <p className="line-clamp-2 text-sm text-foreground/90">
             {itemsSummary(order)}
           </p>
@@ -475,7 +467,7 @@ function OrderCard({
               )}
             </span>
             {couponCode && discount > 0 && (
-              <span className="flex items-center gap-1 font-semibold text-emerald-300">
+              <span className="flex items-center gap-1 font-semibold text-emerald-700">
                 <Sparkles className="h-3.5 w-3.5" />
                 Cupom {couponCode} · -{formatPrice(discount)}
               </span>
@@ -505,16 +497,16 @@ function OrderCard({
               onClick={() =>
                 navigate("track-order", { code: order.code })
               }
-              className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-4 py-2 text-xs font-bold text-black hover:opacity-90"
+              className="rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-bold text-white hover:opacity-90"
             >
-              <Rocket className="h-4 w-4" />
+              <Truck className="h-4 w-4" />
               Rastrear
             </Button>
             <Collapsible open={open} onOpenChange={setOpen}>
               <CollapsibleTrigger asChild>
                 <Button
                   variant="outline"
-                  className="rounded-full border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+                  className="rounded-full border-black/15 bg-black/[0.03] px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-black/[0.06]"
                 >
                   {open ? (
                     <>
@@ -545,16 +537,16 @@ function OrderCard({
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="overflow-hidden border-t border-white/10"
+                className="overflow-hidden border-t border-black/10"
               >
                 {/* Panel header — order code + status + date */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-white/[0.02] px-5 py-4 sm:px-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 bg-black/[0.02] px-5 py-4 sm:px-6">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
-                      <Hash className="h-4 w-4 text-[var(--neon-cyan)]" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-black/[0.03]">
+                      <Hash className="h-4 w-4 text-[var(--brand)]" />
                     </div>
                     <div>
-                      <p className="font-mono text-sm font-black tracking-wider text-[var(--neon-cyan)] sm:text-base">
+                      <p className="font-mono text-sm font-black tracking-wider text-[var(--brand)] sm:text-base">
                         {order.code}
                       </p>
                       <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -578,7 +570,7 @@ function OrderCard({
                   {/* Items list */}
                   <div className="space-y-3">
                     <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      <Package className="h-4 w-4 text-[var(--neon-cyan)]" />
+                      <Package className="h-4 w-4 text-[var(--brand)]" />
                       Itens do pedido
                     </h3>
                     <ul className="space-y-2.5">
@@ -587,9 +579,9 @@ function OrderCard({
                         return (
                           <li
                             key={`${item.productId}-${item.size}-${i}`}
-                            className="flex items-start gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3"
+                            className="flex items-start gap-3 rounded-2xl border border-black/5 bg-black/[0.02] p-3"
                           >
-                            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-black/10 bg-black/[0.03]">
                               {img ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
@@ -626,7 +618,7 @@ function OrderCard({
                     </ul>
 
                     {/* Totals breakdown */}
-                    <div className="mt-2 space-y-1.5 rounded-2xl border border-white/5 bg-white/[0.02] p-3 text-sm">
+                    <div className="mt-2 space-y-1.5 rounded-2xl border border-black/5 bg-black/[0.02] p-3 text-sm">
                       <div className="flex justify-between text-muted-foreground">
                         <span>Subtotal</span>
                         <span className="font-medium text-foreground">
@@ -634,7 +626,7 @@ function OrderCard({
                         </span>
                       </div>
                       {discount > 0 && (
-                        <div className="flex items-center justify-between text-emerald-300">
+                        <div className="flex items-center justify-between text-emerald-700">
                           <span className="flex items-center gap-1.5">
                             <Ticket className="h-3.5 w-3.5" />
                             Desconto
@@ -657,7 +649,7 @@ function OrderCard({
                             : formatPrice(order.shipping)}
                         </span>
                       </div>
-                      <Separator className="my-1 bg-white/10" />
+                      <Separator className="my-1 bg-black/[0.06]" />
                       <div className="flex justify-between text-base font-bold">
                         <span>Total</span>
                         <span className="text-gradient-neon">
@@ -669,8 +661,8 @@ function OrderCard({
                     {/* Coupon badge */}
                     {couponCode && discount > 0 && (
                       <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.07] px-3 py-2">
-                        <Sparkles className="h-4 w-4 shrink-0 text-emerald-300" />
-                        <p className="text-xs text-emerald-200">
+                        <Sparkles className="h-4 w-4 shrink-0 text-emerald-700" />
+                        <p className="text-xs text-emerald-700">
                           Cupom{" "}
                           <span className="font-mono font-bold uppercase tracking-wider">
                             {couponCode}
@@ -687,9 +679,9 @@ function OrderCard({
 
                   {/* Side: address + payment */}
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                    <div className="rounded-2xl border border-black/5 bg-black/[0.02] p-4">
                       <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        <MapPin className="h-4 w-4 text-[var(--neon-magenta)]" />
+                        <MapPin className="h-4 w-4 text-[var(--hot)]" />
                         Endereço de entrega
                       </h3>
                       <div className="mt-2 space-y-0.5 text-sm text-foreground/90">
@@ -712,7 +704,7 @@ function OrderCard({
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                    <div className="rounded-2xl border border-black/5 bg-black/[0.02] p-4">
                       <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         {pay.icon}
                         Pagamento
@@ -731,7 +723,7 @@ function OrderCard({
                           Status: {orderStatusLabel(order.status)}
                         </p>
                         {couponCode && discount > 0 && (
-                          <p className="flex items-center gap-1 text-emerald-300">
+                          <p className="flex items-center gap-1 text-emerald-700">
                             <Sparkles className="h-3.5 w-3.5" />
                             Cupom {couponCode} aplicado ·{" "}
                             {formatPrice(discount)} de desconto
@@ -743,12 +735,12 @@ function OrderCard({
                 </div>
 
                 {/* Panel footer actions */}
-                <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/5 bg-white/[0.02] px-5 py-4 sm:px-6">
+                <div className="flex flex-wrap items-center justify-end gap-2 border-t border-black/5 bg-black/[0.02] px-5 py-4 sm:px-6">
                   <Button
                     onClick={() =>
                       navigate("track-order", { code: order.code })
                     }
-                    className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-4 py-2 text-xs font-bold text-black hover:opacity-90"
+                    className="rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-bold text-white hover:opacity-90"
                   >
                     <Truck className="h-4 w-4" />
                     Rastrear pedido
@@ -756,10 +748,10 @@ function OrderCard({
                   <Button
                     onClick={() => openNave()}
                     variant="outline"
-                    className="rounded-full border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+                    className="rounded-full border-black/15 bg-black/[0.03] px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-black/[0.06]"
                   >
-                    <Rocket className="h-4 w-4" />
-                    Ver na Nave
+                    <MessageCircle className="h-4 w-4" />
+                    Abrir assistente
                   </Button>
                 </div>
               </motion.div>
@@ -823,7 +815,7 @@ function OrdersTab({ orders, isLoading }: { orders: Order[] | undefined; isLoadi
     return (
       <div className="space-y-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-44 w-full rounded-3xl bg-white/5" />
+          <Skeleton key={i} className="h-44 w-full rounded-3xl bg-black/[0.03]" />
         ))}
       </div>
     );
@@ -838,10 +830,8 @@ function OrdersTab({ orders, isLoading }: { orders: Order[] | undefined; isLoadi
         className="glass mx-auto flex max-w-xl flex-col items-center gap-5 rounded-3xl p-10 text-center sm:p-14"
       >
         <div className="relative flex h-28 w-28 items-center justify-center">
-          <div className="absolute inset-0 rounded-full bg-[var(--neon-cyan)]/15 blur-3xl" />
-          <div className="absolute inset-0 animate-spin-slow rounded-full border-2 border-dashed border-[var(--neon-cyan)]/30" />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5">
-            <Package className="h-10 w-10 text-[var(--neon-cyan)]" />
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-black/10 bg-black/[0.03]">
+            <Package className="h-10 w-10 text-[var(--brand)]" />
           </div>
         </div>
         <div className="space-y-2">
@@ -855,7 +845,7 @@ function OrdersTab({ orders, isLoading }: { orders: Order[] | undefined; isLoadi
         </div>
         <Button
           onClick={() => navigate("products")}
-          className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black hover:opacity-90"
+          className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-bold text-white hover:opacity-90"
         >
           <Compass className="h-4 w-4" />
           Explorar drops
@@ -885,9 +875,9 @@ function OrdersTab({ orders, isLoading }: { orders: Order[] | undefined; isLoadi
             className="glass-chip inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {exporting === "csv" ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--neon-cyan)]" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--brand)]" />
             ) : (
-              <Download className="h-3.5 w-3.5 text-[var(--neon-cyan)]" />
+              <Download className="h-3.5 w-3.5 text-[var(--brand)]" />
             )}
             <span className="hidden sm:inline">Exportar CSV</span>
           </button>
@@ -899,9 +889,9 @@ function OrdersTab({ orders, isLoading }: { orders: Order[] | undefined; isLoadi
             className="glass-chip inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {exporting === "json" ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--neon-violet)]" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--ink)]" />
             ) : (
-              <FileJson className="h-3.5 w-3.5 text-[var(--neon-violet)]" />
+              <FileJson className="h-3.5 w-3.5 text-[var(--ink)]" />
             )}
             <span className="hidden sm:inline">Exportar JSON</span>
           </button>
@@ -933,7 +923,7 @@ function ProfileRow({
   accent: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3.5">
+    <div className="flex items-center gap-3 rounded-2xl border border-black/5 bg-black/[0.02] p-3.5">
       <span
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
         style={{ background: `${accent}22`, color: accent }}
@@ -955,9 +945,9 @@ function ProfileRow({
 function ProfileTab({ user }: { user: PublicUser }) {
   const navigate = useUIStore((s) => s.navigate);
   const setUser = useAuthStore((s) => s.setUser);
-  const roleLabel = user.role === "admin" ? "Comando" : "Explorador";
+  const roleLabel = user.role === "admin" ? "Administrador" : "Cliente";
   const roleAccent =
-    user.role === "admin" ? "var(--neon-magenta)" : "var(--neon-cyan)";
+    user.role === "admin" ? "var(--hot)" : "var(--brand)";
 
   // Editable name state
   const [editingName, setEditingName] = useState(false);
@@ -1051,17 +1041,17 @@ function ProfileTab({ user }: { user: PublicUser }) {
         className="glass rounded-3xl p-6"
       >
         <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          <User className="h-4 w-4 text-[var(--neon-cyan)]" />
+          <User className="h-4 w-4 text-[var(--brand)]" />
           Meus dados
         </h2>
         <div className="mt-4 space-y-2.5">
           {/* Editable name row */}
-          <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3">
+          <div className="flex items-center gap-3 rounded-2xl border border-black/5 bg-black/[0.02] p-3">
             <span
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: "color-mix(in oklab, var(--neon-cyan) 12%, transparent)" }}
+              style={{ background: "color-mix(in oklab, var(--brand) 12%, transparent)" }}
             >
-              <User className="h-4 w-4 text-[var(--neon-cyan)]" />
+              <User className="h-4 w-4 text-[var(--brand)]" />
             </span>
             <div className="flex-1">
               <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -1080,13 +1070,13 @@ function ProfileTab({ user }: { user: PublicUser }) {
                         setNameValue(user.name);
                       }
                     }}
-                    className="h-9 flex-1 rounded-lg border border-[var(--neon-cyan)] bg-white/5 px-3 text-sm font-medium outline-none"
+                    className="h-9 flex-1 rounded-lg border border-[var(--brand)] bg-black/[0.03] px-3 text-sm font-medium outline-none"
                     placeholder="Seu nome"
                   />
                   <button
                     onClick={saveName}
                     disabled={savingName}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--neon-cyan)] text-black transition hover:opacity-90 disabled:opacity-40"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--brand)] text-white transition hover:opacity-90 disabled:opacity-40"
                     aria-label="Salvar nome"
                   >
                     {savingName ? (
@@ -1100,7 +1090,7 @@ function ProfileTab({ user }: { user: PublicUser }) {
                       setEditingName(false);
                       setNameValue(user.name);
                     }}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-foreground transition hover:text-foreground"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 bg-black/[0.03] text-muted-foreground transition hover:text-foreground"
                     aria-label="Cancelar"
                   >
                     <X className="h-4 w-4" />
@@ -1111,7 +1101,7 @@ function ProfileTab({ user }: { user: PublicUser }) {
                   <p className="text-sm font-medium">{user.name}</p>
                   <button
                     onClick={() => setEditingName(true)}
-                    className="flex items-center gap-1 text-xs text-[var(--neon-cyan)] transition hover:underline"
+                    className="flex items-center gap-1 text-xs text-[var(--brand)] transition hover:underline"
                   >
                     <Pencil className="h-3 w-3" />
                     Editar
@@ -1124,7 +1114,7 @@ function ProfileTab({ user }: { user: PublicUser }) {
             icon={<Mail className="h-4 w-4" />}
             label="E-mail"
             value={user.email}
-            accent="var(--neon-violet)"
+            accent="var(--ink)"
           />
           <ProfileRow
             icon={<KeyRound className="h-4 w-4" />}
@@ -1139,20 +1129,20 @@ function ProfileTab({ user }: { user: PublicUser }) {
           <ProfileRow
             icon={<Clock className="h-4 w-4" />}
             label="Membro desde"
-            value="Explorador desde 2026"
-            accent="var(--neon-lime)"
+            value="Cliente desde 2026"
+            accent="var(--success)"
           />
         </div>
 
-        <div className="mt-5 flex items-start gap-2 rounded-2xl border border-white/5 bg-white/[0.02] p-3.5">
-          <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-[var(--neon-lime)]" />
+        <div className="mt-5 flex items-start gap-2 rounded-2xl border border-black/5 bg-black/[0.02] p-3.5">
+          <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-[var(--success)]" />
           <p className="text-xs text-muted-foreground">
-            Para trocar seu e-mail, fale com a Nave no canto inferior.
+            Para trocar seu e-mail, fale com nosso assistente no canto inferior.
           </p>
         </div>
       </motion.div>
 
-      <Separator className="bg-white/10" />
+      <Separator className="bg-black/[0.06]" />
 
       {/* Segurança / trocar senha */}
       <motion.div
@@ -1162,7 +1152,7 @@ function ProfileTab({ user }: { user: PublicUser }) {
         className="glass rounded-3xl p-6"
       >
         <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          <Lock className="h-4 w-4 text-[var(--neon-lime)]" />
+          <Lock className="h-4 w-4 text-[var(--success)]" />
           Segurança
         </h2>
         <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
@@ -1198,7 +1188,7 @@ function ProfileTab({ user }: { user: PublicUser }) {
             <Button
               onClick={handleChangePassword}
               disabled={savingPassword}
-              className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 py-2.5 text-sm font-bold text-black hover:opacity-90 disabled:opacity-70"
+              className="rounded-full bg-[var(--brand)] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-70"
             >
               {savingPassword ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -1244,7 +1234,7 @@ function PasswordInputRow({
           type={show ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-11 rounded-xl border-white/10 bg-white/5 pr-11 text-sm outline-none transition-colors focus:border-[var(--neon-cyan)] focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="h-11 rounded-xl border-black/10 bg-black/[0.03] pr-11 text-sm outline-none transition-colors focus:border-[var(--brand)] focus-visible:ring-0 focus-visible:ring-offset-0"
           autoComplete="current-password"
         />
         <button
@@ -1311,7 +1301,7 @@ function formFromAddress(addr: Address): AddressFormState {
 }
 
 const addrInputClass =
-  "h-11 rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[var(--neon-cyan)] focus-visible:ring-0 focus-visible:ring-offset-0";
+  "h-11 rounded-xl border border-black/10 bg-black/[0.03] px-4 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[var(--brand)] focus-visible:ring-0 focus-visible:ring-offset-0";
 
 function AddressFormModal({
   open,
@@ -1396,11 +1386,11 @@ function AddressFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl rounded-3xl border-white/10 bg-[var(--card)] p-0">
+      <DialogContent className="max-w-2xl rounded-3xl border-black/10 bg-[var(--card)] p-0">
         <div className="max-h-[88vh] overflow-y-auto p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-              <MapPin className="h-5 w-5 text-[var(--neon-magenta)]" />
+              <MapPin className="h-5 w-5 text-[var(--hot)]" />
               {isEdit ? "Editar endereço" : "Novo endereço"}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -1464,7 +1454,7 @@ function AddressFormModal({
                 id="addr-street"
                 value={form.street}
                 onChange={(e) => update("street", e.target.value)}
-                placeholder="Av. Via Láctea"
+                placeholder="Av. Paulista"
                 className={addrInputClass}
               />
             </div>
@@ -1506,7 +1496,7 @@ function AddressFormModal({
                 id="addr-district"
                 value={form.district}
                 onChange={(e) => update("district", e.target.value)}
-                placeholder="Galáxia"
+                placeholder="Centro"
                 className={addrInputClass}
               />
             </div>
@@ -1540,7 +1530,7 @@ function AddressFormModal({
                 className={addrInputClass}
               />
             </div>
-            <div className="sm:col-span-6 flex items-center justify-between gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3.5">
+            <div className="sm:col-span-6 flex items-center justify-between gap-3 rounded-2xl border border-black/5 bg-black/[0.02] p-3.5">
               <div>
                 <p className="text-sm font-semibold">Salvar como padrão</p>
                 <p className="text-[11px] text-muted-foreground">
@@ -1559,14 +1549,14 @@ function AddressFormModal({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                className="rounded-full border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-white/10"
+                className="rounded-full border-black/15 bg-black/[0.03] px-5 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-black/[0.06]"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={saving}
-                className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 py-2.5 text-sm font-bold text-black hover:opacity-90 disabled:opacity-70"
+                className="rounded-full bg-[var(--brand)] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-70"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -1610,15 +1600,10 @@ function AddressCard({
       transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.4) }}
       className="glass relative overflow-hidden rounded-3xl p-5"
     >
-      <div
-        className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-30 blur-2xl"
-        style={{ background: "var(--neon-magenta)" }}
-        aria-hidden
-      />
 
       <div className="relative flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--neon-magenta)]/15 text-[var(--neon-magenta)]">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--hot)]/15 text-[var(--hot)]">
             <MapPin className="h-4 w-4" />
           </span>
           <div>
@@ -1633,7 +1618,7 @@ function AddressCard({
         {address.isDefault && (
           <Badge
             variant="outline"
-            className="rounded-full border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300"
+            className="rounded-full border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700"
           >
             <Star className="mr-1 h-3 w-3" />
             Padrão
@@ -1660,7 +1645,7 @@ function AddressCard({
         <Button
           onClick={onEdit}
           variant="outline"
-          className="rounded-full border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+          className="rounded-full border-black/15 bg-black/[0.03] px-3.5 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-black/[0.06]"
         >
           <Pencil className="h-3.5 w-3.5" />
           Editar
@@ -1669,16 +1654,16 @@ function AddressCard({
           <Button
             onClick={onSetDefault}
             variant="outline"
-            className="rounded-full border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+            className="rounded-full border-black/15 bg-black/[0.03] px-3.5 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-black/[0.06]"
           >
-            <Star className="h-3.5 w-3.5 text-[var(--neon-lime)]" />
+            <Star className="h-3.5 w-3.5 text-[var(--success)]" />
             Tornar padrão
           </Button>
         )}
         <Button
           onClick={onAskDelete}
           variant="ghost"
-          className="ml-auto rounded-full px-3.5 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
+          className="ml-auto rounded-full px-3.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-500/10 hover:text-rose-700"
         >
           <Trash2 className="h-3.5 w-3.5" />
           Excluir
@@ -1741,7 +1726,7 @@ function AddressesTab() {
     return (
       <div className="grid gap-4 sm:grid-cols-2">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-48 rounded-3xl bg-white/5" />
+          <Skeleton key={i} className="h-48 rounded-3xl bg-black/[0.03]" />
         ))}
       </div>
     );
@@ -1759,7 +1744,7 @@ function AddressesTab() {
       >
         <div className="space-y-1">
           <h2 className="flex items-center gap-2 text-lg font-bold sm:text-xl">
-            <MapPin className="h-5 w-5 text-[var(--neon-magenta)]" />
+            <MapPin className="h-5 w-5 text-[var(--hot)]" />
             Meus endereços
           </h2>
           <p className="text-xs text-muted-foreground sm:text-sm">
@@ -1769,7 +1754,7 @@ function AddressesTab() {
         </div>
         <Button
           onClick={openCreate}
-          className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 py-2.5 text-sm font-bold text-black hover:opacity-90"
+          className="rounded-full bg-[var(--brand)] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90"
         >
           <Plus className="h-4 w-4" />
           Novo endereço
@@ -1784,10 +1769,8 @@ function AddressesTab() {
           className="glass mx-auto flex max-w-xl flex-col items-center gap-5 rounded-3xl p-10 text-center sm:p-14"
         >
           <div className="relative flex h-24 w-24 items-center justify-center">
-            <div className="absolute inset-0 rounded-full bg-[var(--neon-magenta)]/15 blur-3xl" />
-            <div className="absolute inset-0 animate-spin-slow rounded-full border-2 border-dashed border-[var(--neon-magenta)]/30" />
-            <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5">
-              <MapPin className="h-8 w-8 text-[var(--neon-magenta)]" />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-black/10 bg-black/[0.03]">
+              <MapPin className="h-8 w-8 text-[var(--hot)]" />
             </div>
           </div>
           <div className="space-y-2">
@@ -1801,7 +1784,7 @@ function AddressesTab() {
           </div>
           <Button
             onClick={openCreate}
-            className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black hover:opacity-90"
+            className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-bold text-white hover:opacity-90"
           >
             <Plus className="h-4 w-4" />
             Adicionar endereço
@@ -1832,10 +1815,10 @@ function AddressesTab() {
         open={!!deletingId}
         onOpenChange={(o) => !o && setDeletingId(null)}
       >
-        <AlertDialogContent className="rounded-3xl border-white/10 bg-[var(--card)]">
+        <AlertDialogContent className="rounded-3xl border-black/10 bg-[var(--card)]">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-rose-400" />
+              <Trash2 className="h-5 w-5 text-rose-700" />
               Remover endereço?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-muted-foreground">
@@ -1844,7 +1827,7 @@ function AddressesTab() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel className="rounded-full border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-white/10">
+            <AlertDialogCancel className="rounded-full border-black/15 bg-black/[0.03] px-5 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-black/[0.06]">
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
@@ -1874,13 +1857,13 @@ function HelpFooter() {
       className="glass mt-6 flex flex-col gap-4 rounded-3xl p-6 sm:flex-row sm:items-center sm:justify-between"
     >
       <div className="flex items-center gap-3">
-        <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-          <ShieldCheck className="h-6 w-6 text-[var(--neon-lime)]" />
+        <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-black/10 bg-black/[0.03]">
+          <ShieldCheck className="h-6 w-6 text-[var(--success)]" />
         </div>
         <div>
           <p className="text-sm font-bold">Precisa de ajuda?</p>
           <p className="text-xs text-muted-foreground">
-            A Nave está pronta para tirar suas dúvidas sobre pedidos, pagamentos
+            O assistente está pronto para tirar suas dúvidas sobre pedidos, pagamentos
             e entregas.
           </p>
         </div>
@@ -1888,19 +1871,19 @@ function HelpFooter() {
       <div className="flex flex-wrap gap-2">
         <Button
           onClick={() =>
-            toast("A Nave está no canto inferior direito, pronta para ajudar 🚀")
+            toast("O assistente está no canto inferior direito, pronto para ajudar")
           }
           variant="outline"
-          className="rounded-full border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-white/10"
+          className="rounded-full border-black/15 bg-black/[0.03] px-4 py-2 text-xs font-semibold backdrop-blur transition hover:bg-black/[0.06]"
         >
           <LifeBuoy className="h-4 w-4" />
-          Falar com a Nave
+          Falar com o assistente
         </Button>
         <Button
           onClick={() => navigate("track-order")}
-          className="rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-4 py-2 text-xs font-bold text-black hover:opacity-90"
+          className="rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-bold text-white hover:opacity-90"
         >
-          <Rocket className="h-4 w-4" />
+          <Truck className="h-4 w-4" />
           Rastrear um pedido
         </Button>
       </div>
@@ -1911,24 +1894,24 @@ function HelpFooter() {
 // ---------- Notifications tab ----------
 
 const NOTIFICATION_ICON: Record<NotificationType, { icon: typeof Package; color: string }> = {
-  order_created: { icon: Package, color: "var(--neon-cyan)" },
-  order_status: { icon: Truck, color: "var(--neon-lime)" },
-  coupon_applied: { icon: Ticket, color: "var(--neon-magenta)" },
-  welcome: { icon: Sparkles, color: "var(--neon-violet)" },
+  order_created: { icon: Package, color: "var(--brand)" },
+  order_status: { icon: Truck, color: "var(--success)" },
+  coupon_applied: { icon: Ticket, color: "var(--hot)" },
+  welcome: { icon: Sparkles, color: "var(--ink)" },
 };
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   sent: {
     label: "Enviado",
-    className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+    className: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
   },
   queued: {
     label: "Na fila",
-    className: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+    className: "bg-amber-500/15 text-amber-700 border-amber-500/30",
   },
   failed: {
     label: "Falhou",
-    className: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+    className: "bg-rose-500/15 text-rose-700 border-rose-500/30",
   },
 };
 
@@ -1969,7 +1952,7 @@ function NotificationsTab() {
           variant="outline"
           size="sm"
           onClick={() => queryClient.invalidateQueries({ queryKey: ["my-notifications"] })}
-          className="gap-2 rounded-full border-white/10 hover:bg-white/5"
+          className="gap-2 rounded-full border-black/10 hover:bg-black/[0.03]"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Atualizar
@@ -1982,7 +1965,7 @@ function NotificationsTab() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="glass-strong rounded-2xl border border-white/10 p-4"
+              className="glass-strong rounded-2xl border border-black/10 p-4"
             >
               <div className="flex items-start gap-3">
                 <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
@@ -2001,7 +1984,7 @@ function NotificationsTab() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-strong rounded-3xl border border-dashed border-white/10 p-8 text-center"
+          className="glass-strong rounded-3xl border border-dashed border-black/10 p-8 text-center"
         >
           <Bell className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
           <p className="text-lg font-semibold">Você ainda não recebeu nenhuma notificação.</p>
@@ -2031,7 +2014,7 @@ function NotificationsTab() {
                   <Collapsible
                     open={isOpen}
                     onOpenChange={() => toggleExpand(n.id)}
-                    className="glass-strong cursor-pointer rounded-2xl border border-white/10 transition-colors hover:border-white/20"
+                    className="glass-strong cursor-pointer rounded-2xl border border-black/10 transition-colors hover:border-black/15"
                   >
                     <CollapsibleTrigger asChild>
                       <div className="flex items-start gap-3 p-4">
@@ -2070,7 +2053,7 @@ function NotificationsTab() {
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="border-t border-white/5 px-4 pb-4 pt-3">
+                      <div className="border-t border-black/5 px-4 pb-4 pt-3">
                         <pre className="whitespace-pre-wrap break-words rounded-xl bg-black/20 p-3 font-mono text-sm leading-relaxed text-muted-foreground">
                           {n.body}
                         </pre>
@@ -2152,7 +2135,7 @@ function StockAlertsTab() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="glass-strong rounded-2xl border border-white/10 p-4"
+              className="glass-strong rounded-2xl border border-black/10 p-4"
             >
               <div className="flex items-start gap-3">
                 <Skeleton className="h-16 w-16 shrink-0 rounded-xl" />
@@ -2172,9 +2155,9 @@ function StockAlertsTab() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-strong rounded-3xl border border-dashed border-white/10 p-8 text-center"
+          className="glass-strong rounded-3xl border border-dashed border-black/10 p-8 text-center"
         >
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04]">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-black/[0.024]">
             <Bell className="h-7 w-7 text-muted-foreground" />
           </div>
           <p className="text-lg font-semibold">Você não tem alertas ativos.</p>
@@ -2185,7 +2168,7 @@ function StockAlertsTab() {
           <Button
             type="button"
             onClick={() => navigate("products")}
-            className="mt-5 gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 font-bold text-black hover:opacity-90"
+            className="mt-5 gap-2 rounded-full bg-[var(--brand)] px-5 font-bold text-white hover:opacity-90"
           >
             Explorar drops
           </Button>
@@ -2203,12 +2186,12 @@ function StockAlertsTab() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.06 }}
-                className="glass-strong flex items-start gap-3 rounded-2xl border border-white/10 p-4"
+                className="glass-strong flex items-start gap-3 rounded-2xl border border-black/10 p-4"
               >
                 <button
                   type="button"
                   onClick={() => navigate("product", { id: p.slug })}
-                  className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-1 transition hover:border-white/30"
+                  className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-black/10 bg-black/[0.02] p-1 transition hover:border-black/25"
                   aria-label={`Ver ${p.name}`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2226,7 +2209,7 @@ function StockAlertsTab() {
                     <button
                       type="button"
                       onClick={() => navigate("product", { id: p.slug })}
-                      className="line-clamp-1 text-left text-sm font-semibold leading-tight transition hover:text-[var(--neon-cyan)]"
+                      className="line-clamp-1 text-left text-sm font-semibold leading-tight transition hover:text-[var(--brand)]"
                     >
                       {p.name}
                     </button>
@@ -2237,8 +2220,8 @@ function StockAlertsTab() {
                     className={cn(
                       "px-1.5 py-0 text-[10px] font-semibold",
                       inStock
-                        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                        : "bg-rose-500/15 text-rose-400 border-rose-500/30",
+                        ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+                        : "bg-rose-500/15 text-rose-700 border-rose-500/30",
                     )}
                   >
                     {inStock ? "Em estoque" : "Esgotado"}
@@ -2249,7 +2232,7 @@ function StockAlertsTab() {
                       <Button
                         size="sm"
                         onClick={() => navigate("product", { id: p.slug })}
-                        className="h-8 gap-1.5 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-3 text-xs font-bold text-black hover:opacity-90"
+                        className="h-8 gap-1.5 rounded-full bg-[var(--brand)] px-3 text-xs font-bold text-white hover:opacity-90"
                       >
                         Ver produto
                       </Button>
@@ -2259,7 +2242,7 @@ function StockAlertsTab() {
                       variant="outline"
                       onClick={() => handleRemove(p.id)}
                       disabled={removingId === p.id}
-                      className="h-8 gap-1.5 rounded-full border-white/10 px-3 text-xs font-medium text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                      className="h-8 gap-1.5 rounded-full border-black/10 px-3 text-xs font-medium text-muted-foreground hover:bg-black/[0.03] hover:text-foreground"
                     >
                       {removingId === p.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -2289,9 +2272,9 @@ function StockAlertsTab() {
 // ---------- Loyalty / Rewards tab ----------
 
 const REDEEM_TIERS = [
-  { cost: 100, value: 5, accent: "var(--neon-cyan)" },
-  { cost: 250, value: 12.5, accent: "var(--neon-violet)" },
-  { cost: 500, value: 25, accent: "var(--neon-magenta)" },
+  { cost: 100, value: 5, accent: "var(--brand)" },
+  { cost: 250, value: 12.5, accent: "var(--ink)" },
+  { cost: 500, value: 25, accent: "var(--hot)" },
 ] as const;
 
 function LoyaltyTab() {
@@ -2361,24 +2344,13 @@ function LoyaltyTab() {
         className="glass-strong relative overflow-hidden rounded-3xl p-6 sm:p-8"
       >
         {/* Gradient glows */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -left-16 -top-16 h-56 w-56 rounded-full opacity-40 blur-3xl"
-          style={{ background: "var(--neon-violet)" }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-20 -right-10 h-56 w-56 rounded-full opacity-30 blur-3xl"
-          style={{ background: "var(--neon-cyan)" }}
-        />
 
         {/* Floating sparkles icon */}
-        <Sparkles className="animate-astro-float pointer-events-none absolute right-5 top-5 h-8 w-8 text-[var(--neon-cyan)]/70" />
 
         <div className="relative">
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <Star className="h-3.5 w-3.5 text-[var(--neon-violet)]" />
-            Programa de recompensas estelares
+            <Star className="h-3.5 w-3.5 text-[var(--ink)]" />
+            Programa de recompensas
           </div>
 
           {isLoading ? (
@@ -2394,11 +2366,11 @@ function LoyaltyTab() {
                   {points.toLocaleString("pt-BR")}
                 </span>
                 <span className="mb-1 text-sm font-semibold text-muted-foreground">
-                  pontos estelares
+                  pontos
                 </span>
               </div>
 
-              <p className="mt-2 text-sm font-semibold text-[var(--neon-lime)]">
+              <p className="mt-2 text-sm font-semibold text-[var(--success)]">
                 Vale {formatPrice(pointsValue)} em descontos
               </p>
 
@@ -2413,12 +2385,12 @@ function LoyaltyTab() {
                   </span>
                   <span>{Math.round(progressPct)}%</span>
                 </div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+                <div className="h-2.5 overflow-hidden rounded-full bg-black/[0.06]">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${progressPct}%` }}
                     transition={{ duration: 0.7, ease: "easeOut" }}
-                    className="h-full rounded-full bg-gradient-to-r from-[var(--neon-cyan)] via-[var(--neon-violet)] to-[var(--neon-magenta)]"
+                    className="h-full rounded-full bg-[var(--brand)]"
                   />
                 </div>
                 {points < minRedeemPoints ? (
@@ -2426,7 +2398,7 @@ function LoyaltyTab() {
                     Mínimo de {minRedeemPoints} pts para o primeiro resgate.
                   </p>
                 ) : (
-                  <p className="text-[11px] text-[var(--neon-lime)]">
+                  <p className="text-[11px] text-[var(--success)]">
                     Você já pode resgatar recompensas! ✦
                   </p>
                 )}
@@ -2438,12 +2410,12 @@ function LoyaltyTab() {
 
       {/* Info banner */}
       <div className="glass flex items-start gap-3 rounded-2xl border border-amber-500/20 p-4">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-300">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-700">
           <Sparkles className="h-4 w-4" />
         </div>
         <p className="text-sm text-foreground/85">
-          Ganhe <span className="font-bold text-amber-300">1 ponto</span> para
-          cada <span className="font-bold text-amber-300">R$1</span> gasto. Use
+          Ganhe <span className="font-bold text-amber-700">1 ponto</span> para
+          cada <span className="font-bold text-amber-700">R$1</span> gasto. Use
           os pontos para resgatar cupons de desconto exclusivos.
         </p>
       </div>
@@ -2451,7 +2423,7 @@ function LoyaltyTab() {
       {/* Redemption section */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--neon-violet)]/15 text-[var(--neon-violet)]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--ink)]/15 text-[var(--ink)]">
             <Gift className="h-4 w-4" />
           </span>
           <h3 className="text-lg font-bold sm:text-xl">Resgatar recompensas</h3>
@@ -2469,11 +2441,6 @@ function LoyaltyTab() {
                 transition={{ duration: 0.35 }}
                 className="glass relative flex flex-col gap-3 overflow-hidden rounded-2xl p-5"
               >
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-25 blur-2xl"
-                  style={{ background: tier.accent }}
-                />
                 <div className="relative">
                   <p
                     className="text-3xl font-black tracking-tight"
@@ -2505,8 +2472,8 @@ function LoyaltyTab() {
                   className={cn(
                     "relative mt-auto flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all",
                     canRedeem
-                      ? "bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] text-black hover:opacity-90"
-                      : "cursor-not-allowed border border-white/10 bg-white/[0.03] text-muted-foreground",
+                      ? "bg-[var(--brand)] text-white hover:opacity-90"
+                      : "cursor-not-allowed border border-black/10 bg-black/[0.02] text-muted-foreground",
                   )}
                 >
                   {isRedeeming ? (
@@ -2530,7 +2497,7 @@ function LoyaltyTab() {
       {/* History section */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--neon-cyan)]/15 text-[var(--neon-cyan)]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand)]/15 text-[var(--brand)]">
             <Clock className="h-4 w-4" />
           </span>
           <h3 className="text-lg font-bold sm:text-xl">Histórico de pontos</h3>
@@ -2545,19 +2512,19 @@ function LoyaltyTab() {
             </div>
           ) : history.length === 0 ? (
             <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04]">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-black/[0.024]">
                 <Sparkles className="h-7 w-7 text-muted-foreground" />
               </div>
               <p className="text-sm font-semibold">
                 Você ainda não ganhou pontos.
               </p>
               <p className="max-w-xs text-xs text-muted-foreground">
-                Faça um pedido para começar a acumular recompensas estelares!
+                Faça um pedido para começar a acumular recompensas!
               </p>
               <Button
                 type="button"
                 onClick={() => navigate("products")}
-                className="mt-1 gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-5 font-bold text-black hover:opacity-90"
+                className="mt-1 gap-2 rounded-full bg-[var(--brand)] px-5 font-bold text-white hover:opacity-90"
               >
                 Explorar drops
               </Button>
@@ -2570,9 +2537,9 @@ function LoyaltyTab() {
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.4) }}
-                  className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-3 transition hover:border-white/15"
+                  className="flex items-center gap-3 rounded-xl border border-black/5 bg-black/[0.02] p-3 transition hover:border-black/15"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--neon-lime)]/15 text-[var(--neon-lime)]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--success)]/15 text-[var(--success)]">
                     <TrendingUp className="h-4 w-4" />
                   </span>
                   <div className="min-w-0 flex-1">
@@ -2584,7 +2551,7 @@ function LoyaltyTab() {
                       {formatDate(entry.date)}
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-[var(--neon-lime)]/15 px-2.5 py-1 text-xs font-bold text-[var(--neon-lime)]">
+                  <span className="shrink-0 rounded-full bg-[var(--success)]/15 px-2.5 py-1 text-xs font-bold text-[var(--success)]">
                     +{entry.points}
                   </span>
                 </motion.li>
@@ -2634,45 +2601,45 @@ export function AccountView() {
       <AccountHeader user={user} orders={orders} />
 
       <Tabs defaultValue="orders" className="mt-8">
-        <TabsList className="glass h-auto gap-1 rounded-full border border-white/10 p-1">
+        <TabsList className="glass h-auto gap-1 rounded-full border border-black/10 p-1">
           <TabsTrigger
             value="orders"
-            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-none"
           >
             <Package className="h-4 w-4" />
             Meus pedidos
           </TabsTrigger>
           <TabsTrigger
             value="profile"
-            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-none"
           >
             <User className="h-4 w-4" />
             Meus dados
           </TabsTrigger>
           <TabsTrigger
             value="enderecos"
-            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-none"
           >
             <MapPin className="h-4 w-4" />
             Endereços
           </TabsTrigger>
           <TabsTrigger
             value="notificacoes"
-            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-none"
           >
             <Bell className="h-4 w-4" />
             Notificações
           </TabsTrigger>
           <TabsTrigger
             value="alertas"
-            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-none"
           >
             <BellOff className="h-4 w-4" />
             Alertas
           </TabsTrigger>
           <TabsTrigger
             value="recompensas"
-            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-[var(--neon-cyan)] data-[state=active]:to-[var(--neon-violet)] data-[state=active]:text-black data-[state=active]:shadow-none"
+            className="rounded-full px-4 py-2 text-sm font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-none"
           >
             <Star className="h-4 w-4" />
             Recompensas

@@ -69,7 +69,7 @@ async function redeem(req: NextRequest, user: { id: string; email: string; name:
         minSubtotal: 0,
         active: true,
         maxUses: 1, // cupom de resgate vale para um único pedido
-        description: `Resgate de ${pointsToRedeem} pontos estelares`,
+        description: `Resgate de ${pointsToRedeem} pontos`,
         expiresAt: null,
       },
     });
@@ -83,7 +83,7 @@ async function redeem(req: NextRequest, user: { id: string; email: string; name:
         body: [
           `Olá, ${user.name}!`,
           "",
-          `Você resgatou ${pointsToRedeem} pontos estelares por um cupom de R$${discount.toFixed(2).replace(".", ",")}!`,
+          `Você resgatou ${pointsToRedeem} pontos por um cupom de R$${discount.toFixed(2).replace(".", ",")}!`,
           "",
           `Use o código ${code} no checkout para aplicar o desconto.`,
           "",
@@ -102,7 +102,7 @@ async function redeem(req: NextRequest, user: { id: string; email: string; name:
         code,
         type: "fixed",
         value: discount,
-        description: `Resgate de ${pointsToRedeem} pontos estelares`,
+        description: `Resgate de ${pointsToRedeem} pontos`,
       },
       pointsRemaining: newPoints,
       discount,

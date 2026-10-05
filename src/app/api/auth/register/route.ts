@@ -38,15 +38,15 @@ export async function POST(req: NextRequest) {
       await sendEmailNotification({
         type: "welcome",
         to: email,
-        subject: `Bem-vindo à Astrofeet, ${name}! 🚀`,
+        subject: `Bem-vindo à Astrofeet, ${name}!`,
         body: [
           `Olá, ${name}!`,
           "",
-          "Bem-vindo à Astrofeet — sua nova navegação por sneakers de outro planeta!",
+          "Que bom ter você na Astrofeet!",
           "",
           "Aqui você encontra drops exclusivos, frete grátis acima de R$300 e 30 dias para trocar ou devolver.",
           "",
-          "Fique de olhos abertos: novidades chegam o tempo todo. Use o cupom GALAXIA10 para 10% off na sua primeira compra!",
+          "Fique de olho: lançamentos chegam o tempo todo. Use o cupom GALAXIA10 para 10% off na sua primeira compra!",
           "",
           "Boa exploração,",
           "— Equipe Astrofeet",

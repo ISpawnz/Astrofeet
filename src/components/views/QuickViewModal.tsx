@@ -36,7 +36,7 @@ export function QuickViewModal() {
     <Dialog open={open} onOpenChange={(o) => (o ? null : close())}>
       <DialogContent
         showCloseButton={false}
-        className="max-h-[92vh] overflow-hidden border-white/10 bg-[#0a0e1f]/95 p-0 backdrop-blur-xl sm:max-w-3xl"
+        className="max-h-[92vh] overflow-hidden border-black/10 bg-background p-0 backdrop-blur-xl sm:max-w-3xl"
         aria-describedby="quick-view-desc"
       >
         <DialogTitle className="sr-only">Visualização rápida</DialogTitle>
@@ -48,7 +48,7 @@ export function QuickViewModal() {
         {/* Close (X) button top-right */}
         <DialogClose
           aria-label="Fechar visualização"
-          className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/50 text-white/70 backdrop-blur transition hover:bg-black/70 hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--neon-cyan)]/50"
+          className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white text-foreground shadow-sm transition hover:bg-black/70 hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/50"
         >
           <span aria-hidden className="text-lg leading-none">
             ✕
@@ -76,7 +76,7 @@ function QuickViewBody({ id }: { id: string }) {
     return (
       <div className="grid min-h-[320px] place-items-center p-10">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <Loader2 className="h-8 w-8 animate-spin text-[var(--neon-cyan)]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--brand)]" />
           <p className="text-sm">Carregando produto…</p>
         </div>
       </div>
@@ -160,33 +160,23 @@ function ProductPreview({ product }: { product: Product }) {
       className="grid max-h-[92vh] overflow-y-auto sm:grid-cols-2"
     >
       {/* Left — image */}
-      <div className="relative aspect-square overflow-hidden bg-gradient-to-b from-white/5 to-transparent">
-        {/* Accent glow */}
-        <div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-3/4 w-3/4 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-50 blur-3xl"
-          style={{ background: product.accent }}
-          aria-hidden
-        />
-        {/* Orbit rings (hero-style) */}
-        <div className="pointer-events-none absolute inset-6 rounded-full border border-white/5 animate-spin-slow" aria-hidden />
-        <div className="pointer-events-none absolute inset-12 rounded-full border border-white/[0.07]" aria-hidden />
-        <div className="pointer-events-none absolute inset-20 rounded-full border border-white/[0.04]" aria-hidden />
+      <div className="relative aspect-square overflow-hidden bg-[var(--surface)]">
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={product.images[0]}
           alt={product.name}
-          className="animate-astro-float relative h-full w-full object-contain p-8"
+          className="relative h-full w-full object-cover"
         />
 
         {/* Badge */}
         {product.badge && (
-          <span className="absolute left-3 top-3 rounded-full border border-[var(--neon-cyan)]/40 bg-[var(--neon-cyan)]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--neon-cyan)] backdrop-blur">
+          <span className="absolute left-3 top-3 rounded-full border border-[var(--brand)]/40 bg-[var(--brand)]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--brand)] backdrop-blur">
             {product.badge}
           </span>
         )}
         {soldOut && (
-          <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-rose-500/40 bg-rose-500/15 px-3 py-1 text-[11px] font-bold uppercase text-rose-300 backdrop-blur">
+          <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-rose-500/40 bg-rose-500/15 px-3 py-1 text-[11px] font-bold uppercase text-rose-700 backdrop-blur">
             Esgotado
           </span>
         )}
@@ -201,7 +191,7 @@ function ProductPreview({ product }: { product: Product }) {
           <h2 className="text-xl font-bold leading-tight sm:text-2xl">
             {product.name}
           </h2>
-          <div className="flex items-center gap-1.5 text-xs text-amber-300">
+          <div className="flex items-center gap-1.5 text-xs text-amber-700">
             <Star className="h-3.5 w-3.5 fill-current" />
             <span className="font-semibold">{product.rating.toFixed(1)}</span>
             <span className="text-muted-foreground">
@@ -254,8 +244,8 @@ function ProductPreview({ product }: { product: Product }) {
                     className={cn(
                       "h-9 min-w-9 rounded-full border px-2.5 text-xs font-bold transition-all",
                       active
-                        ? "border-[var(--neon-cyan)] bg-[var(--neon-cyan)]/20 text-[var(--neon-cyan)] shadow-[0_0_12px_var(--neon-cyan)]"
-                        : "border-white/10 bg-white/[0.03] text-foreground/80 hover:border-white/30 hover:bg-white/[0.06]",
+                        ? "border-[var(--brand)] bg-[var(--brand)]/20 text-[var(--brand)]"
+                        : "border-black/10 bg-black/[0.02] text-foreground/80 hover:border-black/25 hover:bg-black/[0.036]",
                       out && "cursor-not-allowed opacity-40 line-through",
                     )}
                   >
@@ -272,13 +262,13 @@ function ProductPreview({ product }: { product: Product }) {
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Quantidade
           </p>
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] p-1">
+          <div className="flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.02] p-1">
             <button
               type="button"
               onClick={() => setQty((q) => Math.max(1, q - 1))}
               disabled={qty <= 1}
               aria-label="Diminuir quantidade"
-              className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/70 transition hover:bg-white/10 hover:text-foreground disabled:opacity-40"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/70 transition hover:bg-black/[0.06] hover:text-foreground disabled:opacity-40"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
@@ -290,7 +280,7 @@ function ProductPreview({ product }: { product: Product }) {
               onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
               disabled={qty >= maxQty}
               aria-label="Aumentar quantidade"
-              className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/70 transition hover:bg-white/10 hover:text-foreground disabled:opacity-40"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/70 transition hover:bg-black/[0.06] hover:text-foreground disabled:opacity-40"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -303,7 +293,7 @@ function ProductPreview({ product }: { product: Product }) {
             type="button"
             onClick={handleAdd}
             disabled={soldOut}
-            className="btn-cosmic flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-black disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-cosmic flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
             {added ? (
               <>
@@ -320,7 +310,7 @@ function ProductPreview({ product }: { product: Product }) {
           <button
             type="button"
             onClick={handleDetails}
-            className="flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-foreground backdrop-blur transition hover:bg-white/10"
+            className="flex items-center justify-center gap-2 rounded-full border border-black/15 bg-black/[0.03] px-5 py-3 text-sm font-bold text-foreground backdrop-blur transition hover:bg-black/[0.06]"
           >
             <Eye className="h-4 w-4" />
             Ver detalhes

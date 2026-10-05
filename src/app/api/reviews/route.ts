@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const authorName = (
       user?.name ||
       String(body.authorName ?? "").trim() ||
-      "Explorador anônimo"
+      "Cliente anônimo"
     ).slice(0, 60);
 
     if (!productId) throw new HttpError("Produto inválido.", 400);

@@ -136,13 +136,13 @@ export async function PUT(
             await sendEmailNotification({
               type: "order_status",
               to: u.email as string,
-              subject: `${productName} voltou ao estoque! 🚀`,
+              subject: `${productName} voltou ao estoque!`,
               body: [
                 `Olá, ${u.name as string}!`,
                 "",
                 `Boa notícia: o sneaker "${productName}" que você marcou voltou ao estoque!`,
                 "",
-                "Corra antes que esgote de novo — os drops voam rápido por aqui.",
+                "Corra antes que esgote de novo — as reposições acabam rápido.",
                 "",
                 "— Equipe Astrofeet",
               ].join("\n"),

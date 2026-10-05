@@ -36,7 +36,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="dark"
+      defaultTheme="light"
       enableSystem={false}
       disableTransitionOnChange
     >
@@ -44,7 +44,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         {children}
         <Sonner
           position="bottom-right"
-          theme="dark"
+          theme="light"
           richColors
           closeButton
           toastOptions={{
