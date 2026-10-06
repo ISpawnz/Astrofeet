@@ -5,12 +5,19 @@ import { parseJSON, required, str } from "@/server/http";
 import { sendEmailNotification } from "@/server/notifications";
 import { slugify } from "@/shared/format";
 
-// Só caminhos locais (/...) ou https://. Bloqueia javascript:, data:, http:.
-const imageUrl = z
-  .string()
-  .trim()
-  .max(500)
-  .refine((v) => /^\/(?!\/)/.test(v) || /^https:\/\//i.test(v));
+// Imagem de produto: caminho local (/...), https:// ou upload do admin como data URL de
+// imagem raster (até ~2 MB). Bloqueia javascript:, http:, SVG (pode conter script) etc.
+const imageUrl = z.union([
+  z
+    .string()
+    .trim()
+    .max(500)
+    .regex(/^(\/(?!\/)|https:\/\/)/i),
+  z
+    .string()
+    .max(2_900_000)
+    .regex(/^data:image\/(png|jpe?g|webp|gif|avif);base64,[a-z0-9+/=]+$/i),
+]);
 
 const fields = {
   name: required("Nome do produto é obrigatório.", 120).min(2, "Nome do produto é obrigatório."),
