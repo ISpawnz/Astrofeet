@@ -4,7 +4,7 @@
 push na main ──► GitHub Actions: npm ci → typecheck → lint → build
                      │  (SSH com DEPLOY_SSH_KEY, só execução de comando)
                      ▼
-VPS, usuário claude-deploy (sem root), /home/claude-deploy/site
+VPS, usuário claude-deploy, /home/claude-deploy/site (o app roda sem root)
    releases/<sha>/        3 últimas versões
    current ──► releases/<sha>
    shared/.env            segredos (600), reescrito a cada deploy
@@ -30,9 +30,28 @@ Em **github.com/ISpawnz/Astrofeet → Settings → Secrets and variables → Act
 
 O admin só é criado quando o banco ainda não existe (primeiro deploy). Depois disso, trocar a senha é pela própria loja.
 
-## 2. Proxy reverso na VPS (admin da VPS, uma vez)
+## 2. Proxy reverso na VPS
 
-Use o mesmo servidor web que já atende o spawn77.com. Para saber qual é: `sudo ss -ltnp | grep -E ':(80|443) '`.
+**Automático** quando o `claude-deploy` tem sudo sem senha: o passo _Publicar no proxy reverso_ roda
+`deploy/setup-proxy.sh` como root. Ele:
+
+- detecta o servidor que já atende o spawn77.com (nginx ou Caddy) e só **cria** um arquivo próprio
+  (`/etc/nginx/sites-available/astrofeet` ou `/etc/nginx/conf.d/astrofeet.conf`; no Caddy, `/etc/caddy/astrofeet.caddy`
+  com um `import` no fim do Caddyfile);
+- valida a configuração inteira (`nginx -t` / `caddy validate`) e faz **reload**, nunca restart; se a validação falhar,
+  desfaz tudo e o job fica vermelho, sem tocar no spawn77.com;
+- não mexe em nada se outro bloco já atende `astrofeet.spawn77.com`;
+- no nginx com HTTPS, reaproveita um certificado da máquina que cubra o nome (ex.: `*.spawn77.com`); se não houver,
+  gera um autoassinado, aceito pela Cloudflare em SSL **Full** (em **Full (strict)**, instale um Origin Certificate
+  da Cloudflare para `*.spawn77.com`);
+- com Cloudflare Tunnel ou outro servidor, só avisa no log o que configurar.
+
+> **Segurança:** a chave do GitHub com sudo dá root na VPS do spawn77.com a quem puder alterar este repositório. Depois
+> do primeiro deploy verde, recomendo revogar o sudo (`sudo deluser claude-deploy sudo` ou apagar a regra em
+> `/etc/sudoers.d`). Os deploys seguintes continuam funcionando: o passo do proxy é pulado e a configuração criada fica.
+
+**Manual**, se preferir não dar sudo: use o mesmo servidor web que já atende o spawn77.com. Para saber qual é:
+`sudo ss -ltnp | grep -E ':(80|443) '`.
 
 **nginx**, em `/etc/nginx/sites-available/astrofeet` e com link simbólico em `sites-enabled`:
 
@@ -94,4 +113,4 @@ sozinho para a anterior e o job fica vermelho, com o log do app.
 | backup do banco         | `cp ~/site/shared/data/astrofeet.json ~/backup-$(date +%F).json`                              |
 | religar após reboot     | automático via `crontab @reboot` (o deploy registra). Sem crontab, rode `~/site/start.sh`.    |
 
-O Node 22 é instalado em `~/site/.node` se a VPS não tiver Node 20+. Nada disso precisa de root.
+O Node 22 é instalado em `~/site/.node` se a VPS não tiver Node 20+. Nada disso precisa de root; só o passo do proxy usa.

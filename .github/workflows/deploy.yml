@@ -108,6 +108,16 @@ jobs:
       - name: Ativar na VPS
         run: ssh vps "bash '$DEPLOY_PATH/incoming/remote-deploy.sh' '$GITHUB_SHA' '$DEPLOY_PATH' '$APP_PORT'"
 
+      - name: Publicar no proxy reverso
+        # Único passo com root (sudo sem senha). O script vai pelo stdin, nunca fica num
+        # diretório gravável pelo claude-deploy. Sem sudo, pula e vale o proxy já configurado.
+        run: |
+          if ssh vps "sudo -n true" 2>/dev/null; then
+            ssh vps "sudo -n bash -s -- '${PUBLIC_URL#https://}' '$APP_PORT'" < deploy/setup-proxy.sh
+          else
+            echo "::notice::claude-deploy sem sudo sem senha; proxy reverso não alterado (docs/DEPLOY.md, passo 2)."
+          fi
+
       - name: Checar site público
         continue-on-error: true # depende do proxy/DNS (docs/DEPLOY.md); não derruba o deploy
         run: |
