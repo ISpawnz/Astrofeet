@@ -1,15 +1,10 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useUIStore } from "@/stores/ui";
 import { motion } from "framer-motion";
-import { Ruler, X } from "lucide-react";
+import { Ruler } from "lucide-react";
+import { fadeUp } from "@/components/shared/motion";
 
 const ROWS = [
   { br: 36, eu: 37, us: 5, cm: 22.5 },
@@ -49,12 +44,12 @@ export function SizeGuideModal() {
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? null : close())}>
       <DialogContent
-        className="max-h-[88vh] overflow-y-auto border-white/10 bg-[#0a0e1f]/95 p-0 backdrop-blur-xl sm:max-w-2xl"
+        className="max-h-[88vh] overflow-y-auto border-black/10 bg-background p-0 backdrop-blur-xl sm:max-w-2xl"
         aria-describedby="size-guide-desc"
       >
-        <DialogHeader className="border-b border-white/10 px-6 py-5">
+        <DialogHeader className="border-b border-black/10 px-6 py-5">
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--neon-cyan)]/15 text-[var(--neon-cyan)]">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand)]/15 text-[var(--brand)]">
               <Ruler className="h-4 w-4" />
             </span>
             Guia de medidas
@@ -62,22 +57,19 @@ export function SizeGuideModal() {
           <DialogDescription id="size-guide-desc" className="sr-only">
             Tabela de conversão de tamanhos e dicas para acertar na escolha.
           </DialogDescription>
-          <p className="text-sm text-muted-foreground">
-            Encontre seu tamanho ideal e evite trocas.
-          </p>
+          <p className="text-sm text-muted-foreground">Encontre seu tamanho ideal e evite trocas.</p>
         </DialogHeader>
 
         <div className="space-y-6 px-6 py-6">
           {/* Table */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...fadeUp}
             transition={{ duration: 0.35 }}
-            className="overflow-hidden rounded-2xl border border-white/10"
+            className="overflow-hidden rounded-2xl border border-black/10"
           >
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-white/[0.04] text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <tr className="bg-black/[0.024] text-left text-xs tracking-wider text-muted-foreground uppercase">
                   <th className="px-4 py-3 font-semibold">BR</th>
                   <th className="px-4 py-3 font-semibold">EU</th>
                   <th className="px-4 py-3 font-semibold">US</th>
@@ -88,13 +80,11 @@ export function SizeGuideModal() {
                 {ROWS.map((r, i) => (
                   <tr
                     key={r.br}
-                    className={`border-t border-white/5 transition hover:bg-white/[0.03] ${
-                      i % 2 ? "bg-white/[0.01]" : ""
+                    className={`border-t border-black/5 transition hover:bg-black/[0.02] ${
+                      i % 2 ? "bg-black/[0.02]" : ""
                     }`}
                   >
-                    <td className="px-4 py-2.5 font-bold text-[var(--neon-cyan)]">
-                      {r.br}
-                    </td>
+                    <td className="px-4 py-2.5 font-bold text-[var(--brand)]">{r.br}</td>
                     <td className="px-4 py-2.5">{r.eu}</td>
                     <td className="px-4 py-2.5">{r.us}</td>
                     <td className="px-4 py-2.5">{r.cm}</td>
@@ -106,25 +96,22 @@ export function SizeGuideModal() {
 
           {/* How to measure */}
           <div>
-            <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-foreground/80">
-              Como medir seu pé
-            </h3>
+            <h3 className="mb-3 text-sm font-bold tracking-wider text-foreground/80 uppercase">Como medir seu pé</h3>
             <ol className="space-y-2 text-sm text-muted-foreground">
               <li className="flex gap-2">
-                <span className="font-bold text-[var(--neon-cyan)]">1.</span>
+                <span className="font-bold text-[var(--brand)]">1.</span>
                 Coloque uma folha de papel no chão, encostada na parede.
               </li>
               <li className="flex gap-2">
-                <span className="font-bold text-[var(--neon-cyan)]">2.</span>
-                Pise na folha com o calcanhar na parede, com a meia que vai
-                usar.
+                <span className="font-bold text-[var(--brand)]">2.</span>
+                Pise na folha com o calcanhar na parede, com a meia que vai usar.
               </li>
               <li className="flex gap-2">
-                <span className="font-bold text-[var(--neon-cyan)]">3.</span>
+                <span className="font-bold text-[var(--brand)]">3.</span>
                 Marque a ponta do dedo mais longo e meça do calcanhar à marca.
               </li>
               <li className="flex gap-2">
-                <span className="font-bold text-[var(--neon-cyan)]">4.</span>
+                <span className="font-bold text-[var(--brand)]">4.</span>
                 Compare o comprimento (em cm) com a tabela acima.
               </li>
             </ol>
@@ -132,15 +119,12 @@ export function SizeGuideModal() {
 
           {/* Tips */}
           <div>
-            <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-foreground/80">
+            <h3 className="mb-3 text-sm font-bold tracking-wider text-foreground/80 uppercase">
               Dicas de quem entende
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
               {TIPS.map((t) => (
-                <div
-                  key={t.title}
-                  className="rounded-2xl border border-white/5 bg-white/[0.02] p-4"
-                >
+                <div key={t.title} className="rounded-2xl border border-black/5 bg-black/[0.02] p-4">
                   <p className="text-sm font-semibold">{t.title}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{t.desc}</p>
                 </div>

@@ -1,45 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  Truck,
-  RefreshCw,
-  ShieldCheck,
-  Headset,
-  Instagram,
-  Twitter,
-  Youtube,
-  Github,
-  Send,
-} from "lucide-react";
+import { Instagram, Twitter, Youtube } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
-import { toast } from "sonner";
-
-// ---------------------------------------------------------------------------
-// Data
-// ---------------------------------------------------------------------------
-
-const TRUST = [
-  { emoji: "🚀", title: "Entrega orbital", desc: "Frete grátis acima de R$300" },
-  { emoji: "🔄", title: "Troca fácil", desc: "30 dias para trocar ou devolver" },
-  { emoji: "🔒", title: "Pagamento seguro", desc: "Cartão, Pix ou Boleto" },
-  { emoji: "🛸", title: "Suporte 24/7", desc: "Nave AI pronta pra te ajudar" },
-];
 
 const SOCIALS = [
   { icon: Instagram, label: "Instagram", href: "#" },
-  { icon: Twitter, label: "Twitter / X", href: "#" },
-  { icon: Youtube, label: "Youtube", href: "#" },
-  { icon: Github, label: "Github", href: "#" },
+  { icon: Twitter, label: "X (Twitter)", href: "#" },
+  { icon: Youtube, label: "YouTube", href: "#" },
 ];
 
 const LINK_COLUMNS = [
   {
-    title: "Explorar",
+    title: "Comprar",
     links: [
-      { label: "Drops", action: "products" as const, params: {} },
-      { label: "Novidades", action: "products" as const, params: { sort: "newest" } },
+      { label: "Lançamentos", action: "products" as const, params: { sort: "newest" } },
+      { label: "Todos os tênis", action: "products" as const, params: {} },
       { label: "Mais vendidos", action: "products" as const, params: { bestSeller: "true" } },
       { label: "Guia de medidas", action: "size-guide" as const, params: {} },
     ],
@@ -49,11 +24,11 @@ const LINK_COLUMNS = [
     links: [
       { label: "Rastrear pedido", action: "track-order" as const, params: {} },
       { label: "Trocas e devoluções", action: "info" as const, params: { page: "trocas" } },
-      { label: "Fale com a Nave", action: "nave" as const, params: {} },
+      { label: "Fale conosco", action: "assistant" as const, params: {} },
     ],
   },
   {
-    title: "Sobre",
+    title: "Empresa",
     links: [
       { label: "Quem somos", action: "info" as const, params: { page: "quem-somos" } },
       { label: "Sustentabilidade", action: "info" as const, params: { page: "sustentabilidade" } },
@@ -62,147 +37,64 @@ const LINK_COLUMNS = [
   },
 ] as const;
 
-// ---------------------------------------------------------------------------
-// Footer
-// ---------------------------------------------------------------------------
-
 export function Footer() {
   const navigate = useUIStore((s) => s.navigate);
   const openSizeGuide = useUIStore((s) => s.openSizeGuide);
-  const openNave = useUIStore((s) => s.openNave);
-  const [email, setEmail] = useState("");
-
-  function handleNewsletter(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim()) return;
-    toast.success("Você entrou na órbita! Fique de olho nos drops. 🚀");
-    setEmail("");
-  }
+  const openAssistant = useUIStore((s) => s.openNave);
 
   function handleLinkClick(action: string, params: Record<string, string>) {
-    if (action === "size-guide") {
-      openSizeGuide();
-    } else if (action === "nave") {
-      openNave();
-    } else {
-      navigate(action as Parameters<typeof navigate>[0], params);
-    }
+    if (action === "size-guide") openSizeGuide();
+    else if (action === "assistant") openAssistant();
+    else navigate(action as Parameters<typeof navigate>[0], params);
   }
 
   return (
-    <footer className="mt-auto border-t border-white/10 bg-black/30 backdrop-blur-md">
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-        {/* ── Social links row ── */}
-        <div className="mb-10 flex items-center justify-center gap-3">
-          {SOCIALS.map((s) => (
-            <motion.a
-              key={s.label}
-              href={s.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={s.label}
-              whileHover={{ scale: 1.12 }}
-              whileTap={{ scale: 0.95 }}
-              className="glass-chip flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-muted-foreground transition-all duration-200 hover:border-[var(--neon-cyan)]/50 hover:text-[var(--neon-cyan)] hover:shadow-[0_0_16px_var(--neon-cyan)]"
-            >
-              <s.icon className="h-4.5 w-4.5" />
-            </motion.a>
-          ))}
-        </div>
-
-        {/* ── Trust badges ── */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {TRUST.map((t) => (
-            <motion.div
-              key={t.title}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4 }}
-              className="glass flex items-start gap-3 rounded-2xl border border-white/10 p-4"
-            >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--neon-cyan)]/10 text-lg">
-                {t.emoji}
-              </span>
-              <div>
-                <p className="text-sm font-semibold">{t.title}</p>
-                <p className="text-xs text-muted-foreground">{t.desc}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Orbit divider ── */}
-      <div className="orbit-divider" />
-
-      {/* ── Main footer content ── */}
-      <div className="mx-auto max-w-7xl px-4 pb-10 pt-10 sm:px-6">
-        <div className="grid gap-8 md:grid-cols-4">
-          {/* Brand + newsletter */}
-          <div className="space-y-5">
-            <div className="flex items-center gap-2">
-              <span className="animate-astro-pulse text-xl font-black text-gradient-neon">
-                ASTROFEET
-              </span>
-            </div>
-            <p className="max-w-xs text-sm text-muted-foreground">
-              Sneakers com visual de outro planeta. Cada drop é uma viagem pela
-              galáxia da moda.
-            </p>
-
-            {/* Newsletter */}
-            <div className="space-y-2">
-              <p className="text-sm font-semibold">Fique por dentro dos drops</p>
-              <p className="text-xs text-muted-foreground">
-                Receba ofertas exclusivas para quem viaja entre as estrelas.
-              </p>
-              <form onSubmit={handleNewsletter} className="flex gap-2">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Seu e-mail"
-                  required
-                  className="h-10 w-full rounded-full border border-white/10 bg-white/5 px-4 text-sm outline-none placeholder:text-muted-foreground focus:border-[var(--neon-cyan)] transition-colors"
-                />
-                <button
-                  type="submit"
-                  className="h-10 shrink-0 rounded-full bg-[var(--neon-cyan)] px-4 text-sm font-semibold text-black transition hover:bg-[var(--neon-cyan)]/90 hover:shadow-[0_0_16px_var(--neon-cyan)]"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </form>
-            </div>
+    <footer className="mt-auto bg-foreground text-background">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+        <div className="space-y-4">
+          <p className="text-2xl font-black tracking-tighter uppercase">Astrofeet</p>
+          <p className="max-w-xs text-sm text-white/65">
+            Tênis com design próprio para correr, andar e viver a cidade.
+          </p>
+          <div className="flex gap-2">
+            {SOCIALS.map((s) => (
+              <a
+                key={s.label}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={s.label}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:border-white hover:text-white"
+              >
+                <s.icon className="h-4 w-4" />
+              </a>
+            ))}
           </div>
-
-          {/* Link columns */}
-          {LINK_COLUMNS.map((col) => (
-            <div key={col.title} className="glass-strong rounded-2xl border border-white/10 p-4">
-              <p className="mb-3 text-sm font-semibold">{col.title}</p>
-              <ul className="space-y-2.5">
-                {col.links.map((link) => (
-                  <li key={link.label}>
-                    <button
-                      onClick={() => handleLinkClick(link.action, { ...link.params })}
-                      className="text-sm text-muted-foreground text-glow-hover transition-colors hover:text-foreground"
-                    >
-                      {link.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
         </div>
+
+        {LINK_COLUMNS.map((col) => (
+          <nav key={col.title} aria-label={col.title}>
+            <p className="mb-4 text-sm font-bold">{col.title}</p>
+            <ul className="space-y-3">
+              {col.links.map((link) => (
+                <li key={link.label}>
+                  <button
+                    onClick={() => handleLinkClick(link.action, { ...link.params })}
+                    className="text-sm text-white/65 transition-colors hover:text-white"
+                  >
+                    {link.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))}
       </div>
 
-      {/* ── Bottom bar ── */}
-      <div className="orbit-divider" />
-      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
-        <div className="flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground sm:flex-row">
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 text-xs text-white/55 sm:flex-row sm:px-6">
           <p>© 2026 Astrofeet. Todos os direitos reservados.</p>
-          <p>Feito com 💜 e stardust</p>
+          <p>Pix · Cartão de crédito · Boleto</p>
         </div>
       </div>
     </footer>

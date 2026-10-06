@@ -1,83 +1,53 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { db } from "@/server/db";
-import {
-  hashPassword,
-  verifyPassword,
-  signToken,
-  verifyToken,
-} from "@/server/crypto";
+import { hashPassword, verifyPassword, signToken, verifyToken, passwordStamp, SESSION_MAX_AGE } from "@/server/crypto";
+import { fail } from "@/server/http";
 import type { PublicUser, Role } from "@/shared/types";
 
 export { hashPassword, verifyPassword };
 
-const COOKIE_NAME = "astrofeet_session";
+const COOKIE = "astrofeet_session";
+type UserRow = Record<string, unknown>;
 
-export async function setSessionCookie(
-  userId: string,
-  role: Role,
-  email: string,
-  name: string,
-) {
-  const token = signToken({ uid: userId, role, email, name });
-  const store = await cookies();
-  store.set(COOKIE_NAME, token, {
+export const publicUser = (u: UserRow): PublicUser => ({
+  id: u.id as string,
+  name: u.name as string,
+  email: u.email as string,
+  role: u.role as Role,
+});
+
+export async function setSessionCookie(user: UserRow) {
+  (await cookies()).set(COOKIE, signToken(user.id as string, passwordStamp(user.passwordHash as string)), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: SESSION_MAX_AGE,
     priority: "high",
   });
 }
 
 export async function clearSessionCookie() {
-  const store = await cookies();
-  store.delete(COOKIE_NAME);
+  (await cookies()).delete(COOKIE);
 }
 
-export async function getSession() {
-  const store = await cookies();
-  const token = store.get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  return verifyToken(token);
-}
-
-// A assinatura do cookie prova que o token é nosso, mas não que a conta ainda
-// existe ou que o papel não mudou. Por isso o usuário é sempre relido do banco:
-// admin rebaixado/removido perde o acesso na hora, sem esperar o token expirar.
+// O cookie só prova quem é o usuário; conta, papel e senha atual são sempre
+// relidos do banco. Admin rebaixado/removido ou senha trocada derruba a sessão na hora.
 export async function getCurrentUser(): Promise<PublicUser | null> {
-  const session = await getSession();
+  const token = (await cookies()).get(COOKIE)?.value;
+  const session = token ? verifyToken(token) : null;
   if (!session) return null;
   const user = await db.user.findUnique({ where: { id: session.uid } });
-  if (!user) return null;
-  return {
-    id: user.id as string,
-    name: user.name as string,
-    email: user.email as string,
-    role: user.role as Role,
-  };
+  if (!user || passwordStamp(user.passwordHash as string) !== session.pwd) return null;
+  return publicUser(user);
+}
+
+export async function requireUser(): Promise<PublicUser> {
+  return (await getCurrentUser()) ?? fail("Não autenticado.", 401);
 }
 
 export async function requireAdmin(): Promise<PublicUser> {
-  const user = await getCurrentUser();
-  if (!user) {
-    throw new AuthError("Não autenticado.", 401);
-  }
-  if (user.role !== "admin") {
-    throw new AuthError("Acesso restrito.", 403);
-  }
-  return user;
-}
-
-export class AuthError extends Error {
-  status: number;
-  constructor(message: string, status = 400) {
-    super(message);
-    this.status = status;
-  }
-}
-
-export async function resolveUserByEmail(email: string) {
-  return db.user.findUnique({ where: { email: email.toLowerCase() } });
+  const user = await requireUser();
+  return user.role === "admin" ? user : fail("Acesso restrito.", 403);
 }

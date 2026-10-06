@@ -1,37 +1,29 @@
-import { NextRequest } from "next/server";
-import { HttpError, handleApiError, ok } from "@/server/http";
+import { z } from "zod";
+import { body, route } from "@/server/http";
 import { rateLimit } from "@/server/rate-limit";
 import { resolveCoupon } from "@/server/coupons";
+import { formatPrice } from "@/shared/format";
 
 export const runtime = "nodejs";
 
-// Prévia do cupom (não aplica). Mesma regra do checkout (server/coupons.ts).
-// Com rate limit para impedir enumeração de códigos por força bruta.
-export async function POST(req: NextRequest) {
-  try {
-    rateLimit(req, "coupons:validate", 30, 10 * 60 * 1000);
-    const body = await req.json().catch(() => ({}));
-    const code = String(body.code ?? "").trim().toUpperCase().slice(0, 40);
-    const subtotal = Number(body.subtotal ?? 0);
+const Preview = z.object({
+  code: z.string().trim().toUpperCase().min(1, "Informe um cupom.").max(40),
+  subtotal: z.coerce.number().min(0, "Subtotal inválido."),
+});
 
-    if (!code) throw new HttpError("Informe um cupom.", 400);
-    if (!Number.isFinite(subtotal) || subtotal < 0)
-      throw new HttpError("Subtotal inválido.", 400);
-
-    const { coupon, belowMin } = await resolveCoupon(code, subtotal, { soft: true });
-    if (!coupon) {
-      const min = belowMin ?? 0;
-      return ok({
+// Prévia do cupom (não aplica). Mesma regra do checkout; rate limit contra enumeração de códigos.
+export const POST = route(async (req) => {
+  rateLimit(req, "coupons:validate", 30, 10 * 60 * 1000);
+  const { code, subtotal } = await body(req, Preview);
+  const { coupon, belowMin = 0 } = await resolveCoupon(code, subtotal, { soft: true });
+  return coupon
+    ? { valid: true, ...coupon }
+    : {
         valid: false,
         code,
         description: "",
-        minSubtotal: min,
+        minSubtotal: belowMin,
         discount: 0,
-        message: `Válido apenas acima de R$${min.toFixed(2).replace(".", ",")}.`,
-      });
-    }
-    return ok({ valid: true, ...coupon });
-  } catch (e) {
-    return handleApiError(e);
-  }
-}
+        message: `Válido apenas acima de ${formatPrice(belowMin)}.`,
+      };
+});

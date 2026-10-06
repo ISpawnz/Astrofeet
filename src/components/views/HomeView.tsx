@@ -1,16 +1,24 @@
 "use client";
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Flame, Rocket, ShieldCheck, Clock, Trash2 } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Trash2, Truck, RefreshCcw, CreditCard } from "lucide-react";
 import { api } from "@/client/api";
 import { useUIStore } from "@/stores/ui";
 import { useCartStore } from "@/stores/cart";
 import { useRecentStore } from "@/stores/recent";
-import { ProductCard } from "./ProductCard";
+import { ProductCard, cardProduct } from "./ProductCard";
 import { formatPrice } from "@/shared/format";
 import { toast } from "sonner";
 import type { Product } from "@/shared/types";
+import { fadeUp } from "@/components/shared/motion";
+
+const COUPONS = [
+  { code: "GALAXIA10", label: "10% off", desc: "na primeira compra" },
+  { code: "ORBITA50", label: "R$50 off", desc: "acima de R$300" },
+  { code: "DROP15", label: "15% off", desc: "acima de R$500" },
+];
 
 export function HomeView() {
   const navigate = useUIStore((s) => s.navigate);
@@ -33,249 +41,195 @@ export function HomeView() {
   });
 
   const hero = featured?.[0];
-  const drops = featured?.slice(1, 4) ?? [];
+  const highlights = featured?.slice(1, 4) ?? [];
+
+  // Uma foto por categoria, a partir do catálogo já carregado.
+  const categories = useMemo(() => {
+    const seen = new Map<string, Product>();
+    for (const p of newest ?? []) if (!seen.has(p.category)) seen.set(p.category, p);
+    return Array.from(seen.entries()).slice(0, 4);
+  }, [newest]);
 
   function heroAdd() {
     if (!hero) return;
     const size = hero.sizes[Math.floor(hero.sizes.length / 2)] ?? hero.sizes[0];
     if (size) {
       add(hero, size, 1);
-      toast.success(`${hero.name} adicionado ao carrinho`);
+      toast.success(`${hero.name} (tam. ${size}) adicionado ao carrinho`);
     }
   }
 
   return (
     <div className="flex flex-col">
       {/* ---------- HERO ---------- */}
-      <section className="relative overflow-hidden comet-trail">
-        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-2 lg:pt-20">
-          {/* Copy */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="relative z-10 text-center lg:text-left"
-          >
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-foreground/80 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5 text-[var(--neon-cyan)]" />
-              Drop limitado · edição galáxia
-            </span>
-            <h1 className="mt-5 text-balance text-5xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-              Sneakers com
-              <br />
-              <span className="text-gradient-animated">
-                visual de outro
-              </span>
-              <br />
-              planeta.
-            </h1>
-            <p className="mx-auto mt-5 max-w-md text-pretty text-base text-muted-foreground lg:mx-0">
-              Cada par da Astrofeet é uma nave para seus pés. Explore os drops,
-              escolha seu tamanho e decole.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-              <button
-                onClick={() => navigate("products")}
-                className="btn-cosmic group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-3 text-sm font-bold text-black transition hover:opacity-90"
-              >
-                Explorar drops
-                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-              </button>
-              {hero && (
-                <button
-                  onClick={() => navigate("product", { id: hero.slug })}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold backdrop-blur transition hover:bg-white/10"
-                >
-                  Ver destaque
-                </button>
-              )}
-            </div>
-            {/* mini stats */}
-            <div className="mt-9 flex items-center justify-center gap-6 text-center lg:justify-start">
-              {[
-                { n: "6", l: "drops em órbita" },
-                { n: "4.7★", l: "avaliação média" },
-                { n: "30d", l: "para trocar" },
-              ].map((s) => (
-                <div key={s.l}>
-                  <p className="text-xl font-black text-gradient-neon">{s.n}</p>
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {s.l}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+      <section className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-10 pb-14 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-16">
+        <motion.div {...fadeUp} transition={{ duration: 0.5 }}>
+          <p className="text-xs font-bold tracking-[0.2em] text-[var(--brand)] uppercase">Nova coleção</p>
+          <h1 className="mt-4 text-5xl leading-[0.95] font-black tracking-tighter text-balance sm:text-6xl lg:text-7xl xl:text-8xl">
+            Feito para andar mais longe.
+          </h1>
+          <p className="mt-6 max-w-md text-lg text-pretty text-muted-foreground">
+            Tênis de corrida, casual e skate com design próprio, conforto para o dia inteiro e entrega para todo o
+            Brasil.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => navigate("products")}
+              className="btn-cosmic group inline-flex h-12 items-center gap-2 rounded-full bg-[var(--brand)] px-7 text-sm font-bold text-white hover:bg-[var(--brand)]/90"
+            >
+              Comprar agora
+              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+            </button>
+            <button
+              onClick={() => navigate("products", { sort: "newest" })}
+              className="inline-flex h-12 items-center rounded-full border border-foreground px-7 text-sm font-bold transition hover:bg-foreground hover:text-background"
+            >
+              Ver lançamentos
+            </button>
+          </div>
+          <ul className="mt-10 grid max-w-lg grid-cols-3 gap-4 border-t border-border pt-6 text-sm">
+            {[
+              { icon: Truck, t: "Frete grátis", d: "acima de R$300" },
+              { icon: RefreshCcw, t: "Troca grátis", d: "em até 30 dias" },
+              { icon: CreditCard, t: "10x sem juros", d: "no cartão" },
+            ].map(({ icon: Icon, t, d }) => (
+              <li key={t}>
+                <Icon className="h-5 w-5" aria-hidden />
+                <p className="mt-2 font-semibold">{t}</p>
+                <p className="text-xs text-muted-foreground">{d}</p>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
 
-          {/* Hero product */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="relative"
-          >
-            <div className="relative mx-auto aspect-square max-w-md overflow-hidden rounded-3xl">
-              {/* orbit rings */}
-              <div className="absolute inset-0 rounded-full border border-white/5 animate-spin-slow" />
-              <div className="absolute inset-8 rounded-full border border-white/[0.07]" />
-              <div className="absolute inset-16 rounded-full border border-white/[0.04]" />
-              {/* glow */}
-              {hero && (
-                <div
-                  className="absolute left-1/2 top-1/2 h-2/3 w-2/3 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-50 blur-3xl"
-                  style={{ background: hero.accent }}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+        >
+          {hero ? (
+            <div className="group relative aspect-[4/3] overflow-hidden rounded-3xl bg-[var(--surface)] sm:aspect-square lg:aspect-[4/5]">
+              <button
+                onClick={() => navigate("product", { id: hero.slug })}
+                className="absolute inset-0"
+                aria-label={`Ver ${hero.name}`}
+              >
+                <img
+                  src={hero.images[0]}
+                  alt={hero.name}
+                  className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
                 />
-              )}
-              {hero && (
-                <div className="absolute inset-0 flex items-center justify-center p-8">
-                  <img
-                    src={hero.images[0]}
-                    alt={hero.name}
-                    className="h-full w-full animate-astro-float object-contain drop-shadow-2xl"
-                  />
-                </div>
-              )}
-              {/* floating price chip */}
-              {hero && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-2xl glass-strong px-5 py-3 text-center"
-                >
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              </button>
+              <div className="absolute inset-x-4 bottom-4 flex items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-lg sm:inset-x-6 sm:bottom-6">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
                     {hero.badge ?? "Em destaque"}
                   </p>
-                  <p className="text-sm font-bold">{hero.name}</p>
-                  <button
-                    onClick={heroAdd}
-                    className="btn-cosmic mt-1 text-xs font-semibold text-[var(--neon-cyan)]"
-                  >
-                    Adicionar por {formatPrice(hero.price)} →
-                  </button>
-                </motion.div>
-              )}
+                  <p className="truncate font-bold">{hero.name}</p>
+                  <p className="text-sm">{formatPrice(hero.price)}</p>
+                </div>
+                <button
+                  onClick={heroAdd}
+                  className="shrink-0 rounded-full bg-foreground px-4 py-2.5 text-sm font-bold text-background transition hover:bg-foreground/85"
+                >
+                  Adicionar
+                </button>
+              </div>
             </div>
-          </motion.div>
-        </div>
+          ) : (
+            <div className="shimmer aspect-[4/3] rounded-3xl sm:aspect-square lg:aspect-[4/5]" />
+          )}
+        </motion.div>
       </section>
 
-      {/* ---------- DROPS LIMITADOS ---------- */}
-      {drops.length > 0 && (
-        <Section
-          eyebrow="Edição galáxia"
-          title="Escolha seu drop"
-          icon={<Flame className="h-4 w-4 text-[var(--neon-magenta)]" />}
-          action={() => navigate("products")}
-          actionLabel="Ver todos"
-        >
-          <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${colsLg(drops.length, 3)}`}>
-            {drops.map((p, i) => (
+      {/* ---------- CATEGORIAS ---------- */}
+      {categories.length > 0 && (
+        <Section title="Compre por categoria">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {categories.map(([category, p]) => (
+              <button
+                key={category}
+                onClick={() => navigate("products", { category })}
+                className="group relative aspect-[4/5] overflow-hidden rounded-2xl bg-[var(--surface)] text-left"
+              >
+                <img
+                  src={p.images[0]}
+                  alt=""
+                  className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                />
+                <span className="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-full bg-white px-4 py-2.5 text-sm font-bold shadow-sm">
+                  {category}
+                  <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </span>
+              </button>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* ---------- LANÇAMENTOS ---------- */}
+      {newest && newest.length > 0 && (
+        <Section title="Lançamentos" action={() => navigate("products", { sort: "newest" })} actionLabel="Ver todos">
+          <div className={`grid grid-cols-2 gap-x-4 gap-y-8 ${colsLg(Math.min(newest.length, 4), 4)}`}>
+            {newest.slice(0, 4).map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
           </div>
         </Section>
       )}
 
-      {/* ---------- PROMO BANNER ---------- */}
-      <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="gradient-border-animated relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[var(--neon-violet)]/15 via-transparent to-[var(--neon-magenta)]/15 p-8 sm:p-12"
-        >
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[var(--neon-magenta)] opacity-20 blur-3xl" />
-          <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-[var(--neon-cyan)] opacity-20 blur-3xl" />
-          <div className="relative flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+      {/* ---------- BANNER + CUPONS ---------- */}
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
+        <div className="overflow-hidden rounded-3xl bg-foreground text-background">
+          <div className="grid gap-8 p-8 sm:p-12 lg:grid-cols-[1.2fr_1fr] lg:items-center">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
-                <Rocket className="h-3.5 w-3.5" />
-                Promoção da semana
-              </span>
-              <h3 className="mt-3 max-w-xl text-3xl font-black sm:text-4xl">
-                Frete grátis para toda a galáxia acima de{" "}
-                <span className="text-gradient-neon">R$300</span>
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Aproveite o impulso e leve seu sneaker orbital com entrega por
-                nossa conta.
-              </p>
+              <p className="text-xs font-bold tracking-[0.2em] text-white/60 uppercase">Oferta da semana</p>
+              <h2 className="mt-3 max-w-lg text-4xl leading-[1.05] font-black tracking-tighter sm:text-5xl">
+                Frete grátis em compras acima de R$300.
+              </h2>
+              <button
+                onClick={() => navigate("products")}
+                className="mt-7 inline-flex h-12 items-center gap-2 rounded-full bg-white px-7 text-sm font-bold text-[#111] transition hover:bg-white/85"
+              >
+                Aproveitar
+                <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              onClick={() => navigate("products")}
-              className="btn-cosmic shrink-0 rounded-full bg-white px-6 py-3 text-sm font-bold text-black transition hover:opacity-90"
-            >
-              Aproveitar
-            </button>
+            <ul className="grid gap-2">
+              {COUPONS.map((c) => (
+                <li key={c.code}>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard?.writeText(c.code).catch(() => {});
+                      toast.success(`Cupom ${c.code} copiado! Use no checkout.`);
+                    }}
+                    className="flex w-full items-center justify-between gap-4 rounded-2xl border border-white/15 px-5 py-4 text-left transition hover:border-white/40 hover:bg-white/5"
+                  >
+                    <span>
+                      <span className="block font-mono text-lg font-bold tracking-wide">{c.code}</span>
+                      <span className="text-xs text-white/60">{c.desc}</span>
+                    </span>
+                    <span className="text-right">
+                      <span className="block font-bold">{c.label}</span>
+                      <span className="text-xs text-white/60">Copiar</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
-        </motion.div>
-      </section>
-
-      {/* ---------- COUPON SHOWCASE ---------- */}
-      <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            { code: "GALAXIA10", label: "10% off em tudo", desc: "Bem-vindo à galáxia", color: "var(--neon-cyan)" },
-            { code: "ORBITA50", label: "R$50 off", desc: "Acima de R$300", color: "var(--neon-magenta)" },
-            { code: "DROP15", label: "15% off", desc: "Acima de R$500", color: "var(--neon-lime)" },
-          ].map((c, i) => (
-            <motion.button
-              key={c.code}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-              whileHover={{ y: -4 }}
-              onClick={() => {
-                navigator.clipboard?.writeText(c.code).catch(() => {});
-                toast.success(`Cupom ${c.code} copiado! Use no checkout.`);
-              }}
-              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-white/20"
-            >
-              <div
-                className="absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-20 blur-2xl transition group-hover:opacity-40"
-                style={{ background: c.color }}
-              />
-              <div className="relative flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Cupom
-                  </p>
-                  <p className="font-mono text-lg font-black" style={{ color: c.color }}>
-                    {c.code}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{c.desc}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold">{c.label}</p>
-                  <p className="mt-1 text-[10px] text-muted-foreground opacity-0 transition group-hover:opacity-100">
-                    Clique para copiar
-                  </p>
-                </div>
-              </div>
-            </motion.button>
-          ))}
         </div>
       </section>
 
-      {/* ---------- NOVIDADES ---------- */}
-      {newest && newest.length > 0 && (
+      {/* ---------- DESTAQUES ---------- */}
+      {highlights.length > 0 && (
         <Section
-          eyebrow="Recém-chegados"
-          title="Novidades no radar"
-          icon={
-            <span className="relative flex h-2 w-2">
-              <span className="pulse-dot absolute inline-flex h-full w-full rounded-full bg-[var(--neon-lime)]" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--neon-lime)]" />
-            </span>
-          }
-          action={() => navigate("products", { sort: "newest" })}
-          actionLabel="Ver novidades"
+          title="Edições limitadas"
+          action={() => navigate("products", { featured: "true" })}
+          actionLabel="Ver todos"
         >
-          <div className={`grid grid-cols-2 gap-4 ${colsLg(Math.min(newest.length, 4), 4)}`}>
-            {newest.slice(0, 4).map((p, i) => (
+          <div className={`grid grid-cols-2 gap-x-4 gap-y-8 ${colsLg(highlights.length, 3)}`}>
+            {highlights.map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
           </div>
@@ -285,13 +239,11 @@ export function HomeView() {
       {/* ---------- MAIS VENDIDOS ---------- */}
       {bestSellers && bestSellers.length > 0 && (
         <Section
-          eyebrow="Os preferidos"
-          title="Mais vendidos da órbita"
-          icon={<Flame className="h-4 w-4 text-[var(--neon-lime)]" />}
+          title="Mais vendidos"
           action={() => navigate("products", { bestSeller: "true" })}
-          actionLabel="Ver mais vendidos"
+          actionLabel="Ver todos"
         >
-          <div className={`grid grid-cols-2 gap-4 ${colsLg(Math.min(bestSellers.length, 4), 4)}`}>
+          <div className={`grid grid-cols-2 gap-x-4 gap-y-8 ${colsLg(Math.min(bestSellers.length, 4), 4)}`}>
             {bestSellers.slice(0, 4).map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
@@ -299,126 +251,60 @@ export function HomeView() {
         </Section>
       )}
 
-      {/* ---------- RECENTLY VIEWED ---------- */}
+      {/* ---------- VISTOS RECENTEMENTE ---------- */}
       {recentHydrated && recent.length > 0 && (
-        <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
-          <div className="orbit-divider mb-6" />
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="glass-strong relative overflow-hidden rounded-3xl border border-white/10 p-5 sm:p-7"
-          >
-            {/* glow accents */}
-            <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-[var(--neon-violet)] opacity-15 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-[var(--neon-cyan)] opacity-15 blur-3xl" />
-
-            <div className="relative mb-5 flex items-end justify-between gap-3">
-              <div>
-                <p className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-                  <Clock className="h-4 w-4 text-[var(--neon-violet)]" />
-                  Sua rota recente
-                </p>
-                <h2 className="text-glow-hover mt-1 text-2xl font-black sm:text-3xl">
-                  Vistos recentemente
-                </h2>
-              </div>
-              <button
-                onClick={() => {
-                  clearRecent();
-                  toast.success("Histórico de visualizações limpo.");
-                }}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-[var(--neon-magenta)]/40 hover:bg-[var(--neon-magenta)]/10 hover:text-[var(--neon-magenta)]"
-                aria-label="Limpar histórico de visualizações"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Limpar
-              </button>
-            </div>
-
-            <div className="relative grid grid-cols-2 gap-4 lg:grid-cols-4">
-              {recent.slice(0, 4).map((r, i) => {
-                const product: Product = {
-                  id: r.id,
-                  slug: r.slug,
-                  name: r.name,
-                  brand: r.brand,
-                  category: "",
-                  price: r.price,
-                  description: "",
-                  images: [r.image],
-                  sizes: [],
-                  stock: 0,
-                  rating: 0,
-                  accent: r.accent,
-                  badge: null,
-                  featured: false,
-                  bestSeller: false,
-                  createdAt: r.viewedAt,
-                };
-                return (
-                  <motion.div
-                    key={r.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: i * 0.08 }}
-                  >
-                    <ProductCard product={product} index={i} />
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            <div className="relative mt-6 flex justify-center">
-              <button
-                onClick={() => navigate("products")}
-                className="btn-cosmic group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 py-2.5 text-sm font-bold text-black transition hover:opacity-90"
-              >
-                Continuar explorando
-                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-              </button>
-            </div>
-          </motion.div>
-        </section>
+        <Section
+          title="Vistos recentemente"
+          action={() => {
+            clearRecent();
+            toast.success("Histórico de visualizações limpo.");
+          }}
+          actionLabel="Limpar"
+          actionIcon={<Trash2 className="h-4 w-4" />}
+        >
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
+            {recent.slice(0, 4).map((r, i) => (
+              <ProductCard key={r.id} product={cardProduct(r)} index={i} />
+            ))}
+          </div>
+        </Section>
       )}
 
-      {/* ---------- NEWSLETTER CTA ---------- */}
-      <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6">
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-8 text-center sm:p-14">
-          <div className="absolute inset-0 grid-overlay opacity-30" />
-          <div className="relative">
-            <ShieldCheck className="mx-auto h-8 w-8 text-[var(--neon-cyan)]" />
-            <h3 className="mt-4 text-2xl font-black sm:text-3xl">
-              Entre na órbita da Astrofeet
-            </h3>
-            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              Receba os drops em primeira mão e ofertas exclusivas para quem
-              viaja entre as estrelas.
+      {/* ---------- NEWSLETTER ---------- */}
+      <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6">
+        <div className="grid gap-6 rounded-3xl bg-[var(--surface)] p-8 sm:p-12 lg:grid-cols-2 lg:items-center">
+          <div>
+            <h2 className="text-3xl font-black tracking-tighter sm:text-4xl">Receba os lançamentos primeiro.</h2>
+            <p className="mt-2 max-w-md text-muted-foreground">
+              Novidades, reposições e ofertas exclusivas direto no seu e-mail. Sem spam.
             </p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                toast.success("Inscrição confirmada! Bem-vindo a bordo 🚀");
-                (e.currentTarget as HTMLFormElement).reset();
-              }}
-              className="mx-auto mt-6 flex max-w-md gap-2"
-            >
-              <input
-                type="email"
-                required
-                placeholder="Seu melhor e-mail"
-                className="h-12 flex-1 rounded-full border border-white/10 bg-white/5 px-5 text-sm outline-none placeholder:text-muted-foreground focus:border-[var(--neon-cyan)]"
-              />
-              <button
-                type="submit"
-                className="h-12 shrink-0 rounded-full bg-[var(--neon-cyan)] px-6 text-sm font-bold text-black hover:opacity-90"
-              >
-                Assinar
-              </button>
-            </form>
           </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              toast.success("Inscrição confirmada! Obrigado.");
+              (e.currentTarget as HTMLFormElement).reset();
+            }}
+            className="flex w-full gap-2"
+          >
+            <label htmlFor="newsletter-email" className="sr-only">
+              E-mail
+            </label>
+            <input
+              id="newsletter-email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="Seu melhor e-mail"
+              className="h-12 min-w-0 flex-1 rounded-full border border-input bg-white px-5 text-sm outline-none placeholder:text-muted-foreground focus:border-foreground"
+            />
+            <button
+              type="submit"
+              className="h-12 shrink-0 rounded-full bg-foreground px-6 text-sm font-bold text-background hover:bg-foreground/85"
+            >
+              Assinar
+            </button>
+          </form>
         </div>
       </section>
     </div>
@@ -433,38 +319,29 @@ function colsLg(count: number, max: 3 | 4): string {
 }
 
 function Section({
-  eyebrow,
   title,
-  icon,
   action,
   actionLabel,
+  actionIcon,
   children,
 }: {
-  eyebrow: string;
   title: string;
-  icon?: React.ReactNode;
   action?: () => void;
   actionLabel?: string;
+  actionIcon?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
-      <div className="orbit-divider mb-6" />
-      <div className="mb-5 flex items-end justify-between gap-4">
-        <div>
-          <p className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-            {icon}
-            {eyebrow}
-          </p>
-          <h2 className="text-glow-hover mt-1 text-2xl font-black sm:text-3xl">{title}</h2>
-        </div>
+    <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
+      <div className="mb-6 flex items-end justify-between gap-4">
+        <h2 className="text-2xl font-black tracking-tighter sm:text-3xl">{title}</h2>
         {action && actionLabel && (
           <button
             onClick={action}
-            className="nav-underline group inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[var(--neon-cyan)]"
+            className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline"
           >
             {actionLabel}
-            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+            {actionIcon ?? <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />}
           </button>
         )}
       </div>

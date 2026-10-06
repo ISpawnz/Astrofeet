@@ -1,81 +1,57 @@
 import "server-only";
 import crypto from "node:crypto";
 
-// Password hashing + token signing utilities (no DB dependency, to avoid cycles).
+// Hash de senha + token de sessão assinado (sem dependência do banco, evita ciclos).
 
 const DEV_SECRET = "astrofeet-dev-secret-change-me-in-production-please";
+const WEEK = 60 * 60 * 24 * 7;
 
-function getAuthSecret(): string {
-  const secret = process.env.ASTROFEET_AUTH_SECRET;
-
-  if (process.env.NODE_ENV === "production" && (!secret || secret.length < 32)) {
+function secret(): string {
+  const s = process.env.ASTROFEET_AUTH_SECRET;
+  if (process.env.NODE_ENV === "production" && (!s || s.length < 32))
     throw new Error("ASTROFEET_AUTH_SECRET deve ter pelo menos 32 caracteres em producao.");
-  }
-
-  return secret || DEV_SECRET;
+  return s || DEV_SECRET;
 }
 
-function buf(key: string): Buffer {
-  return crypto.createHash("sha256").update(key).digest();
-}
+const hmac = (data: string) => crypto.createHmac("sha256", secret()).update(data).digest("base64url");
+const safeEqual = (a: string, b: string) =>
+  a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
-  return `scrypt$${salt}$${hash}`;
+  return `scrypt$${salt}$${crypto.scryptSync(password, salt, 64).toString("hex")}`;
 }
 
 export function verifyPassword(password: string, stored: string): boolean {
-  try {
-    const parts = stored.split("$");
-    if (parts.length !== 3 || parts[0] !== "scrypt") return false;
-    const salt = parts[1];
-    const expected = parts[2];
-    const hash = crypto.scryptSync(password, salt, 64).toString("hex");
-    return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(expected));
-  } catch {
-    return false;
-  }
+  const [alg, salt, expected] = stored.split("$");
+  if (alg !== "scrypt" || !salt || !expected) return false;
+  return safeEqual(crypto.scryptSync(password, salt, 64).toString("hex"), expected);
 }
+
+/** Impressão curta do hash da senha: muda quando a senha muda e invalida tokens antigos. */
+export const passwordStamp = (hash: string) => hmac(hash).slice(0, 12);
 
 interface TokenPayload {
   uid: string;
-  role: "customer" | "admin";
-  email: string;
-  name: string;
-  iat: number;
+  pwd: string;
   exp: number;
 }
 
-export function signToken(
-  payload: Omit<TokenPayload, "iat" | "exp">,
-): string {
-  const iat = Math.floor(Date.now() / 1000);
-  const exp = iat + 60 * 60 * 24 * 7;
-  const body: TokenPayload = { ...payload, iat, exp };
-  const data = Buffer.from(JSON.stringify(body)).toString("base64url");
-  const sig = crypto
-    .createHmac("sha256", buf(getAuthSecret()))
-    .update(data)
-    .digest("base64url");
-  return `${data}.${sig}`;
+export const SESSION_MAX_AGE = WEEK;
+
+export function signToken(uid: string, pwd: string): string {
+  const data = Buffer.from(JSON.stringify({ uid, pwd, exp: Math.floor(Date.now() / 1000) + WEEK })).toString(
+    "base64url",
+  );
+  return `${data}.${hmac(data)}`;
 }
 
 export function verifyToken(token: string): TokenPayload | null {
+  const [data, sig] = token.split(".");
+  if (!data || !sig || !safeEqual(sig, hmac(data))) return null;
   try {
-    const [data, sig] = token.split(".");
-    if (!data || !sig) return null;
-    const expected = crypto
-      .createHmac("sha256", buf(getAuthSecret()))
-      .update(data)
-      .digest("base64url");
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected)))
-      return null;
-    const payload = JSON.parse(
-      Buffer.from(data, "base64url").toString("utf8"),
-    ) as TokenPayload;
-    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
-    return payload;
+    const payload = JSON.parse(Buffer.from(data, "base64url").toString("utf8")) as TokenPayload;
+    return payload.exp >= Date.now() / 1000 ? payload : null;
   } catch {
     return null;
   }

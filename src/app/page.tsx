@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { GalaxyBackground } from "@/components/layout/GalaxyBackground";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
@@ -19,38 +18,52 @@ function ViewSkeleton() {
       aria-label="Carregando"
       className="mx-auto w-full max-w-6xl animate-pulse space-y-4 px-4 py-16"
     >
-      <div className="h-8 w-1/3 rounded-lg bg-white/10" />
-      <div className="h-4 w-1/2 rounded bg-white/5" />
+      <div className="h-8 w-1/3 rounded-lg bg-black/[0.06]" />
+      <div className="h-4 w-1/2 rounded bg-black/[0.03]" />
       <div className="grid gap-4 pt-6 sm:grid-cols-2 lg:grid-cols-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-64 rounded-2xl bg-white/5" />
+          <div key={i} className="h-64 rounded-2xl bg-black/[0.03]" />
         ))}
       </div>
     </div>
   );
 }
-const view = (loader: () => Promise<{ default: React.ComponentType }>) =>
-  dynamic(loader, { loading: ViewSkeleton });
-const overlay = (loader: () => Promise<{ default: React.ComponentType }>) =>
-  dynamic(loader, { ssr: false });
+const view = (loader: () => Promise<{ default: React.ComponentType }>) => dynamic(loader, { loading: ViewSkeleton });
+const overlay = (loader: () => Promise<{ default: React.ComponentType }>) => dynamic(loader, { ssr: false });
 
 const ProductsView = view(() => import("@/components/views/ProductsView").then((m) => ({ default: m.ProductsView })));
-const ProductDetailView = view(() => import("@/components/views/ProductDetailView").then((m) => ({ default: m.ProductDetailView })));
+const ProductDetailView = view(() =>
+  import("@/components/views/ProductDetailView").then((m) => ({ default: m.ProductDetailView })),
+);
 const CheckoutView = view(() => import("@/components/views/CheckoutView").then((m) => ({ default: m.CheckoutView })));
-const OrderSuccessView = view(() => import("@/components/views/OrderSuccessView").then((m) => ({ default: m.OrderSuccessView })));
-const AdminView = view(() => import("@/components/views/AdminView").then((m) => ({ default: m.AdminView })));
+const OrderSuccessView = view(() =>
+  import("@/components/views/OrderSuccessView").then((m) => ({ default: m.OrderSuccessView })),
+);
+const AdminView = view(() => import("@/components/admin/AdminView").then((m) => ({ default: m.AdminView })));
 const WishlistView = view(() => import("@/components/views/WishlistView").then((m) => ({ default: m.WishlistView })));
-const TrackOrderView = view(() => import("@/components/views/TrackOrderView").then((m) => ({ default: m.TrackOrderView })));
-const AccountView = view(() => import("@/components/views/AccountView").then((m) => ({ default: m.AccountView })));
+const TrackOrderView = view(() =>
+  import("@/components/views/TrackOrderView").then((m) => ({ default: m.TrackOrderView })),
+);
+const AccountView = view(() => import("@/components/account/AccountView").then((m) => ({ default: m.AccountView })));
 const InfoView = view(() => import("@/components/views/InfoView").then((m) => ({ default: m.InfoView })));
 
 const CartDrawer = overlay(() => import("@/components/views/CartDrawer").then((m) => ({ default: m.CartDrawer })));
 const AuthModal = overlay(() => import("@/components/views/AuthModal").then((m) => ({ default: m.AuthModal })));
-const SizeGuideModal = overlay(() => import("@/components/views/SizeGuideModal").then((m) => ({ default: m.SizeGuideModal })));
-const SearchPalette = overlay(() => import("@/components/views/SearchPalette").then((m) => ({ default: m.SearchPalette })));
-const CompareDrawer = overlay(() => import("@/components/views/CompareDrawer").then((m) => ({ default: m.CompareDrawer })));
-const QuickViewModal = overlay(() => import("@/components/views/QuickViewModal").then((m) => ({ default: m.QuickViewModal })));
-const ShipAssistant = overlay(() => import("@/components/layout/ShipAssistant").then((m) => ({ default: m.ShipAssistant })));
+const SizeGuideModal = overlay(() =>
+  import("@/components/views/SizeGuideModal").then((m) => ({ default: m.SizeGuideModal })),
+);
+const SearchPalette = overlay(() =>
+  import("@/components/views/SearchPalette").then((m) => ({ default: m.SearchPalette })),
+);
+const CompareDrawer = overlay(() =>
+  import("@/components/views/CompareDrawer").then((m) => ({ default: m.CompareDrawer })),
+);
+const QuickViewModal = overlay(() =>
+  import("@/components/views/QuickViewModal").then((m) => ({ default: m.QuickViewModal })),
+);
+const ShipAssistant = overlay(() =>
+  import("@/components/layout/ShipAssistant").then((m) => ({ default: m.ShipAssistant })),
+);
 
 export default function Page() {
   const current = useUIStore((s) => s.view);
@@ -63,12 +76,11 @@ export default function Page() {
     <div className="relative flex min-h-screen flex-col">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-[var(--neon-cyan)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-black"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-full focus:bg-[var(--brand)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
       >
         Pular para o conteúdo
       </a>
       <RouterSync />
-      <GalaxyBackground />
       <ScrollProgress />
       <Header />
       <main id="main-content" tabIndex={-1} className="flex-1 outline-none">

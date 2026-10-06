@@ -50,8 +50,7 @@ export const useCompareStore = create<CompareState>()(
         if (get().ids.length > 0) set({ open: true });
       },
       closePanel: () => set({ open: false }),
-      togglePanel: () =>
-        set((s) => ({ open: s.ids.length > 0 ? !s.open : false })),
+      togglePanel: () => set((s) => ({ open: s.ids.length > 0 ? !s.open : false })),
       count: () => get().ids.length,
     }),
     {

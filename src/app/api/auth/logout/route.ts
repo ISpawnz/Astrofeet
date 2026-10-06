@@ -1,9 +1,9 @@
 import { clearSessionCookie } from "@/server/auth";
-import { ok } from "@/server/http";
+import { route } from "@/server/http";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+export const POST = route(async () => {
   await clearSessionCookie();
-  return ok({ ok: true });
-}
+  return { ok: true };
+});

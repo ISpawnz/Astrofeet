@@ -16,17 +16,7 @@ import { useCartStore } from "@/stores/cart";
 import { api } from "@/client/api";
 import { formatPrice } from "@/shared/format";
 import type { Product } from "@/shared/types";
-import {
-  Search,
-  Rocket,
-  Heart,
-  ShoppingBag,
-  Package,
-  Home,
-  Sparkles,
-  TrendingUp,
-  Loader2,
-} from "lucide-react";
+import { Search, Heart, ShoppingBag, Package, Home, Sparkles, TrendingUp, Loader2 } from "lucide-react";
 
 export function SearchPalette() {
   const open = useUIStore((s) => s.searchOpen);
@@ -92,7 +82,7 @@ export function SearchPalette() {
     <CommandDialog
       open={open}
       onOpenChange={(o) => setSearchOpen(o)}
-      className="border-white/10 bg-[#0a0e1f]/95 backdrop-blur-xl"
+      className="border-black/10 bg-background backdrop-blur-xl"
     >
       <CommandInput
         placeholder="Buscar sneakers, marcas, categorias…  (Esc para fechar)"
@@ -104,7 +94,7 @@ export function SearchPalette() {
           {loading ? (
             <span className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Buscando na galáxia…
+              Buscando…
             </span>
           ) : q.trim() ? (
             <span className="block py-6 text-center text-sm text-muted-foreground">
@@ -121,42 +111,27 @@ export function SearchPalette() {
         {!q.trim() && (
           <>
             <CommandGroup heading="Ações rápidas">
-              <CommandItem
-                onSelect={() => go("home")}
-                className="cursor-pointer gap-3"
-              >
-                <Home className="h-4 w-4 text-[var(--neon-cyan)]" />
+              <CommandItem onSelect={() => go("home")} className="cursor-pointer gap-3">
+                <Home className="h-4 w-4 text-[var(--brand)]" />
                 <span>Início</span>
               </CommandItem>
-              <CommandItem
-                onSelect={() => go("products")}
-                className="cursor-pointer gap-3"
-              >
-                <Package className="h-4 w-4 text-[var(--neon-cyan)]" />
+              <CommandItem onSelect={() => go("products")} className="cursor-pointer gap-3">
+                <Package className="h-4 w-4 text-[var(--brand)]" />
                 <span>Ver todos os drops</span>
               </CommandItem>
-              <CommandItem
-                onSelect={() => go("products", { sort: "newest" })}
-                className="cursor-pointer gap-3"
-              >
-                <Sparkles className="h-4 w-4 text-[var(--neon-violet)]" />
+              <CommandItem onSelect={() => go("products", { sort: "newest" })} className="cursor-pointer gap-3">
+                <Sparkles className="h-4 w-4 text-[var(--ink)]" />
                 <span>Novidades</span>
               </CommandItem>
-              <CommandItem
-                onSelect={() => go("products", { bestSeller: "true" })}
-                className="cursor-pointer gap-3"
-              >
-                <TrendingUp className="h-4 w-4 text-[var(--neon-lime)]" />
+              <CommandItem onSelect={() => go("products", { bestSeller: "true" })} className="cursor-pointer gap-3">
+                <TrendingUp className="h-4 w-4 text-[var(--success)]" />
                 <span>Mais vendidos</span>
               </CommandItem>
-              <CommandItem
-                onSelect={() => go("wishlist")}
-                className="cursor-pointer gap-3"
-              >
-                <Heart className="h-4 w-4 text-[var(--neon-magenta)]" />
+              <CommandItem onSelect={() => go("wishlist")} className="cursor-pointer gap-3">
+                <Heart className="h-4 w-4 text-[var(--hot)]" />
                 <span>Lista de desejos</span>
                 {wishlistCount > 0 && (
-                  <span className="ml-auto rounded-full bg-[var(--neon-magenta)]/15 px-2 py-0.5 text-xs font-bold text-[var(--neon-magenta)]">
+                  <span className="ml-auto rounded-full bg-[var(--hot)]/15 px-2 py-0.5 text-xs font-bold text-[var(--hot)]">
                     {wishlistCount}
                   </span>
                 )}
@@ -168,19 +143,16 @@ export function SearchPalette() {
                 }}
                 className="cursor-pointer gap-3"
               >
-                <ShoppingBag className="h-4 w-4 text-[var(--neon-cyan)]" />
+                <ShoppingBag className="h-4 w-4 text-[var(--brand)]" />
                 <span>Abrir carrinho</span>
                 {cartCount > 0 && (
-                  <span className="ml-auto rounded-full bg-[var(--neon-cyan)]/15 px-2 py-0.5 text-xs font-bold text-[var(--neon-cyan)]">
+                  <span className="ml-auto rounded-full bg-[var(--brand)]/15 px-2 py-0.5 text-xs font-bold text-[var(--brand)]">
                     {cartCount}
                   </span>
                 )}
               </CommandItem>
-              <CommandItem
-                onSelect={() => go("track-order")}
-                className="cursor-pointer gap-3"
-              >
-                <Rocket className="h-4 w-4 text-[var(--neon-violet)]" />
+              <CommandItem onSelect={() => go("track-order")} className="cursor-pointer gap-3">
+                <Search className="h-4 w-4 text-[var(--ink)]" />
                 <span>Rastrear pedido</span>
               </CommandItem>
             </CommandGroup>
@@ -188,7 +160,7 @@ export function SearchPalette() {
             <CommandGroup heading="Atalho">
               <div className="px-3 py-2 text-xs text-muted-foreground">
                 Pressione{" "}
-                <kbd className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[10px]">
+                <kbd className="rounded border border-black/15 bg-black/[0.03] px-1.5 py-0.5 font-mono text-[10px]">
                   Ctrl K
                 </kbd>{" "}
                 a qualquer momento para abrir esta busca.
@@ -211,12 +183,8 @@ export function SearchPalette() {
                   className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg"
                   style={{ background: `${p.accent}1a` }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.images[0]}
-                    alt={p.name}
-                    className="h-full w-full object-contain p-1"
-                  />
+                  {}
+                  <img src={p.images[0]} alt={p.name} className="h-full w-full object-contain p-1" />
                 </span>
                 <div className="flex-1">
                   <p className="text-sm font-semibold">{p.name}</p>
@@ -224,15 +192,13 @@ export function SearchPalette() {
                     {p.brand} · {p.category}
                   </p>
                 </div>
-                <span className="text-sm font-bold">
-                  {formatPrice(p.price)}
-                </span>
+                <span className="text-sm font-bold">{formatPrice(p.price)}</span>
               </CommandItem>
             ))}
             {results.length > 0 && (
               <CommandItem
                 onSelect={() => go("products", { q })}
-                className="cursor-pointer justify-center gap-2 border-t border-white/5 pt-3 text-sm font-semibold text-[var(--neon-cyan)]"
+                className="cursor-pointer justify-center gap-2 border-t border-black/5 pt-3 text-sm font-semibold text-[var(--brand)]"
               >
                 <Search className="h-4 w-4" />
                 Ver todos os resultados para “{q}”

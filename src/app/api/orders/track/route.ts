@@ -1,59 +1,44 @@
-import { NextRequest } from "next/server";
 import { db } from "@/server/db";
-import { serializeOrder } from "@/server/serialize";
-import { HttpError, handleApiError, ok } from "@/server/http";
+import { fail, parseJSON, route } from "@/server/http";
 import { rateLimit } from "@/server/rate-limit";
+import { serializeOrder } from "@/server/serialize";
 
 export const runtime = "nodejs";
 
-// Public order lookup by code (no auth required) — used by the order tracking page.
-// Only returns a trimmed public shape (no internal id leaks beyond what's needed).
-export async function GET(req: NextRequest) {
-  try {
-    rateLimit(req, "orders:track", 20, 10 * 60 * 1000);
-    const url = new URL(req.url);
-    const code = (url.searchParams.get("code") || "").trim().toUpperCase();
-    const email = (url.searchParams.get("email") || "").trim().toLowerCase();
+// Consulta pública de pedido. Código + e-mail são obrigatórios (sem o e-mail,
+// quem adivinhasse um código veria nome e cidade) e "não existe" / "e-mail não
+// confere" dão a mesma resposta, para não permitir enumeração.
+export const GET = route(async (req) => {
+  rateLimit(req, "orders:track", 20, 10 * 60 * 1000);
+  const q = new URL(req.url).searchParams;
+  const code = (q.get("code") ?? "").trim().toUpperCase();
+  const email = (q.get("email") ?? "").trim().toLowerCase();
+  if (!code || !email) fail("Informe o código do pedido e o e-mail da compra.");
 
-    // Código + e-mail são obrigatórios: sem o e-mail, qualquer pessoa que
-    // adivinhasse um código veria nome e cidade do cliente.
-    if (!code || !email)
-      throw new HttpError("Informe o código do pedido e o e-mail da compra.", 400);
+  const row = await db.order.findFirst({ where: { code } });
+  const sameEmail = parseJSON<{ email?: string }>(row?.customer, {}).email?.toLowerCase() === email;
+  if (!row || !sameEmail) fail("Pedido não encontrado para este código e e-mail.", 404);
 
-    const order = await db.order.findFirst({ where: { code } });
-    let orderEmail = "";
-    try {
-      orderEmail = String(JSON.parse((order?.customer as string) || "{}").email ?? "").toLowerCase();
-    } catch {
-      /* noop */
-    }
-    // Mesma resposta para "não existe" e "e-mail não confere" (sem enumeração).
-    if (!order || orderEmail !== email)
-      throw new HttpError("Pedido não encontrado para este código e e-mail.", 404);
-
-    const full = serializeOrder(order);
-    return ok({
-      order: {
-        code: full.code,
-        status: full.status,
-        total: full.total,
-        subtotal: full.subtotal,
-        shipping: full.shipping,
-        items: full.items.map((i) => ({
-          name: i.name,
-          quantity: i.quantity,
-          size: i.size,
-          unitPrice: i.unitPrice,
-          subtotal: i.subtotal,
-        })),
-        customerName: full.customer.name,
-        city: full.address.city,
-        state: full.address.state,
-        paymentMethod: full.payment.method,
-        createdAt: full.createdAt,
-      },
-    });
-  } catch (e) {
-    return handleApiError(e);
-  }
-}
+  const o = serializeOrder(row);
+  return {
+    order: {
+      code: o.code,
+      status: o.status,
+      total: o.total,
+      subtotal: o.subtotal,
+      shipping: o.shipping,
+      items: o.items.map(({ name, quantity, size, unitPrice, subtotal }) => ({
+        name,
+        quantity,
+        size,
+        unitPrice,
+        subtotal,
+      })),
+      customerName: o.customer.name,
+      city: o.address.city,
+      state: o.address.state,
+      paymentMethod: o.payment.method,
+      createdAt: o.createdAt,
+    },
+  };
+});

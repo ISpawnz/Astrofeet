@@ -18,9 +18,10 @@ function sweep(now: number) {
   for (const [k, b] of buckets) if (b.resetAt <= now) buckets.delete(k);
 }
 
+// X-Real-IP é definido pelo nosso proxy reverso (nginx/Caddy) a partir do IP real;
+// o primeiro valor de X-Forwarded-For pode ser forjado pelo cliente.
 function clientIp(req: NextRequest): string {
-  const forwardedFor = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwardedFor || req.headers.get("x-real-ip") || "local";
+  return req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() || "local";
 }
 
 function hit(bucketKey: string, limit: number, windowMs: number) {

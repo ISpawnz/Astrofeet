@@ -1,82 +1,30 @@
-import { NextRequest } from "next/server";
+import { z } from "zod";
 import { db } from "@/server/db";
-import { getCurrentUser } from "@/server/auth";
-import { HttpError, handleApiError, ok } from "@/server/http";
+import { requireUser } from "@/server/auth";
+import { body, fail, ok, parseJSON, route } from "@/server/http";
 
 export const runtime = "nodejs";
 
-// GET /api/stock-alerts — list the authenticated user's stock alert subscriptions
-export async function GET() {
-  try {
-    const user = await getCurrentUser();
-    if (!user) throw new HttpError("Não autenticado.", 401);
-    // Stock alerts are stored as a JSON array on the user record (subscribedProductIds).
-    const u = await db.user.findUnique({ where: { id: user.id } });
-    let ids: string[] = [];
-    try {
-      ids = JSON.parse((u?.stockAlerts as string) || "[]");
-    } catch {
-      ids = [];
-    }
-    return ok({ productIds: ids });
-  } catch (e) {
-    return handleApiError(e);
-  }
+// Inscrições de "avise-me quando voltar" ficam no usuário (stockAlerts: JSON de ids).
+async function alerts(userId: string, update?: (ids: string[]) => string[]) {
+  const ids = parseJSON<string[]>((await db.user.findUnique({ where: { id: userId } }))?.stockAlerts, []);
+  if (!update) return ids;
+  const next = update(ids);
+  await db.user.update({ where: { id: userId }, data: { stockAlerts: JSON.stringify(next) } });
+  return next;
 }
 
-// POST /api/stock-alerts — subscribe to a product's stock alert
-// Body: { productId: string }
-export async function POST(req: NextRequest) {
-  try {
-    const user = await getCurrentUser();
-    if (!user) throw new HttpError("Não autenticado.", 401);
-    const body = await req.json().catch(() => ({}));
-    const productId = String(body.productId ?? "");
-    if (!productId) throw new HttpError("Produto inválido.", 400);
+export const GET = route(async () => ({ productIds: await alerts((await requireUser()).id) }));
 
-    const u = await db.user.findUnique({ where: { id: user.id } });
-    let ids: string[] = [];
-    try {
-      ids = JSON.parse((u?.stockAlerts as string) || "[]");
-    } catch {
-      ids = [];
-    }
-    if (!ids.includes(productId)) {
-      ids.push(productId);
-      await db.user.update({
-        where: { id: user.id },
-        data: { stockAlerts: JSON.stringify(ids) },
-      });
-    }
-    return ok({ productIds: ids, subscribed: true }, 201);
-  } catch (e) {
-    return handleApiError(e);
-  }
-}
+export const POST = route(async (req) => {
+  const user = await requireUser();
+  const { productId } = await body(req, z.object({ productId: z.string().min(1, "Produto inválido.") }));
+  const productIds = await alerts(user.id, (ids) => (ids.includes(productId) ? ids : [...ids, productId]));
+  return ok({ productIds, subscribed: true }, 201);
+});
 
-// DELETE /api/stock-alerts?productId=... — unsubscribe
-export async function DELETE(req: NextRequest) {
-  try {
-    const user = await getCurrentUser();
-    if (!user) throw new HttpError("Não autenticado.", 401);
-    const url = new URL(req.url);
-    const productId = url.searchParams.get("productId") || "";
-    if (!productId) throw new HttpError("Produto inválido.", 400);
-
-    const u = await db.user.findUnique({ where: { id: user.id } });
-    let ids: string[] = [];
-    try {
-      ids = JSON.parse((u?.stockAlerts as string) || "[]");
-    } catch {
-      ids = [];
-    }
-    const next = ids.filter((x) => x !== productId);
-    await db.user.update({
-      where: { id: user.id },
-      data: { stockAlerts: JSON.stringify(next) },
-    });
-    return ok({ productIds: next, subscribed: false });
-  } catch (e) {
-    return handleApiError(e);
-  }
-}
+export const DELETE = route(async (req) => {
+  const user = await requireUser();
+  const productId = new URL(req.url).searchParams.get("productId") || fail("Produto inválido.");
+  return { productIds: await alerts(user.id, (ids) => ids.filter((x) => x !== productId)), subscribed: false };
+});

@@ -28,17 +28,12 @@ export const useCartStore = create<CartState>()(
       toggle: () => set((s) => ({ isOpen: !s.isOpen })),
       add: (product, size, quantity = 1) => {
         set((s) => {
-          const idx = s.items.findIndex(
-            (i) => i.productId === product.id && i.size === size,
-          );
+          const idx = s.items.findIndex((i) => i.productId === product.id && i.size === size);
           if (idx >= 0) {
             const items = [...s.items];
             items[idx] = {
               ...items[idx],
-              quantity: Math.min(
-                items[idx].quantity + quantity,
-                Math.max(product.stock, 1) || 99,
-              ),
+              quantity: Math.min(items[idx].quantity + quantity, Math.max(product.stock, 1) || 99),
             };
             return { items, isOpen: true };
           }
@@ -57,9 +52,7 @@ export const useCartStore = create<CartState>()(
       },
       remove: (productId, size) =>
         set((s) => ({
-          items: s.items.filter(
-            (i) => !(i.productId === productId && i.size === size),
-          ),
+          items: s.items.filter((i) => !(i.productId === productId && i.size === size)),
         })),
       setQuantity: (productId, size, quantity) =>
         set((s) => ({
@@ -73,8 +66,7 @@ export const useCartStore = create<CartState>()(
         })),
       clear: () => set({ items: [] }),
       count: () => get().items.reduce((n, i) => n + i.quantity, 0),
-      subtotal: () =>
-        get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+      subtotal: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
     }),
     {
       name: "astrofeet-cart",

@@ -3,15 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import {
-  Search,
-  SlidersHorizontal,
-  X,
-  RotateCcw,
-  Sparkles,
-  PackageSearch,
-  Compass,
-} from "lucide-react";
+import { Search, SlidersHorizontal, X, RotateCcw, PackageSearch, Compass } from "lucide-react";
 import { api } from "@/client/api";
 import { useUIStore } from "@/stores/ui";
 import { formatPrice } from "@/shared/format";
@@ -21,21 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { fadeUp } from "@/components/shared/motion";
 
 const SIZES = [36, 37, 38, 39, 40, 41, 42, 43, 44];
 const PRICE_MIN = 0;
@@ -69,13 +49,21 @@ const SORT_OPTIONS: { value: SortValue; label: string }[] = [
 
 export function ProductsView() {
   const params = useUIStore((s) => s.params);
+  const pageTitle =
+    params.bestSeller === "true"
+      ? "Mais vendidos"
+      : params.featured === "true"
+        ? "Edições limitadas"
+        : params.category
+          ? params.category
+          : params.sort === "newest" && !params.q
+            ? "Lançamentos"
+            : "Todos os tênis";
 
   // ---- Local UI state (initialized from store params on mount) ----
   const [searchInput, setSearchInput] = useState<string>(params.q ?? "");
   const [q, setQ] = useState<string>(params.q ?? "");
-  const [sort, setSort] = useState<SortValue>(
-    (params.sort as SortValue) || "newest",
-  );
+  const [sort, setSort] = useState<SortValue>((params.sort as SortValue) || "newest");
   const [filters, setFilters] = useState<Filters>({
     category: params.category ?? "Todos",
     brand: params.brand ?? "Todas",
@@ -99,8 +87,7 @@ export function ProductsView() {
   const apiParams = useMemo(() => {
     const p: Record<string, string | number | boolean> = { sort };
     if (q) p.q = q;
-    if (filters.category && filters.category !== "Todos")
-      p.category = filters.category;
+    if (filters.category && filters.category !== "Todos") p.category = filters.category;
     if (filters.brand && filters.brand !== "Todas") p.brand = filters.brand;
     if (filters.size) p.size = filters.size;
     if (filters.min != null) p.min = filters.min;
@@ -172,11 +159,7 @@ export function ProductsView() {
       <FilterGroup title="Categoria">
         <ChipRow>
           {categories.map((c) => (
-            <Chip
-              key={c}
-              active={filters.category === c}
-              onClick={() => setCategory(c)}
-            >
+            <Chip key={c} active={filters.category === c} onClick={() => setCategory(c)}>
               {c}
             </Chip>
           ))}
@@ -187,11 +170,7 @@ export function ProductsView() {
       <FilterGroup title="Marca">
         <ChipRow>
           {brands.map((b) => (
-            <Chip
-              key={b}
-              active={filters.brand === b}
-              onClick={() => setBrand(b)}
-            >
+            <Chip key={b} active={filters.brand === b} onClick={() => setBrand(b)}>
               {b}
             </Chip>
           ))}
@@ -210,8 +189,8 @@ export function ProductsView() {
               className={cn(
                 "flex h-10 items-center justify-center rounded-full border px-2 text-sm font-medium transition",
                 filters.size === s
-                  ? "border-[var(--neon-cyan)] bg-[var(--neon-cyan)]/10 text-[var(--neon-cyan)]"
-                  : "border-white/10 bg-white/5 text-foreground/80 hover:border-white/25",
+                  ? "border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]"
+                  : "border-black/10 bg-black/[0.03] text-foreground/80 hover:border-black/25",
               )}
             >
               {s}
@@ -232,13 +211,9 @@ export function ProductsView() {
           className="py-2"
         />
         <div className="mt-3 flex items-center justify-between text-sm">
-          <span className="font-medium text-foreground">
-            {formatPrice(priceRange[0])}
-          </span>
+          <span className="font-medium text-foreground">{formatPrice(priceRange[0])}</span>
           <span className="text-foreground/30">—</span>
-          <span className="font-medium text-foreground">
-            {formatPrice(priceRange[1])}
-          </span>
+          <span className="font-medium text-foreground">{formatPrice(priceRange[1])}</span>
         </div>
       </FilterGroup>
 
@@ -257,53 +232,48 @@ export function ProductsView() {
   );
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-6 lg:pt-16">
+    <div className="mx-auto max-w-7xl px-4 pt-10 pb-24 sm:px-6 lg:pt-16">
       {/* ---------- Header ---------- */}
       <header className="flex flex-col gap-3">
         <motion.span
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--neon-cyan)]"
+          {...fadeUp}
+          className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.25em] text-[var(--brand)] uppercase"
         >
-          <Sparkles className="h-3.5 w-3.5" />
           Catálogo
         </motion.span>
         <motion.h1
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
+          {...fadeUp}
           transition={{ delay: 0.05 }}
-          className="text-balance text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl"
+          className="text-4xl leading-[1.05] font-black tracking-tight text-balance sm:text-5xl"
         >
-          Escolha seu <span className="text-gradient-neon">drop</span>
+          {pageTitle}
         </motion.h1>
         <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
+          {...fadeUp}
           transition={{ delay: 0.1 }}
-          className="max-w-xl text-pretty text-sm text-muted-foreground sm:text-base"
+          className="max-w-xl text-sm text-pretty text-muted-foreground sm:text-base"
         >
-          Filtre por categoria, marca, tamanho ou preço e encontre o par perfeito
-          para decolar.
+          Filtre por categoria, marca, tamanho ou preço e encontre o par certo para você.
         </motion.p>
       </header>
 
       {/* ---------- Toolbar: search + sort + mobile filter trigger ---------- */}
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Buscar por nome, marca ou estilo…"
             aria-label="Buscar modelos"
-            className="h-11 rounded-full border-white/10 bg-white/5 pl-11 pr-10 text-sm placeholder:text-muted-foreground/70 focus-visible:border-[var(--neon-cyan)]/50 focus-visible:ring-[var(--neon-cyan)]/20"
+            className="h-11 rounded-full border-black/10 bg-black/[0.03] pr-10 pl-11 text-sm placeholder:text-muted-foreground/70 focus-visible:border-[var(--brand)]/50 focus-visible:ring-[var(--brand)]/20"
           />
           {searchInput && (
             <button
               type="button"
               onClick={() => setSearchInput("")}
-              className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
+              className="absolute top-1/2 right-3 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-black/[0.06] hover:text-foreground"
               aria-label="Limpar busca"
             >
               <X className="h-4 w-4" />
@@ -315,11 +285,11 @@ export function ProductsView() {
           <Select value={sort} onValueChange={(v) => setSort(v as SortValue)}>
             <SelectTrigger
               aria-label="Ordenar por"
-              className="h-11 w-full min-w-[180px] rounded-full border-white/10 bg-white/5 px-4 text-sm focus-visible:border-[var(--neon-cyan)]/50 focus-visible:ring-[var(--neon-cyan)]/20 sm:w-auto"
+              className="h-11 w-full min-w-[180px] rounded-full border-black/10 bg-black/[0.03] px-4 text-sm focus-visible:border-[var(--brand)]/50 focus-visible:ring-[var(--brand)]/20 sm:w-auto"
             >
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
-            <SelectContent className="rounded-2xl border-white/10 bg-popover/95 backdrop-blur">
+            <SelectContent className="rounded-2xl border-black/10 bg-popover/95 backdrop-blur">
               {SORT_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
@@ -333,7 +303,7 @@ export function ProductsView() {
             <SheetTrigger asChild>
               <Button
                 variant="outline"
-                className="h-11 shrink-0 rounded-full border-white/10 bg-white/5 px-4 text-sm lg:hidden"
+                className="h-11 shrink-0 rounded-full border-black/10 bg-black/[0.03] px-4 text-sm lg:hidden"
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 Filtros
@@ -341,30 +311,24 @@ export function ProductsView() {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="flex w-[88vw] max-w-sm flex-col border-white/10 bg-background/95 p-0 backdrop-blur-xl"
+              className="flex w-[88vw] max-w-sm flex-col border-black/10 bg-background/95 p-0 backdrop-blur-xl"
             >
-              <SheetHeader className="flex flex-row items-center justify-between gap-2 border-b border-white/10 px-5 py-4">
+              <SheetHeader className="flex flex-row items-center justify-between gap-2 border-b border-black/10 px-5 py-4">
                 <SheetTitle className="flex items-center gap-2 text-base">
-                  <SlidersHorizontal className="h-4 w-4 text-[var(--neon-cyan)]" />
+                  <SlidersHorizontal className="h-4 w-4 text-[var(--brand)]" />
                   Filtros
                 </SheetTitle>
                 {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-xs text-[var(--neon-cyan)] hover:underline"
-                  >
+                  <button onClick={clearFilters} className="text-xs text-[var(--brand)] hover:underline">
                     Limpar
                   </button>
                 )}
               </SheetHeader>
-              <div className="flex-1 overflow-y-auto px-5 py-5">
-                {FiltersPanel}
-              </div>
-              <div className="border-t border-white/10 p-4">
+              <div className="flex-1 overflow-y-auto px-5 py-5">{FiltersPanel}</div>
+              <div className="border-t border-black/10 p-4">
                 <SheetClose asChild>
-                  <Button className="h-11 w-full rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] text-sm font-bold text-black">
-                    Ver {products.length}{" "}
-                    {products.length === 1 ? "modelo" : "modelos"}
+                  <Button className="h-11 w-full rounded-full bg-[var(--brand)] text-sm font-bold text-white">
+                    Ver {products.length} {products.length === 1 ? "modelo" : "modelos"}
                   </Button>
                 </SheetClose>
               </div>
@@ -377,16 +341,11 @@ export function ProductsView() {
       <div className="mt-8 grid gap-8 lg:grid-cols-[260px_1fr]">
         {/* Sidebar (desktop) */}
         <aside className="hidden lg:block">
-          <div className="sticky top-24 rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
+          <div className="sticky top-24 rounded-3xl border border-black/10 bg-black/[0.02] p-5 backdrop-blur">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Filtros
-              </h2>
+              <h2 className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">Filtros</h2>
               {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="text-xs text-[var(--neon-cyan)] transition hover:underline"
-                >
+                <button onClick={clearFilters} className="text-xs text-[var(--brand)] transition hover:underline">
                   Limpar
                 </button>
               )}
@@ -403,15 +362,11 @@ export function ProductsView() {
               {isLoading ? (
                 <span className="text-foreground/60">Buscando modelos…</span>
               ) : isError ? (
-                <span className="text-amber-300">Falha ao carregar.</span>
+                <span className="text-amber-700">Falha ao carregar.</span>
               ) : (
                 <>
-                  <span className="font-bold text-foreground">
-                    {products.length}
-                  </span>{" "}
-                  {products.length === 1
-                    ? "modelo encontrado"
-                    : "modelos encontrados"}
+                  <span className="font-bold text-foreground">{products.length}</span>{" "}
+                  {products.length === 1 ? "modelo encontrado" : "modelos encontrados"}
                 </>
               )}
             </p>
@@ -426,7 +381,7 @@ export function ProductsView() {
             </div>
           ) : isError ? (
             <EmptyState
-              icon={<PackageSearch className="h-7 w-7 text-[var(--neon-cyan)]" />}
+              icon={<PackageSearch className="h-7 w-7 text-[var(--brand)]" />}
               title="Não foi possível carregar os modelos"
               description="Algo deu errado na conexão. Tente novamente."
               actionLabel="Tentar novamente"
@@ -434,7 +389,7 @@ export function ProductsView() {
             />
           ) : products.length === 0 ? (
             <EmptyState
-              icon={<Compass className="h-7 w-7 text-[var(--neon-cyan)]" />}
+              icon={<Compass className="h-7 w-7 text-[var(--brand)]" />}
               title="Nenhum modelo encontrado"
               description="Ajuste os filtros ou explore todo o catálogo da Astrofeet."
               actionLabel="Explorar tudo"
@@ -455,18 +410,10 @@ export function ProductsView() {
 
 // ---------- Sub-components ----------
 
-function FilterGroup({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-        {title}
-      </h3>
+      <h3 className="mb-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">{title}</h3>
       {children}
     </div>
   );
@@ -476,15 +423,7 @@ function ChipRow({ children }: { children: ReactNode }) {
   return <div className="flex flex-wrap gap-2">{children}</div>;
 }
 
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
@@ -493,8 +432,8 @@ function Chip({
       className={cn(
         "rounded-full border px-3 py-1.5 text-sm transition",
         active
-          ? "border-[var(--neon-cyan)] bg-[var(--neon-cyan)]/10 text-[var(--neon-cyan)]"
-          : "border-white/10 bg-white/5 text-foreground/80 hover:border-white/25",
+          ? "border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]"
+          : "border-black/10 bg-black/[0.03] text-foreground/80 hover:border-black/25",
       )}
     >
       {children}
@@ -504,12 +443,12 @@ function Chip({
 
 function ProductCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-3">
-      <Skeleton className="aspect-square w-full rounded-2xl bg-white/[0.06]" />
-      <div className="space-y-2 px-2 pb-1 pt-3">
-        <Skeleton className="h-3 w-16 bg-white/[0.06]" />
-        <Skeleton className="h-4 w-32 bg-white/[0.06]" />
-        <Skeleton className="h-6 w-24 bg-white/[0.06]" />
+    <div className="overflow-hidden rounded-3xl border border-black/10 bg-black/[0.02] p-3">
+      <Skeleton className="aspect-square w-full rounded-2xl bg-black/[0.036]" />
+      <div className="space-y-2 px-2 pt-3 pb-1">
+        <Skeleton className="h-3 w-16 bg-black/[0.036]" />
+        <Skeleton className="h-4 w-32 bg-black/[0.036]" />
+        <Skeleton className="h-6 w-24 bg-black/[0.036]" />
       </div>
     </div>
   );
@@ -530,23 +469,17 @@ function EmptyState({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-12 text-center backdrop-blur"
+      {...fadeUp}
+      className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-black/10 bg-black/[0.02] p-12 text-center backdrop-blur"
     >
-      <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full border border-black/10 bg-black/[0.03]">
         {icon}
       </div>
       <div>
         <h3 className="text-lg font-bold">{title}</h3>
-        <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-          {description}
-        </p>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
       </div>
-      <Button
-        onClick={onAction}
-        className="h-11 rounded-full bg-gradient-to-r from-[var(--neon-cyan)] to-[var(--neon-violet)] px-6 text-sm font-bold text-black"
-      >
+      <Button onClick={onAction} className="h-11 rounded-full bg-[var(--brand)] px-6 text-sm font-bold text-white">
         {actionLabel}
       </Button>
     </motion.div>

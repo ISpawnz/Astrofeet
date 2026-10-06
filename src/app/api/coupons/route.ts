@@ -1,97 +1,35 @@
-import { NextRequest } from "next/server";
+import { z } from "zod";
 import { db } from "@/server/db";
 import { requireAdmin } from "@/server/auth";
 import { serializeCoupon } from "@/server/serialize";
-import { HttpError, handleApiError, ok } from "@/server/http";
+import { couponUsage, CouponFields } from "@/server/coupons";
+import { body, fail, ok, route } from "@/server/http";
 
 export const runtime = "nodejs";
 
-export async function GET() {
-  try {
-    await requireAdmin();
-    const coupons = await db.coupon.findMany({
-      orderBy: { createdAt: "desc" },
-    });
-    const orders = await db.order.findMany({});
-    // Tally usage per coupon code by scanning the payment JSON.
-    const usageByCode = new Map<string, { count: number; totalDiscount: number }>();
-    for (const o of orders) {
-      try {
-        const payment = JSON.parse((o.payment as string) || "{}") as {
-          couponCode?: string;
-          discount?: number;
-        };
-        if (payment.couponCode) {
-          const code = String(payment.couponCode).toUpperCase();
-          const prev = usageByCode.get(code) ?? { count: 0, totalDiscount: 0 };
-          prev.count += 1;
-          prev.totalDiscount += Number(payment.discount ?? 0);
-          usageByCode.set(code, prev);
-        }
-      } catch {
-        /* ignore malformed payment JSON */
-      }
-    }
-    const serialized = coupons.map((c) => {
-      const base = serializeCoupon(c);
-      const usage = usageByCode.get((c.code as string).toUpperCase());
-      return {
-        ...base,
-        usageCount: usage?.count ?? 0,
-        totalDiscount: Number((usage?.totalDiscount ?? 0).toFixed(2)),
-      };
-    });
-    return ok({ coupons: serialized });
-  } catch (e) {
-    return handleApiError(e);
-  }
-}
+const NewCoupon = z
+  .object({
+    ...CouponFields,
+    type: z.enum(["percent", "fixed"], { error: "Tipo deve ser 'percent' ou 'fixed'." }),
+    minSubtotal: CouponFields.minSubtotal.default(0),
+    active: CouponFields.active.default(true),
+  })
+  .refine((c) => c.type !== "percent" || c.value <= 100, "Percentual não pode exceder 100%.");
 
-export async function POST(req: NextRequest) {
-  try {
-    await requireAdmin();
-    const body = await req.json().catch(() => ({}));
-    const code = String(body.code ?? "")
-      .trim()
-      .toUpperCase();
-    const type = String(body.type ?? "");
-    const value = Number(body.value);
-    const minSubtotal = Number(body.minSubtotal ?? 0);
-    const description = String(body.description ?? "").trim();
-    const active = body.active !== false;
-    const expiresAt = body.expiresAt ? String(body.expiresAt) : null;
+export const GET = route(async () => {
+  await requireAdmin();
+  const [coupons, usage] = await Promise.all([db.coupon.findMany({ orderBy: { createdAt: "desc" } }), couponUsage()]);
+  return {
+    coupons: coupons.map((c) => {
+      const u = usage.get(c.code);
+      return { ...serializeCoupon(c), usageCount: u?.count ?? 0, totalDiscount: u?.totalDiscount ?? 0 };
+    }),
+  };
+});
 
-    if (!/^[A-Z0-9]{3,20}$/.test(code))
-      throw new HttpError(
-        "Código inválido. Use 3 a 20 caracteres (A-Z, 0-9).",
-        400,
-      );
-    if (type !== "percent" && type !== "fixed")
-      throw new HttpError("Tipo deve ser 'percent' ou 'fixed'.", 400);
-    if (!Number.isFinite(value) || value <= 0)
-      throw new HttpError("Valor deve ser maior que zero.", 400);
-    if (type === "percent" && value > 100)
-      throw new HttpError("Percentual não pode exceder 100%.", 400);
-    if (!Number.isFinite(minSubtotal) || minSubtotal < 0)
-      throw new HttpError("Subtotal mínimo inválido.", 400);
-    if (!description) throw new HttpError("Descrição é obrigatória.", 400);
-
-    const existing = await db.coupon.findFirst({ where: { code } });
-    if (existing) throw new HttpError("Já existe um cupom com esse código.", 409);
-
-    const created = await db.coupon.create({
-      data: {
-        code,
-        type,
-        value,
-        minSubtotal,
-        active,
-        description,
-        expiresAt,
-      },
-    });
-    return ok({ coupon: serializeCoupon(created) }, 201);
-  } catch (e) {
-    return handleApiError(e);
-  }
-}
+export const POST = route(async (req) => {
+  await requireAdmin();
+  const data = await body(req, NewCoupon);
+  if (await db.coupon.findFirst({ where: { code: data.code } })) fail("Já existe um cupom com esse código.", 409);
+  return ok({ coupon: serializeCoupon(await db.coupon.create({ data })) }, 201);
+});
