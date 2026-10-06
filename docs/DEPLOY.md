@@ -18,17 +18,15 @@ spawn77.com. O spawn77.com não é tocado.
 
 ## 1. Segredos no GitHub (uma vez)
 
-Em **github.com/ISpawnz/Astrofeet → Settings → Secrets and variables → Actions → New repository secret**:
+Em **github.com/ISpawnz/Astrofeet → Settings → Secrets and variables → Actions → aba "Secrets" → New repository
+secret**. Só o primeiro é obrigatório:
 
-| Segredo                    | Valor                                                                                                                                                                                                                               |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DEPLOY_SSH_KEY`           | Conteúdo inteiro de `C:\Users\pedro\.ssh\claude_site_deploy_20261006` (a chave **privada**, incluindo as linhas `-----BEGIN…` e `-----END…`). Abra no Bloco de Notas e cole direto no GitHub. **Não cole em chat nenhum.**          |
-| `DEPLOY_KNOWN_HOSTS`       | Saída de `ssh-keyscan -t ed25519 137.131.146.32` (PowerShell). Fixa a identidade do servidor e impede ataques de intermediário. Confira se a impressão bate com a que apareceu no seu primeiro acesso: `ssh-keygen -lf` no arquivo. |
-| `ASTROFEET_AUTH_SECRET`    | 48+ caracteres aleatórios. PowerShell: `[Convert]::ToBase64String([byte[]](1..48 \| % { Get-Random -Max 256 }))`                                                                                                                            |
-| `ASTROFEET_ADMIN_EMAIL`    | E-mail do primeiro administrador da loja.                                                                                                                                                                                           |
-| `ASTROFEET_ADMIN_PASSWORD` | Senha desse admin (mínimo 12 caracteres).                                                                                                                                                                                           |
-
-O admin só é criado quando o banco ainda não existe (primeiro deploy). Depois disso, trocar a senha é pela própria loja.
+| Segredo                                               | Valor                                                                                                                                                                                                                                               |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEPLOY_SSH_KEY` (**obrigatório**)                    | Conteúdo inteiro de `C:\Users\pedro\.ssh\claude_site_deploy_20261006` (a chave **privada**, incluindo as linhas `-----BEGIN…` e `-----END…`). Abra no Bloco de Notas e cole direto no GitHub. **Não cole em chat nenhum.**                            |
+| `ASTROFEET_ADMIN_EMAIL` + `ASTROFEET_ADMIN_PASSWORD`  | Opcional: conta de administrador da loja (senha com 12+ caracteres). Pode ser adicionada a qualquer momento; o admin é criado no deploy seguinte.                                                                                                   |
+| `DEPLOY_KNOWN_HOSTS`                                  | Opcional: identidade da VPS (`ssh-keyscan -t ed25519 137.131.146.32`). Sem ele, o deploy lê a identidade a cada vez e mostra no log; salvar fixa a identidade e impede um servidor falso no meio do caminho.                                         |
+| `ASTROFEET_AUTH_SECRET`                               | Opcional: segredo das sessões (32+ caracteres). Sem ele, a VPS gera um na primeira vez e guarda em `shared/auth-secret`.                                                                                                                             |
 
 ## 2. Proxy reverso na VPS
 

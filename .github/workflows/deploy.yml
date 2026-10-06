@@ -2,12 +2,12 @@
 # Build no runner do GitHub → envio por SSH (só execução de comando, sem
 # scp/sftp nem encaminhamento de portas) → deploy/remote-deploy.sh na VPS.
 #
-# Segredos (Settings → Secrets and variables → Actions):
-#   DEPLOY_SSH_KEY            chave privada dedicada do usuário claude-deploy
-#   DEPLOY_KNOWN_HOSTS        saída de `ssh-keyscan -t ed25519 137.131.146.32` (fixa a identidade do servidor)
-#   ASTROFEET_AUTH_SECRET     >= 32 caracteres aleatórios
-#   ASTROFEET_ADMIN_EMAIL     primeiro admin (criado só se o banco ainda não existir)
-#   ASTROFEET_ADMIN_PASSWORD  >= 12 caracteres
+# Segredos (Settings → Secrets and variables → Actions → New repository secret):
+#   DEPLOY_SSH_KEY            OBRIGATÓRIO: chave privada dedicada do usuário claude-deploy
+#   DEPLOY_KNOWN_HOSTS        opcional: `ssh-keyscan -t ed25519 137.131.146.32`; sem ele, a identidade é lida a cada deploy
+#   ASTROFEET_AUTH_SECRET     opcional (>= 32): sem ele, a VPS gera e guarda um
+#   ASTROFEET_ADMIN_EMAIL     opcional, junto com a senha: conta de administrador da loja
+#   ASTROFEET_ADMIN_PASSWORD  opcional (>= 12)
 name: Deploy VPS
 
 on:
@@ -44,13 +44,13 @@ jobs:
           ASTROFEET_ADMIN_EMAIL: ${{ secrets.ASTROFEET_ADMIN_EMAIL }}
           ASTROFEET_ADMIN_PASSWORD: ${{ secrets.ASTROFEET_ADMIN_PASSWORD }}
         run: |
-          missing=0
-          for v in DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS ASTROFEET_AUTH_SECRET ASTROFEET_ADMIN_EMAIL ASTROFEET_ADMIN_PASSWORD; do
-            [ -n "${!v}" ] || { echo "::error::Segredo $v não configurado (ver docs/DEPLOY.md)"; missing=1; }
-          done
-          [ "${#ASTROFEET_AUTH_SECRET}" -ge 32 ] || { echo "::error::ASTROFEET_AUTH_SECRET precisa de >= 32 caracteres"; missing=1; }
-          [ "${#ASTROFEET_ADMIN_PASSWORD}" -ge 12 ] || { echo "::error::ASTROFEET_ADMIN_PASSWORD precisa de >= 12 caracteres"; missing=1; }
-          exit $missing
+          bad=0
+          [ -n "$DEPLOY_SSH_KEY" ] || { echo "::error::Falta o segredo DEPLOY_SSH_KEY: a chave privada do claude-deploy (ver docs/DEPLOY.md)"; bad=1; }
+          [ -z "$ASTROFEET_AUTH_SECRET" ] || [ "${#ASTROFEET_AUTH_SECRET}" -ge 32 ] || { echo "::error::ASTROFEET_AUTH_SECRET precisa de >= 32 caracteres (ou apague o segredo)"; bad=1; }
+          [ -z "$ASTROFEET_ADMIN_EMAIL$ASTROFEET_ADMIN_PASSWORD" ] || { [ -n "$ASTROFEET_ADMIN_EMAIL" ] && [ "${#ASTROFEET_ADMIN_PASSWORD}" -ge 12 ]; } ||
+            { echo "::error::Admin: defina ASTROFEET_ADMIN_EMAIL e ASTROFEET_ADMIN_PASSWORD (>= 12 caracteres) juntos"; bad=1; }
+          [ -n "$ASTROFEET_ADMIN_EMAIL" ] || echo "::notice::Sem ASTROFEET_ADMIN_EMAIL/PASSWORD: a loja sobe sem conta de administrador (dá para adicionar depois)."
+          exit $bad
 
       - uses: actions/setup-node@v4
         with:
@@ -76,7 +76,14 @@ jobs:
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts && chmod 600 ~/.ssh/known_hosts
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -T 20 -t ed25519 "$DEPLOY_HOST" 2>/dev/null > ~/.ssh/known_hosts
+            [ -s ~/.ssh/known_hosts ] || { echo "::error::$DEPLOY_HOST não respondeu na porta 22"; exit 1; }
+            echo "::notice::Identidade da VPS (salve em DEPLOY_KNOWN_HOSTS para fixá-la): $(cat ~/.ssh/known_hosts)"
+          fi
+          chmod 600 ~/.ssh/known_hosts
           cat > ~/.ssh/config <<CFG
           Host vps
             HostName $DEPLOY_HOST
@@ -98,12 +105,10 @@ jobs:
           ssh vps "cat > '$DEPLOY_PATH/incoming/release.tgz'" < release.tgz
           ssh vps "cat > '$DEPLOY_PATH/incoming/remote-deploy.sh' && chmod 700 '$DEPLOY_PATH/incoming/remote-deploy.sh'" < deploy/remote-deploy.sh
           # Segredos vão pelo stdin (nunca na linha de comando) para um .env com permissão 600.
-          {
-            printf 'ASTROFEET_AUTH_SECRET=%q\n' "$ASTROFEET_AUTH_SECRET"
-            printf 'ASTROFEET_ADMIN_EMAIL=%q\n' "$ASTROFEET_ADMIN_EMAIL"
-            printf 'ASTROFEET_ADMIN_PASSWORD=%q\n' "$ASTROFEET_ADMIN_PASSWORD"
-            printf 'ASTROFEET_ALLOWED_ORIGINS=%q\n' "$PUBLIC_URL"
-          } | ssh vps "umask 077 && cat > '$DEPLOY_PATH/shared/.env'"
+          ASTROFEET_ALLOWED_ORIGINS="$PUBLIC_URL"
+          for v in ASTROFEET_AUTH_SECRET ASTROFEET_ADMIN_EMAIL ASTROFEET_ADMIN_PASSWORD ASTROFEET_ALLOWED_ORIGINS; do
+            [ -z "${!v}" ] || printf '%s=%q\n' "$v" "${!v}"
+          done | ssh vps "umask 077 && cat > '$DEPLOY_PATH/shared/.env'"
 
       - name: Ativar na VPS
         run: ssh vps "bash '$DEPLOY_PATH/incoming/remote-deploy.sh' '$GITHUB_SHA' '$DEPLOY_PATH' '$APP_PORT'"

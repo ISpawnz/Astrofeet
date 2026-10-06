@@ -55,21 +55,26 @@ function persist() {
   return g.__astrofeet_writes;
 }
 
-// Dev: contas de demonstração. Produção: NUNCA (admin123 seria uma porta aberta);
-// o primeiro admin vem de ASTROFEET_ADMIN_EMAIL / ASTROFEET_ADMIN_PASSWORD (>= 12).
-function seedUsers() {
-  if (!isProd) return SEED_USERS;
+// Produção: NUNCA contas de demonstração (admin123 seria uma porta aberta). O admin vem de
+// ASTROFEET_ADMIN_EMAIL / ASTROFEET_ADMIN_PASSWORD (>= 12) e é criado no primeiro boot em que
+// esses valores existirem, mesmo com o banco já em uso (dá para configurar depois).
+function ensureEnvAdmin(db: DBShape) {
   const email = process.env.ASTROFEET_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.ASTROFEET_ADMIN_PASSWORD;
-  if (email && password && password.length >= 12)
-    return [{ email, name: "Administrador", password, role: "admin" as const }];
-  console.warn("[db] produção sem ASTROFEET_ADMIN_EMAIL/ASTROFEET_ADMIN_PASSWORD (>=12 chars): nenhum admin criado.");
-  return [];
+  if (email && password && password.length >= 12) {
+    if (!db.users.some((u) => u.email === email))
+      db.users.push(stamp({ email, name: "Administrador", role: "admin", passwordHash: hashPassword(password) }));
+  } else if (!db.users.some((u) => u.role === "admin"))
+    console.warn(
+      "[db] produção sem admin: defina ASTROFEET_ADMIN_EMAIL e ASTROFEET_ADMIN_PASSWORD (>= 12 caracteres).",
+    );
 }
 
 function seed(): DBShape {
   const db = Object.fromEntries(COLLECTIONS.map((c) => [c, []])) as unknown as DBShape;
-  db.users = seedUsers().map(({ password, ...u }) => stamp({ ...u, passwordHash: hashPassword(password) }));
+  db.users = (isProd ? [] : SEED_USERS).map(({ password, ...u }) =>
+    stamp({ ...u, passwordHash: hashPassword(password) }),
+  );
   db.products = SEED_PRODUCTS.map((p) => stamp(p));
   const idBySlug = new Map(db.products.map((p) => [p.slug, p.id]));
   db.reviews = SEED_REVIEWS.filter((r) => idBySlug.has(r.slug)).map(({ slug, ...r }) =>
@@ -101,6 +106,7 @@ function load(): DBShape {
       console.error("[db] falha ao ler o banco, semeando de novo:", e);
     db = seed();
   }
+  if (isProd) ensureEnvAdmin(db);
   write(db);
   return (g.__astrofeet_db = db);
 }

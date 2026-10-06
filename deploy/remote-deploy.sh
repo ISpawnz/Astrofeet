@@ -8,7 +8,7 @@
 #   - garante o religamento após reboot via crontab @reboot do próprio usuário.
 #
 # Uso: remote-deploy.sh <sha> <base> <porta>
-# Espera $BASE/incoming/release.tgz e $BASE/shared/.env já enviados.
+# Espera $BASE/incoming/release.tgz e $BASE/shared/.env (pode estar vazio) já enviados.
 set -euo pipefail
 
 SHA="$1"
@@ -47,6 +47,12 @@ else
 fi
 log "node: $NODE ($("$NODE" -v))"
 
+# Segredo das sessões: gerado uma vez aqui se não vier do GitHub (ASTROFEET_AUTH_SECRET).
+if [ ! -s "$SHARED/auth-secret" ]; then
+  (umask 077 && "$NODE" -e "process.stdout.write(require('crypto').randomBytes(48).toString('base64url'))" >"$SHARED/auth-secret")
+  log "segredo de sessão gerado em $SHARED/auth-secret"
+fi
+
 # ---------- start/stop (gravados em $BASE para o @reboot usar) ----------
 cat >"$BASE/start.sh" <<START
 #!/usr/bin/env bash
@@ -54,6 +60,7 @@ cat >"$BASE/start.sh" <<START
 set -euo pipefail
 cd "$BASE/current"
 set -a; . "$SHARED/.env"; set +a
+export ASTROFEET_AUTH_SECRET="\${ASTROFEET_AUTH_SECRET:-\$(cat "$SHARED/auth-secret")}"
 export NODE_ENV=production PORT=$PORT HOSTNAME=127.0.0.1 ASTROFEET_DB_PATH="$SHARED/data/astrofeet.json"
 "$BASE/stop.sh"
 nohup setsid "$NODE" server.js >>"$BASE/logs/app.log" 2>&1 </dev/null &
